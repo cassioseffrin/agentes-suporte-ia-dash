@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const API = "http://localhost:8000";
+const API = "http://192.168.50.21:8000";
 
 interface DashboardData {
   categories: string[];

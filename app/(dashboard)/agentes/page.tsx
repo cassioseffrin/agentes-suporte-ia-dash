@@ -19,7 +19,7 @@ import {
   Circle as CircleIcon,
 } from "@mui/icons-material";
 
-const API = "http://localhost:8000";
+const API = "http://192.168.50.21:8000";
 
 // Dark MUI theme matching dashboard palette
 const darkTheme = createTheme({

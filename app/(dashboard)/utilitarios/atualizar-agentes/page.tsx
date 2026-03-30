@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Sync as SyncIcon, CheckCircle, ErrorOutline } from "@mui/icons-material";
-
-const API = "http://localhost:8000";
+const API = "http://192.168.50.21:8000";
 
 type Status = "idle" | "loading" | "success" | "error";
 

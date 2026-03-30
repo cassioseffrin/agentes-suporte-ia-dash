@@ -194,7 +194,7 @@ export default function Sidebar() {
           color: "var(--text-muted)",
         }}
       >
-        API: http://localhost:8000
+         API = "http://192.168.50.21:8000";
       </div>
     </aside>
   );
