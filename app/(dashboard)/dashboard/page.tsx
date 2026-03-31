@@ -450,8 +450,8 @@ export default function DashboardPage() {
                   <td style={{ padding: "12px 20px", color: "var(--text-muted)", fontSize: 13 }}>
                     {i + 1}
                   </td>
-                  <td style={{ padding: "12px 20px", fontSize: 14, fontWeight: 500 }}>
-                    {u.name}
+                  <td style={{ padding: "12px 20px", fontSize: 14, fontWeight: 500, textTransform: "capitalize" }}>
+                    {u.name.toLowerCase()}
                   </td>
                   <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }}>
                     {u.email}
