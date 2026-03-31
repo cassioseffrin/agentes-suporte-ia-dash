@@ -97,6 +97,13 @@ export default function DashboardPage() {
         resFeedbacks.json()
       ]);
 
+      if (jsonUsers && jsonUsers.series) {
+        jsonUsers.series = jsonUsers.series.map((s: any) => ({
+          ...s,
+          name: s.name.toLowerCase().replace(/(?:^|\s)\S/g, (a: string) => a.toUpperCase())
+        }));
+      }
+
       setData(jsonUsers);
       setAgentData(jsonAgents);
       setFeedbackData(jsonFeedbacks);
