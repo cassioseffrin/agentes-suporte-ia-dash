@@ -19,7 +19,7 @@ import {
   Circle as CircleIcon,
 } from "@mui/icons-material";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "https://apiassistant.arpasistemas.com.br";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 
 // Dark MUI theme matching dashboard palette
 const darkTheme = createTheme({

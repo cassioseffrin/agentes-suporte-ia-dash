@@ -194,7 +194,7 @@ export default function Sidebar() {
           color: "var(--text-muted)",
         }}
       >
-        API: {process.env.NEXT_PUBLIC_API_URL || "https://apiassistant.arpasistemas.com.br"}
+        API: {process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br"}
       </div>
     </aside>
   );

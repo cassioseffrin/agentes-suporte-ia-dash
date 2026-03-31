@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Refresh as RefreshIcon, CheckCircle, ErrorOutline, InfoOutlined } from "@mui/icons-material";
-const API = process.env.NEXT_PUBLIC_API_URL || "https://apiassistant.arpasistemas.com.br";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 
 type Status = "idle" | "loading" | "success" | "error";
 
