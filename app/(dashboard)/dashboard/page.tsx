@@ -10,7 +10,14 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 interface DashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  top_users: { name: string; email: string; total: number }[];
+  top_users?: { name: string; email: string; total: number }[];
+  agents?: { name: string; total: number }[];
+}
+
+interface FeedbackDashboardData {
+  categories: string[];
+  series: { name: string; data: number[] }[];
+  feedbacks: { name: string; avg_rating: number; total_ratings: number }[];
 }
 
 function StatCard({
@@ -67,6 +74,8 @@ function StatCard({
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [agentData, setAgentData] = useState<DashboardData | null>(null);
+  const [feedbackData, setFeedbackData] = useState<FeedbackDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
@@ -75,10 +84,22 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API}/dashboard/chats-per-user?days=${d}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      setData(json);
+      const [resUsers, resAgents, resFeedbacks] = await Promise.all([
+        fetch(`${API}/dashboard/chats-per-user?days=${d}`),
+        fetch(`${API}/dashboard/chats-per-agent?days=${d}`),
+        fetch(`${API}/dashboard/feedback-per-agent?days=${d}`)
+      ]);
+      if (!resUsers.ok || !resAgents.ok || !resFeedbacks.ok) throw new Error(`HTTP Error`);
+      
+      const [jsonUsers, jsonAgents, jsonFeedbacks] = await Promise.all([
+        resUsers.json(),
+        resAgents.json(),
+        resFeedbacks.json()
+      ]);
+
+      setData(jsonUsers);
+      setAgentData(jsonAgents);
+      setFeedbackData(jsonFeedbacks);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erro ao carregar dados");
     } finally {
@@ -90,10 +111,10 @@ export default function DashboardPage() {
     load(days);
   }, [days]);
 
-  const totalChats = data?.top_users.reduce((s, u) => s + u.total, 0) ?? 0;
-  const totalUsers = data?.top_users.length ?? 0;
+  const totalChats = data?.top_users?.reduce((s, u) => s + u.total, 0) ?? 0;
+  const totalUsers = data?.top_users?.length ?? 0;
 
-  const chartOptions: ApexCharts.ApexOptions = {
+  const getChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
     chart: {
       type: "line",
       background: "transparent",
@@ -109,7 +130,7 @@ export default function DashboardPage() {
       strokeDashArray: 4,
     },
     xaxis: {
-      categories: data?.categories ?? [],
+      categories: categories,
       labels: {
         style: { colors: "#94a3b8", fontSize: "11px" },
         rotate: -30,
@@ -137,7 +158,43 @@ export default function DashboardPage() {
       "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
       "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
     ],
-  };
+  });
+
+  const getBarChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
+    chart: {
+      type: "bar",
+      background: "transparent",
+      toolbar: { show: false },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 4,
+        horizontal: true,
+        dataLabels: { position: 'top' },
+      }
+    },
+    dataLabels: {
+      enabled: true,
+      textAnchor: 'start',
+      style: { colors: ['#fff'] },
+      formatter: function (val) {
+        return val + " ★";
+      },
+      offsetX: 0,
+    },
+    theme: { mode: "dark" },
+    xaxis: {
+      categories: categories,
+      labels: { style: { colors: "#94a3b8", fontSize: "11px" } },
+      max: 5,
+      tickAmount: 5,
+    },
+    yaxis: {
+      labels: { style: { colors: "#94a3b8", fontSize: "12px", fontWeight: 500 } },
+    },
+    colors: ["#f59e0b"], // Gold/Amber
+    grid: { borderColor: "#2d3352", strokeDashArray: 4 },
+  });
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
@@ -243,14 +300,104 @@ export default function DashboardPage() {
           <ApexChart
             type="line"
             series={data.series}
-            options={chartOptions}
+            options={getChartOptions(data.categories ?? [])}
             height={320}
           />
         )}
       </div>
 
+      {/* Agent Chart */}
+      <div
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "24px",
+          marginBottom: 24,
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
+          Chats por Agente (diário)
+        </h2>
+
+        {loading ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
+            <span className="spinner" /> Carregando dados...
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 300,
+              color: "var(--danger)",
+              fontSize: 14,
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        ) : !agentData || agentData.series.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
+            Nenhum dado no período selecionado.
+          </div>
+        ) : (
+          <ApexChart
+            type="line"
+            series={agentData.series}
+            options={getChartOptions(agentData.categories ?? [])}
+            height={320}
+          />
+        )}
+      </div>
+
+      {/* Feedback Chart */}
+      <div
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "24px",
+          marginBottom: 24,
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
+          Média de Avaliação por Agente (Estrelas)
+        </h2>
+
+        {loading ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
+            <span className="spinner" /> Carregando dados...
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 300,
+              color: "var(--danger)",
+              fontSize: 14,
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        ) : !feedbackData || feedbackData.series.length === 0 || feedbackData.series[0].data.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
+            Nenhum feedback recebido no período selecionado.
+          </div>
+        ) : (
+          <ApexChart
+            type="bar"
+            series={feedbackData.series}
+            options={getBarChartOptions(feedbackData.categories ?? [])}
+            height={Math.max(200, (feedbackData.categories?.length || 0) * 50)}
+          />
+        )}
+      </div>
+
       {/* Top users table */}
-      {data && data.top_users.length > 0 && (
+      {data && data.top_users && data.top_users.length > 0 && (
         <div
           style={{
             background: "var(--bg-card)",
