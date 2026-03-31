@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-const API = "http://192.168.50.21:8000";
+const API = process.env.NEXT_PUBLIC_API_URL || "https://apiassistant.arpasistemas.com.br";
 
 interface DashboardData {
   categories: string[];

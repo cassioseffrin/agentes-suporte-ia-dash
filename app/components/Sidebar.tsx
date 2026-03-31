@@ -194,7 +194,7 @@ export default function Sidebar() {
           color: "var(--text-muted)",
         }}
       >
-         API = "http://192.168.50.21:8000";
+        API: {process.env.NEXT_PUBLIC_API_URL || "https://apiassistant.arpasistemas.com.br"}
       </div>
     </aside>
   );
