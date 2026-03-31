@@ -10,7 +10,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 interface DashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  top_users?: { name: string; email: string; total: number }[];
+  top_users?: { name: string; email: string; total: number; avg_rating?: number | null }[];
   agents?: { name: string; total: number }[];
 }
 
@@ -414,7 +414,7 @@ export default function DashboardPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)" }}>
-                {["#", "Nome", "Email", "Total de Chats"].map((h) => (
+                {["#", "Nome", "Email", "Total de Chats", "Avaliação"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -472,6 +472,24 @@ export default function DashboardPage() {
                     >
                       {u.total}
                     </span>
+                  </td>
+                  <td style={{ padding: "12px 20px" }}>
+                    {u.avg_rating ? (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          color: "#f59e0b", // Gold text for stars
+                          fontSize: 13,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {u.avg_rating} ★
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>
+                    )}
                   </td>
                 </tr>
               ))}
