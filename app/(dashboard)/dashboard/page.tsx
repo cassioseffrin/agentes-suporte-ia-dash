@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { format, parseISO } from "date-fns";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -96,6 +97,23 @@ export default function DashboardPage() {
         resAgents.json(),
         resFeedbacks.json()
       ]);
+
+      const formatDateBR = (dateStr: string) => {
+        if (!dateStr || typeof dateStr !== "string") return dateStr;
+        try {
+          return format(parseISO(dateStr), 'dd/MM/yyyy');
+        } catch {
+          return dateStr;
+        }
+      };
+
+      if (jsonUsers && jsonUsers.categories) {
+        jsonUsers.categories = jsonUsers.categories.map(formatDateBR);
+      }
+      
+      if (jsonAgents && jsonAgents.categories) {
+        jsonAgents.categories = jsonAgents.categories.map(formatDateBR);
+      }
 
       if (jsonUsers && jsonUsers.series) {
         jsonUsers.series = jsonUsers.series.map((s: any) => ({
