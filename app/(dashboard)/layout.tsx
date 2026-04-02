@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 
 export default function DashboardShellLayout({
@@ -5,6 +9,20 @@ export default function DashboardShellLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const [authorized, setAuthorized] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const auth = localStorage.getItem("isAuthenticated");
+    if (auth !== "true") {
+      router.push("/login");
+    } else {
+      setAuthorized(true);
+    }
+  }, [router]);
+
+  if (!authorized) return null;
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
