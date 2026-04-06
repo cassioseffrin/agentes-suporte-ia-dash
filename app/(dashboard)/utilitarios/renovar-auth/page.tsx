@@ -102,7 +102,7 @@ export default function RenovarAuthPage() {
       <div style={infoCardStyle}>
         <InfoOutlined sx={{ color: "var(--accent)", fontSize: 20, flexShrink: 0, mt: "2px" }} />
         <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-          <strong style={{ color: "var(--text-primary)" }}>Como obter o arquivo no Mac:</strong>
+          <strong style={{ color: "var(--text-primary)" }}>Como obter o arquivo:</strong>
           <ol style={{ margin: "8px 0 0 16px", padding: 0 }}>
             {/* <li>
               Abra o Terminal e execute:{" "}
