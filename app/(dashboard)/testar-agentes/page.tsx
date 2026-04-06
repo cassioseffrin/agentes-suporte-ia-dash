@@ -14,7 +14,7 @@ export default function TestarAgentesPage() {
       </div>
       
       {/* Container to render the component */}
-      <div style={{ position: "relative", minHeight: "400px", padding: 20, background: "var(--bg-surface)", borderRadius: "var(--radius)", border: "1px dashed var(--accent)" }}>
+      {/* <div style={{ position: "relative", minHeight: "400px", padding: 20, background: "var(--bg-surface)", borderRadius: "var(--radius)", border: "1px dashed var(--accent)" }}> */}
         {/* <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "2rem" }}>
           Widget do chat ativo nesta página.
         </p> */}
@@ -31,7 +31,7 @@ export default function TestarAgentesPage() {
             }
           }} 
         />
-      </div>
+      {/* </div> */}
     </div>
   );
 }
