@@ -62,7 +62,7 @@ export default function AtualizarAgentesPage() {
             GET /updateNotebooks
           </code>{" "}
           que irá listar todos os notebooks disponíveis no NotebookLM e sincronizá-los com o banco de
-          dados (inserindo novos, atualizando existentes e removendo os que não existem mais).
+          dados (inserindo novos, atualizando existentes e <strong>desativando</strong> os que não existem mais — sem deletar).
         </p>
       </div>
 
@@ -128,7 +128,7 @@ export default function AtualizarAgentesPage() {
               ["Total", result.total],
               ["Inseridos", result.inseridos],
               ["Atualizados", result.atualizados],
-              ["Removidos", result.removidos],
+              ["Desativados", result.desativados],
             ].map(([label, val]) => (
               <div
                 key={label as string}
