@@ -15,9 +15,9 @@ export default function TestarAgentesPage() {
       
       {/* Container to render the component */}
       <div style={{ position: "relative", minHeight: "400px", padding: 20, background: "var(--bg-surface)", borderRadius: "var(--radius)", border: "1px dashed var(--accent)" }}>
-        <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "2rem" }}>
+        {/* <p style={{ textAlign: "center", color: "var(--text-muted)", marginTop: "2rem" }}>
           Widget do chat ativo nesta página.
-        </p>
+        </p> */}
         
         {/* Render ChatIA. We pass a mock session so the test works naturally */}
         <ChatIA 
