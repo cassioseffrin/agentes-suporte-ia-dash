@@ -25,6 +25,7 @@ const navGroups = [
     items: [
       { label: "Atualizar Agentes", href: "/utilitarios/atualizar-agentes", icon: SyncIcon },
       { label: "Renovar Autenticação", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
+      { label: "Testar Agentes", href: "/testar-agentes", icon: AgentIcon },
     ],
   },
   {

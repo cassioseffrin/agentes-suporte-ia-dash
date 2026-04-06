@@ -102,22 +102,28 @@ export default function RenovarAuthPage() {
       <div style={infoCardStyle}>
         <InfoOutlined sx={{ color: "var(--accent)", fontSize: 20, flexShrink: 0, mt: "2px" }} />
         <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
-          <strong style={{ color: "var(--text-primary)" }}>Como obter o arquivo:</strong>
-          <ol style={{ margin: "8px 0 0 16px", padding: 0 }}>
-            {/* <li>
-              Abra o Terminal e execute:{" "}
-              <code style={codeStyle}>open ~/.notebooklm/</code>
-            </li> */}
+          <strong style={{ color: "var(--text-primary)" }}>Como renovar a autenticação:</strong>
+          <ol style={{ margin: "8px 0 0 16px", padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
             <li>
-              Copie o arquivo{" "}
-              <code style={codeStyle}>storage_state.json</code> para sua área de trabalho
+              Abra o Terminal, entre na pasta do projeto e faça o login:
+              <br />
+              <code style={{ ...codeStyle, display: "inline-block", marginTop: 4 }}>
+                cd dev/agentes-suporte-ia
+                <br />
+                notebooklm login
+              </code>
             </li>
-            <li>Arraste o arquivo para a zona abaixo ou clique para selecionar</li>
+            <li>Complete o login do Google no navegador que será aberto.</li>
+            <li>Aguarde até ver a página inicial do NotebookLM e pressione ENTER no Terminal.</li>
+            <li>
+              Copie o arquivo gerado para sua Área de Trabalho:
+              <br />
+              <code style={{ ...codeStyle, display: "inline-block", marginTop: 4 }}>
+                cp ~/.notebooklm/storage_state.json ~/Desktop
+              </code>
+            </li>
+            <li>Arraste o arquivo para a zona abaixo ou clique para selecionar.</li>
           </ol>
-          <div style={{ marginTop: 8, fontSize: 12, color: "var(--text-muted)" }}>
-            💡 Se o token expirou, execute primeiro{" "}
-            <code style={codeStyle}>notebooklm login</code> no Mac para gerar um novo arquivo.
-          </div>
         </div>
       </div>
 
