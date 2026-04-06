@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   CloudUpload as UploadIcon,
   CheckCircle,
@@ -8,6 +8,8 @@ import {
   InfoOutlined,
   InsertDriveFile as FileIcon,
   Close as CloseIcon,
+  WifiProtectedSetup as RefreshStatusIcon,
+  Circle as DotIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -23,12 +25,39 @@ interface UploadResult {
   message: string;
 }
 
+interface AuthStatus {
+  exists: boolean;
+  valid: boolean;
+  cookies_count: number;
+  expires_at: string | null;
+  file_age_hours: number | null;
+  message: string;
+}
+
 export default function RenovarAuthPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const fetchAuthStatus = useCallback(async () => {
+    setLoadingStatus(true);
+    try {
+      const res = await fetch(`${API}/authStatus`);
+      if (res.ok) setAuthStatus(await res.json());
+    } catch {
+      setAuthStatus(null);
+    } finally {
+      setLoadingStatus(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAuthStatus();
+  }, [fetchAuthStatus]);
 
   const acceptFile = useCallback((f: File) => {
     if (!f.name.endsWith(".json")) {
@@ -69,6 +98,8 @@ export default function RenovarAuthPage() {
       if (!res.ok) throw new Error(json.detail || `HTTP ${res.status}`);
       setResult(json);
       setStatus("success");
+      // Refresh status card after a short delay so backend finishes validating
+      setTimeout(() => fetchAuthStatus(), 1500);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erro desconhecido");
       setStatus("error");
@@ -85,6 +116,19 @@ export default function RenovarAuthPage() {
   const isDragging = status === "dragging";
   const isUploading = status === "uploading";
 
+  const expiresLabel = (() => {
+    if (!authStatus?.expires_at) return null;
+    const d = new Date(authStatus.expires_at);
+    const now = new Date();
+    const diffMs = d.getTime() - now.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    if (diffMs < 0) return "Expirado";
+    if (diffDays > 0) return `Expira em ${diffDays}d ${diffHours}h`;
+    if (diffHours > 0) return `Expira em ${diffHours}h`;
+    return "Expira em breve";
+  })();
+
   return (
     <div style={{ animation: "fadeIn 0.3s ease", maxWidth: 620 }}>
       {/* Header */}
@@ -96,6 +140,90 @@ export default function RenovarAuthPage() {
           Faça upload do <code style={codeStyle}>storage_state.json</code> do Mac
           para renovar a sessão do NotebookLM no servidor.
         </p>
+      </div>
+
+      {/* Auth Status Card */}
+      <div style={{
+        background: loadingStatus
+          ? "var(--bg-surface)"
+          : authStatus?.valid
+          ? "rgba(16,185,129,0.07)"
+          : "rgba(239,68,68,0.07)",
+        border: `1px solid ${
+          loadingStatus
+            ? "var(--border)"
+            : authStatus?.valid
+            ? "rgba(16,185,129,0.25)"
+            : "rgba(239,68,68,0.25)"
+        }`,
+        borderRadius: "var(--radius)",
+        padding: "16px 20px",
+        marginBottom: 24,
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        transition: "all 0.3s ease",
+      }}>
+        {/* Dot indicator */}
+        <div style={{
+          width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+          background: loadingStatus
+            ? "var(--text-muted)"
+            : authStatus?.valid
+            ? "#10b981"
+            : "#ef4444",
+          boxShadow: loadingStatus
+            ? "none"
+            : authStatus?.valid
+            ? "0 0 6px rgba(16,185,129,0.6)"
+            : "0 0 6px rgba(239,68,68,0.6)",
+          animation: !loadingStatus && authStatus?.valid ? "pulse-glow 2s infinite" : "none",
+        }} />
+
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 13, fontWeight: 600,
+            color: loadingStatus
+              ? "var(--text-secondary)"
+              : authStatus?.valid
+              ? "var(--success)"
+              : "var(--danger)",
+            marginBottom: 4,
+          }}>
+            {loadingStatus
+              ? "Verificando sessão…"
+              : authStatus
+              ? authStatus.message
+              : "Não foi possível verificar o status."}
+          </div>
+          {!loadingStatus && authStatus?.exists && (
+            <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--text-muted)", flexWrap: "wrap" }}>
+              <span>🍪 {authStatus.cookies_count} cookies</span>
+              {authStatus.file_age_hours !== null && (
+                <span>📁 Arquivo atualizado há {authStatus.file_age_hours}h</span>
+              )}
+              {expiresLabel && (
+                <span style={{ color: authStatus.valid ? "var(--text-muted)" : "var(--danger)", fontWeight: 500 }}>
+                  ⏰ {expiresLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={fetchAuthStatus}
+          disabled={loadingStatus}
+          title="Verificar novamente"
+          style={{
+            background: "none", border: "none", cursor: loadingStatus ? "default" : "pointer",
+            color: "var(--text-muted)", padding: 6, borderRadius: 6,
+            opacity: loadingStatus ? 0.4 : 1, transition: "opacity 0.2s",
+            display: "flex",
+          }}
+        >
+          <RefreshStatusIcon fontSize="small" style={{ animation: loadingStatus ? "spin 1s linear infinite" : "none" }} />
+        </button>
       </div>
 
       {/* Instructions */}

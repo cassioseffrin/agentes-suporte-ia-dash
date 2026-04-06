@@ -249,7 +249,7 @@ export default function AgentesPage() {
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-            Editar Agentes
+             Agentes de Suporte IA
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
             Selecione um agente para editar suas configurações.

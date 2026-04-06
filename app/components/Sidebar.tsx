@@ -31,7 +31,7 @@ const navGroups = [
   {
     label: "Configurações",
     items: [
-      { label: "Editar Agentes", href: "/agentes", icon: AgentIcon },
+      { label: "Agentes de Suporte IA", href: "/agentes", icon: AgentIcon },
     ],
   },
 ];
@@ -40,7 +40,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const SidebarContent = () => (
+  const SidebarContent = () => (  
     <aside
       style={{
         width: "var(--sidebar-width)",
