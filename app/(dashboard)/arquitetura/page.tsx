@@ -14,7 +14,7 @@ sequenceDiagram
     participant NLM as NotebookLM CLI<br/>(subprocess)
     participant OAI as OpenAI API<br/>(gpt-4o-mini)
 
-    rect rgb(230, 240, 255)
+    rect rgba(0, 50, 100, 0.4)
         Note over U,OAI: FASE 1 — Abertura do Chat e Configuração Inicial
         U->>Chat: Clica no FAB (Assistente IA)
         Chat->>Chat: Verifica localStorage "ia_consent"
@@ -33,7 +33,7 @@ sequenceDiagram
         U->>Chat: Seleciona um Agente
     end
 
-    rect rgb(230, 255, 240)
+    rect rgba(0, 100, 50, 0.4)
         Note over U,OAI: FASE 2 — Criação da Thread (Sessão)
         Chat->>Backend: GET /createNewThread?agentName=...
         Backend->>Backend: Gera UUID (threadId) e inicializa sessão
@@ -43,32 +43,32 @@ sequenceDiagram
         Chat-->>U: Exibe mensagem de boas-vindas
     end
 
-    rect rgb(255, 245, 220)
+    rect rgba(100, 70, 0, 0.4)
         Note over U,OAI: FASE 3 — Envio de Mensagem e Resposta
         U->>Chat: Digita mensagem
         Chat->>Chat: setIsTyping(true) / Start AbortController (timeout 240s)
 
         Chat->>Backend: POST /chat { threadId, message, assistantName }
         
-        rect rgb(255, 230, 200)
+        rect rgba(100, 50, 0, 0.3)
             Note over Backend,OAI: Etapa 3a — Query Rewriting (timeout 60s)
             Backend->>OAI: chat.completions.create (escreve query autocontida)
             OAI-->>Backend: query reescrita
         end
 
-        rect rgb(200, 230, 255)
+        rect rgba(0, 50, 100, 0.3)
             Note over Backend,NLM: Etapa 3b — Busca RAG NotebookLM (timeout 240s)
             Backend->>NLM: notebooklm ask ...
             NLM-->>Backend: Contexto dos manuais
         end
 
-        rect rgb(220, 255, 220)
+        rect rgba(0, 100, 50, 0.3)
             Note over Backend,OAI: Etapa 3c — Geração (timeout 120s)
             Backend->>OAI: chat.completions.create (gera resposta com contexto)
             OAI-->>Backend: resposta gerada
         end
 
-        rect rgb(240, 220, 255)
+        rect rgba(70, 30, 100, 0.4)
             Note over Backend,DB: Etapa 3d — Persistência (assíncrona)
             Backend->>DB: Salva mensagens e cria Subject (assunto curt)
         end
@@ -78,7 +78,7 @@ sequenceDiagram
         Chat-->>U: Exibe resposta
     end
 
-    rect rgb(255, 220, 220)
+    rect rgba(100, 0, 0, 0.4)
         Note over U,Chat: TIMEOUT DO CLIENTE — AbortController (240s)
         Note over Chat: Se fetch falhar (4 min), encerra digitando e exibe erro.
     end
