@@ -755,7 +755,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   Escolha o Assistente
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#6b7280", textAlign: "center" }}>
-                  Sobre qual assunto ou manual você deseja falar?
+                  Sobre qual assunto ou manual você deseja falar?<br/>
+                  <span style={{ fontSize: "0.85em", opacity: 0.8 }}>Dica: Você também pode acessar conversas anteriores no ícone de histórico acima.</span>
                 </Typography>
               </Box>
 

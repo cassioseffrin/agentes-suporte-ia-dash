@@ -11,14 +11,14 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 interface DashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  top_users?: { name: string; email: string; total: number; avg_rating?: number | null }[];
+  top_users?: { name: string; email: string; total: number; avg_rating?: number | null; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number }[];
   agents?: { name: string; total: number }[];
 }
 
 interface FeedbackDashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  feedbacks: { name: string; avg_rating: number; total_ratings: number }[];
+  feedbacks: { name: string; avg_rating: number; total_ratings: number; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number }[];
 }
 
 function StatCard({
@@ -202,7 +202,11 @@ export default function DashboardPage() {
       enabled: true,
       textAnchor: 'start',
       style: { colors: ['#fff'] },
-      formatter: function (val) {
+      formatter: function (val, opts?: any) {
+        const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
+        if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
+          return `${val} ★ | ${item.thumb_avg}% 👍`;
+        }
         return val + " ★";
       },
       offsetX: 0,
@@ -219,6 +223,18 @@ export default function DashboardPage() {
     },
     colors: ["#f59e0b"], // Gold/Amber
     grid: { borderColor: "#2d3352", strokeDashArray: 4 },
+    tooltip: {
+      theme: "dark",
+      y: {
+        formatter: function (val, opts?: any) {
+          const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
+          if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
+            return `${val} ★ (${item.thumb_avg}% 👍 | ${item.thumb_up} up, ${item.thumb_down} down)`;
+          }
+          return val + " ★";
+        }
+      }
+    },
   });
 
   return (
@@ -499,22 +515,30 @@ export default function DashboardPage() {
                     </span>
                   </td>
                   <td style={{ padding: "12px 20px" }}>
-                    {u.avg_rating ? (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          color: "#f59e0b", // Gold text for stars
-                          fontSize: 13,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {u.avg_rating} ★
-                      </span>
-                    ) : (
-                      <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>
-                    )}
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      {u.avg_rating ? (
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            color: "#f59e0b", // Gold text for stars
+                            fontSize: 13,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {u.avg_rating} ★
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>
+                      )}
+                      
+                      {u.thumb_avg !== undefined && u.thumb_avg !== null ? (
+                        <span style={{ color: "#10b981", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 3 }}>
+                          | {u.thumb_avg}% 👍
+                        </span>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}
