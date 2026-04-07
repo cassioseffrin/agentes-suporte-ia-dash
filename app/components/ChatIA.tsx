@@ -298,9 +298,15 @@ const ChatIA = ({ session }: ChatIAProps) => {
     message: string,
     currentThreadId: string
   ): Promise<string | null> => {
+    // Timeout explícito de 4 minutos (240s) para acomodar notebooks lentos (ex: REFORMA_TRIBUTARIA)
+    // O browser por padrão pode encerrar conexões em ~60s, antes do servidor responder
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4 * 60 * 1000);
+
     try {
       const res = await fetch(`${BASE_API_URL}/chat`, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${BACKEND_API_KEY}`,
@@ -318,6 +324,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
       return null;
     } catch {
       return null;
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
