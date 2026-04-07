@@ -14,6 +14,10 @@ import {
   useTheme,
   useMediaQuery,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import CloseIcon from "@mui/icons-material/Close";
@@ -26,6 +30,11 @@ import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import CloseFullscreenIcon from "@mui/icons-material/CloseFullscreen";
 import HistoryIcon from "@mui/icons-material/History";
 import DeleteIcon from "@mui/icons-material/Delete";
+import ThumbUpOutlinedIcon from "@mui/icons-material/ThumbUpOutlined";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import ThumbDownOutlinedIcon from "@mui/icons-material/ThumbDownOutlined";
+import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReactMarkdown from "react-markdown";
 
 // const BASE_API_URL = "http://localhost:8000";
@@ -51,6 +60,9 @@ const dotBounce = keyframes`
 interface ChatMessage {
   text: string;
   isUser: boolean;
+  id?: number;
+  feedback_thumb?: number;
+  feedback_text?: string;
 }
 
 interface ChatIAProps {
@@ -81,6 +93,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyHasMore, setHistoryHasMore] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [feedbackDialogChatId, setFeedbackDialogChatId] = useState<number | null>(null);
+  const [feedbackDialogText, setFeedbackDialogText] = useState("");
 
   useEffect(() => {
     fetchAgents();
@@ -193,8 +208,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
       if (res.ok) {
         const data = await res.json();
         const loadedMessages = data.messages.map((m: any) => ({
+          id: m.id,
           text: m.content,
-          isUser: m.role === "user"
+          isUser: m.role === "user",
+          feedback_thumb: m.feedback_thumb,
+          feedback_text: m.feedback_text
         }));
         setThreadId(tId);
         setSelectedAgent(agentName);
@@ -297,7 +315,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const fetchResponse = async (
     message: string,
     currentThreadId: string
-  ): Promise<string | null> => {
+  ): Promise<{ content: string; chat_id: number | null } | null> => {
     // Timeout explícito de 4 minutos (240s) para acomodar notebooks lentos (ex: REFORMA_TRIBUTARIA)
     // O browser por padrão pode encerrar conexões em ~60s, antes do servidor responder
     const controller = new AbortController();
@@ -319,7 +337,10 @@ const ChatIA = ({ session }: ChatIAProps) => {
       });
       if (res.ok) {
         const data = await res.json();
-        return data?.content?.[0] ?? null;
+        return {
+          content: data?.content?.[0] ?? "",
+          chat_id: data?.chat_id ?? null,
+        };
       }
       return null;
     } catch {
@@ -347,10 +368,10 @@ const ChatIA = ({ session }: ChatIAProps) => {
     const reply = await fetchResponse(text, tid);
     setIsTyping(false);
 
-    if (reply) {
+    if (reply && reply.content) {
       setMessages((prev) => [
         ...prev,
-        { text: cleanText(reply), isUser: false },
+        { text: cleanText(reply.content), isUser: false, id: reply.chat_id || undefined },
       ]);
     } else {
       setMessages((prev) => [
@@ -369,6 +390,42 @@ const ChatIA = ({ session }: ChatIAProps) => {
     patterns.forEach((p) => (t = t.replace(p, "")));
     t = t.replace(/ +/g, " ").trim();
     return t;
+  };
+
+  const handleMessageFeedback = async (chatId: number, thumb: number, text?: string) => {
+    try {
+      await fetch(`${BASE_API_URL}/chat/${chatId}/feedback`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${BACKEND_API_KEY}`,
+        },
+        body: JSON.stringify({ thumb, text }),
+      });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === chatId
+            ? { ...m, feedback_thumb: thumb, feedback_text: text || m.feedback_text }
+            : m
+        )
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const openFeedbackDialog = (chatId: number) => {
+    const msg = messages.find(m => m.id === chatId);
+    setFeedbackDialogChatId(chatId);
+    setFeedbackDialogText(msg?.feedback_text || "");
+    setFeedbackDialogOpen(true);
+  };
+
+  const submitFeedbackDialog = () => {
+    if (feedbackDialogChatId) {
+      handleMessageFeedback(feedbackDialogChatId, -1, feedbackDialogText);
+    }
+    setFeedbackDialogOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -882,6 +939,26 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       ) : (
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
                       )}
+
+                      {!msg.isUser && msg.id && (
+                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, mt: 1 }}>
+                          <Tooltip title="Copiar">
+                            <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "#6366f1", bgcolor: "rgba(99,102,241,0.1)" }}}>
+                              <ContentCopyIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Gostei">
+                            <IconButton size="small" onClick={() => handleMessageFeedback(msg.id!, 1)} sx={{ p: 0.5, color: msg.feedback_thumb === 1 ? "#10b981" : "#9ca3af", "&:hover": { color: "#10b981", bgcolor: "rgba(16,185,129,0.1)" }}}>
+                              {msg.feedback_thumb === 1 ? <ThumbUpIcon sx={{ fontSize: 16 }} /> : <ThumbUpOutlinedIcon sx={{ fontSize: 16 }} />}
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Não Gostei">
+                            <IconButton size="small" onClick={() => openFeedbackDialog(msg.id!)} sx={{ p: 0.5, color: msg.feedback_thumb === -1 ? "#ef4444" : "#9ca3af", "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.1)" }}}>
+                              {msg.feedback_thumb === -1 ? <ThumbDownIcon sx={{ fontSize: 16 }} /> : <ThumbDownOutlinedIcon sx={{ fontSize: 16 }} />}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
                 ))}
@@ -1053,6 +1130,31 @@ const ChatIA = ({ session }: ChatIAProps) => {
           )}
         </Paper>
       )}
+
+      <Dialog open={feedbackDialogOpen} onClose={() => setFeedbackDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700, color: "#1e1b4b" }}>Como podemos melhorar?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: "#6b7280", mb: 2 }}>
+            Sua opinião é fundamental. Por favor, conte-nos por que essa resposta não foi útil.
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Seu feedback"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={feedbackDialogText}
+            onChange={(e) => setFeedbackDialogText(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setFeedbackDialogOpen(false)} sx={{ color: "#6b7280" }}>Cancelar</Button>
+          <Button onClick={submitFeedbackDialog} variant="contained" sx={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>Enviar Feedback</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
