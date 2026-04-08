@@ -80,6 +80,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
+  const [userLimit, setUserLimit] = useState(20);
 
   const load = async (d: number) => {
     setLoading(true);
@@ -449,10 +450,33 @@ export default function DashboardPage() {
             overflow: "hidden",
           }}
         >
-          <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
               Ranking de Usuários
             </h2>
+            <select
+              title="Quantidade de usuários a exibir"
+              value={userLimit}
+              onChange={(e) => setUserLimit(Number(e.target.value))}
+              style={{
+                background: "var(--bg-surface)",
+                color: "var(--text-primary)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                padding: "6px 12px",
+                fontSize: 13,
+                outline: "none",
+                cursor: "pointer",
+                fontFamily: "Inter, sans-serif"
+              }}
+            >
+              <option value={5}>Top 5</option>
+              <option value={10}>Top 10</option>
+              <option value={20}>Top 20</option>
+              <option value={50}>Top 50</option>
+              <option value={100}>Top 100</option>
+              <option value={999999}>Todos</option>
+            </select>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -476,7 +500,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {data.top_users.map((u, i) => (
+              {data.top_users.slice(0, userLimit).map((u, i) => (
                 <tr
                   key={u.email}
                   style={{
