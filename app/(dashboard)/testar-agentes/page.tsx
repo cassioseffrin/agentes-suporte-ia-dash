@@ -24,9 +24,9 @@ export default function TestarAgentesPage() {
           session={{
             user: {
               userAuthentication: {
-                username: "admin@test.com",
+                username: "admin@arpasistemas.com.br",
                 nome: "Conta de Testes - admin",
-                tenantId: { schemaFilial: "test_tenant" }
+                tenantId: { schemaFilial: "03600477000104" }
               }
             }
           }} 
