@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Dashboard — Agentes de Suporte IA",
+  title: "Dashboard Agentes de IA",
   description: "Painel de controle dos agentes de suporte com IA",
 };
 
