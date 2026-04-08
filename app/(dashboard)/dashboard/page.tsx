@@ -204,7 +204,7 @@ export default function DashboardPage() {
       style: { colors: ['#fff'] },
       formatter: function (val, opts?: any) {
         const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
-        const starText = (val === null || val === undefined || isNaN(val)) ? "- ★" : `${val} ★`;
+        const starText = (val === null || val === undefined) ? "- ★" : `${val} ★`;
         if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
           return `${starText} | ${item.thumb_avg}% 👍`;
         }
@@ -229,7 +229,7 @@ export default function DashboardPage() {
       y: {
         formatter: function (val, opts?: any) {
           const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
-          const starText = (val === null || val === undefined || isNaN(val)) ? "Sem avaliações ★" : `${val} ★`;
+          const starText = (val === null || val === undefined) ? "Sem avaliações ★" : `${val} ★`;
           if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
             return `${starText} (${item.thumb_avg}% 👍 | ${item.thumb_up} up, ${item.thumb_down} down)`;
           }
