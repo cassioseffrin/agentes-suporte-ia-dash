@@ -204,10 +204,11 @@ export default function DashboardPage() {
       style: { colors: ['#fff'] },
       formatter: function (val, opts?: any) {
         const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
+        const starText = (val === null || val === undefined || isNaN(val)) ? "- ★" : `${val} ★`;
         if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
-          return `${val} ★ | ${item.thumb_avg}% 👍`;
+          return `${starText} | ${item.thumb_avg}% 👍`;
         }
-        return val + " ★";
+        return starText;
       },
       offsetX: 0,
     },
@@ -228,10 +229,11 @@ export default function DashboardPage() {
       y: {
         formatter: function (val, opts?: any) {
           const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
+          const starText = (val === null || val === undefined || isNaN(val)) ? "Sem avaliações ★" : `${val} ★`;
           if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
-            return `${val} ★ (${item.thumb_avg}% 👍 | ${item.thumb_up} up, ${item.thumb_down} down)`;
+            return `${starText} (${item.thumb_avg}% 👍 | ${item.thumb_up} up, ${item.thumb_down} down)`;
           }
-          return val + " ★";
+          return starText;
         }
       }
     },
