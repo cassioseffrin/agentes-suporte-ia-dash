@@ -723,10 +723,16 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "stretch",
-                justifyContent: "center",
                 p: 3,
                 gap: 2,
                 bgcolor: "#fafafa",
+                minHeight: 0,
+                overflowY: "auto",
+                "&::-webkit-scrollbar": { width: 4 },
+                "&::-webkit-scrollbar-thumb": {
+                  bgcolor: "#c7d2fe",
+                  borderRadius: 2,
+                },
               }}
             >
               <Box
@@ -734,33 +740,34 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  mb: 2,
+                  mb: 1,
+                  flexShrink: 0,
                 }}
               >
                 <Box
                   sx={{
-                    width: 56,
-                    height: 56,
+                    width: 48,
+                    height: 48,
                     borderRadius: "50%",
                     background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    mb: 1.5,
+                    mb: 1,
                   }}
                 >
-                  <SmartToyIcon sx={{ color: "#fff", fontSize: 28 }} />
+                  <SmartToyIcon sx={{ color: "#fff", fontSize: 24 }} />
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e1b4b" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e1b4b" }}>
                   Escolha o Assistente
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#6b7280", textAlign: "center" }}>
+                <Typography variant="body2" sx={{ color: "#6b7280", textAlign: "center", fontSize: 13 }}>
                   Sobre qual assunto ou manual você deseja falar?<br/>
                   <span style={{ fontSize: "0.85em", opacity: 0.8 }}>Dica: Você também pode acessar conversas anteriores no ícone de histórico acima.</span>
                 </Typography>
               </Box>
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflowY: "auto", maxHeight: "100%" }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, flex: 1, minHeight: 0 }}>
                 {agents.length === 0 ? (
                   <LinearProgress sx={{ mt: 2 }} />
                 ) : (
@@ -773,11 +780,12 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         textTransform: "none",
                         justifyContent: "flex-start",
                         textAlign: "left",
-                        py: 1.5,
-                        px: 2,
+                        py: 1,
+                        px: 1.5,
                         borderRadius: 2,
                         borderColor: "#e8eaff",
                         color: "#1e1b4b",
+                        minHeight: 0,
                         "&:hover": {
                           borderColor: "#a5b4fc",
                           bgcolor: "#f5f3ff",
@@ -785,10 +793,10 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       }}
                     >
                       <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3 }}>
                           {agent.title}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                        <Typography variant="caption" sx={{ color: "#6b7280", fontSize: 11 }}>
                           Agente: {agent.name}
                         </Typography>
                       </Box>
