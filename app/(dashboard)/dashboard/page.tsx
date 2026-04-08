@@ -82,12 +82,12 @@ export default function DashboardPage() {
   const [days, setDays] = useState(30);
   const [userLimit, setUserLimit] = useState(20);
 
-  const load = async (d: number) => {
+  const load = async (d: number, lim: number) => {
     setLoading(true);
     setError(null);
     try {
       const [resUsers, resAgents, resFeedbacks] = await Promise.all([
-        fetch(`${API}/dashboard/chats-per-user?days=${d}`),
+        fetch(`${API}/dashboard/chats-per-user?days=${d}&limit=${lim}`),
         fetch(`${API}/dashboard/chats-per-agent?days=${d}`),
         fetch(`${API}/dashboard/feedback-per-agent?days=${d}`)
       ]);
@@ -134,8 +134,8 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    load(days);
-  }, [days]);
+    load(days, userLimit);
+  }, [days, userLimit]);
 
   const totalChats = data?.top_users?.reduce((s, u) => s + u.total, 0) ?? 0;
   const totalUsers = data?.top_users?.length ?? 0;
