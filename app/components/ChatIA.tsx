@@ -36,6 +36,7 @@ import ThumbDownOutlinedIcon from "@mui/icons-material/ThumbDownOutlined";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReactMarkdown from "react-markdown";
+import axios from "axios";
 
 // const BASE_API_URL = "http://localhost:8000";
 const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -103,10 +104,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   const fetchAgents = async () => {
     try {
-      const res = await fetch(`${BASE_API_URL}/agents`);
-      if (res.ok) {
-        const data = await res.json();
-        setAgents(data.agents || []);
+      const res = await axios.get(`${BASE_API_URL}/agents`);
+      if (res.status === 200) {
+        setAgents(res.data.agents || []);
       }
     } catch (e) {
       console.error("Erro ao carregar agentes:", e);
@@ -137,12 +137,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
       if (agentToUse) query.append("agentName", agentToUse);
 
       const queryString = query.toString();
-      const endpoint = `${BASE_API_URL}/createNewThread${queryString ? `?${queryString}` : ""}`;
+      const endpoint = `/createNewThread${queryString ? `?${queryString}` : ""}`;
 
-      const res = await fetch(endpoint);
-      if (res.ok) {
-        const data = await res.json();
-        setThreadId(data.threadId);
+      const res = await axios.get(endpoint, { baseURL: BASE_API_URL });
+      if (res.status === 200) {
+        setThreadId(res.data.threadId);
         setMessages([
           {
             text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
@@ -164,11 +163,12 @@ const ChatIA = ({ session }: ChatIAProps) => {
         return;
       }
 
-      const res = await fetch(`${BASE_API_URL}/history?email=${encodeURIComponent(email)}&page=${page}&limit=30`, {
-        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const res = await axios.get(
+        `${BASE_API_URL}/history?email=${encodeURIComponent(email)}&page=${page}&limit=30`,
+        { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
+      );
+      if (res.status === 200) {
+        const data = res.data;
         if (page === 1) {
           setHistory(data.threads || []);
         } else {
@@ -202,21 +202,31 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   const handleSelectHistoryThread = async (tId: string, agentName: string) => {
     try {
-      const res = await fetch(`${BASE_API_URL}/thread/${tId}/messages`, {
-        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` }
+      const res = await axios.get(`/thread/${tId}/messages`, {
+        baseURL: BASE_API_URL,
+        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (res.status === 200) {
+        const data = res.data;
         const loadedMessages = data.messages.map((m: any) => ({
           id: m.id,
           text: m.content,
           isUser: m.role === "user",
           feedback_thumb: m.feedback_thumb,
-          feedback_text: m.feedback_text
+          feedback_text: m.feedback_text,
         }));
+        const greeting: ChatMessage = {
+          text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
+          isUser: false,
+        };
+        const existingRating = data.messages.find(
+          (m: any) => m.feedback_rating != null,
+        )?.feedback_rating ?? 0;
         setThreadId(tId);
         setSelectedAgent(agentName);
-        setMessages(loadedMessages);
+        setMessages([greeting, ...loadedMessages]);
+        setFeedbackRating(existingRating);
+        setFeedbackSent(existingRating > 0);
         setShowHistory(false);
         setShowAgentSelection(false);
         setShowConsent(false);
@@ -230,11 +240,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
     e.stopPropagation();
     if (!confirm("Deseja excluir esta conversa? Esta ação não pode ser desfeita.")) return;
     try {
-      const res = await fetch(`${BASE_API_URL}/thread/${tId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` }
+      const res = await axios.delete(`/thread/${tId}`, {
+        baseURL: BASE_API_URL,
+        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
       });
-      if (res.ok) {
+      if (res.status === 200) {
         setHistory(prev => prev.filter(t => t.thread_id !== tId));
         // Se for a thread ativa, reseta o chat
         if (threadId === tId) {
@@ -296,15 +306,17 @@ const ChatIA = ({ session }: ChatIAProps) => {
     if (!threadId || feedbackSent) return;
     setFeedbackRating(rating);
     try {
-      const res = await fetch(`${BASE_API_URL}/thread/${threadId}/feedback`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${BACKEND_API_KEY}`,
-        },
-        body: JSON.stringify({ rating }),
-      });
-      if (res.ok) {
+      const res = await axios.put(
+        `${BASE_API_URL}/thread/${threadId}/feedback`,
+        { rating },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${BACKEND_API_KEY}`,
+          },
+        }
+      );
+      if (res.status === 200) {
         setFeedbackSent(true);
       }
     } catch (e) {
@@ -316,27 +328,38 @@ const ChatIA = ({ session }: ChatIAProps) => {
     message: string,
     currentThreadId: string
   ): Promise<{ content: string; chat_id: number | null } | null> => {
-    // Timeout explícito de 4 minutos (240s) para acomodar notebooks lentos (ex: REFORMA_TRIBUTARIA)
-    // O browser por padrão pode encerrar conexões em ~60s, antes do servidor responder
+    // ─── Timeout de 4 minutos (240s) — alinhado ao diagrama de sequência ───
+    // O AbortController é a única fonte de timeout do lado do cliente.
+    // Notas:
+    //  • axios.timeout = 0  → desativa o timeout interno do axios; sem isso,
+    //    configs de ambiente (interceptors, instâncias globais) poderiam
+    //    sobrescrever e cortar a requisição antes dos 240s.
+    //  • O nginx do dashboard (dashia.arpasistemas.com.br) NÃO afeta esta
+    //    chamada: o browser faz POST direto a BASE_API_URL
+    //    (assistant.arpasistemas.com.br), sem passar pelo proxy do dashboard.
+    //  • O nginx do BACKEND (assistant.arpasistemas.com.br) precisa ter
+    //    proxy_read_timeout >= 300s para não cortar a conexão com o FastAPI.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4 * 60 * 1000);
 
     try {
-      const res = await fetch(`${BASE_API_URL}/chat`, {
+      const res = await axios.request({
+        url: `${BASE_API_URL}/chat`,
         method: "POST",
+        timeout: 0, // desativa timeout do axios — apenas o AbortController (240s) controla
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${BACKEND_API_KEY}`,
         },
-        body: JSON.stringify({
+        data: JSON.stringify({
           threadId: currentThreadId,
           message,
           assistantName: selectedAgent,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (res.status === 200) {
+        const data = res.data;
         return {
           content: data?.content?.[0] ?? "",
           chat_id: data?.chat_id ?? null,
@@ -394,14 +417,16 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   const handleMessageFeedback = async (chatId: number, thumb: number, text?: string) => {
     try {
-      await fetch(`${BASE_API_URL}/chat/${chatId}/feedback`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${BACKEND_API_KEY}`,
-        },
-        body: JSON.stringify({ thumb, text }),
-      });
+      await axios.put(
+        `${BASE_API_URL}/chat/${chatId}/feedback`,
+        { thumb, text },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${BACKEND_API_KEY}`,
+          },
+        }
+      );
       setMessages((prev) =>
         prev.map((m) =>
           m.id === chatId

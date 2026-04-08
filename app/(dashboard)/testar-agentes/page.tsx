@@ -25,7 +25,7 @@ export default function TestarAgentesPage() {
             user: {
               userAuthentication: {
                 username: "admin@test.com",
-                nome: "Admin Test",
+                nome: "Conta de Testes - admin",
                 tenantId: { schemaFilial: "test_tenant" }
               }
             }
