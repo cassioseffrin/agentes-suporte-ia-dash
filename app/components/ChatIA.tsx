@@ -38,7 +38,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 
-// const BASE_API_URL = "http://localhost:8000";
+ 
 const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 
@@ -77,6 +77,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [statusText, setStatusText] = useState("");
+  const [streamingText, setStreamingText] = useState("");
   const [threadId, setThreadId] = useState("");
   const [threadError, setThreadError] = useState(0);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -121,7 +123,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isTyping, streamingText]);
 
   const createNewThread = async (overrideAgent?: string) => {
     try {
@@ -324,29 +326,116 @@ const ChatIA = ({ session }: ChatIAProps) => {
     }
   };
 
-  const fetchResponse = async (
+  const fetchResponseStream = async (
     message: string,
-    currentThreadId: string
-  ): Promise<{ content: string; chat_id: number | null } | null> => {
+    currentThreadId: string,
+    onToken: (token: string) => void,
+    onStatus: (detail: string) => void,
+    onDone: (result: { content: string; chat_id: number | null; was_fallback: boolean }) => void,
+    onFallback: (content: string, reason: string) => void,
+    onError: (detail: string) => void,
+  ) => {
     // ─── Timeout de 4 minutos (240s) — alinhado ao diagrama de sequência ───
-    // O AbortController é a única fonte de timeout do lado do cliente.
-    // Notas:
-    //  • axios.timeout = 0  → desativa o timeout interno do axios; sem isso,
-    //    configs de ambiente (interceptors, instâncias globais) poderiam
-    //    sobrescrever e cortar a requisição antes dos 240s.
-    //  • O nginx do dashboard (dashia.arpasistemas.com.br) NÃO afeta esta
-    //    chamada: o browser faz POST direto a BASE_API_URL
-    //    (assistant.arpasistemas.com.br), sem passar pelo proxy do dashboard.
-    //  • O nginx do BACKEND (assistant.arpasistemas.com.br) precisa ter
-    //    proxy_read_timeout >= 300s para não cortar a conexão com o FastAPI.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4 * 60 * 1000);
 
     try {
+      const res = await fetch(`${BASE_API_URL}/chat/stream`, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${BACKEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          threadId: currentThreadId,
+          message,
+          assistantName: selectedAgent,
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        onError("Erro na conexão com o servidor.");
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Parse SSE events from buffer
+        const lines = buffer.split("\n");
+        buffer = "";
+
+        let currentEvent = "";
+        for (const line of lines) {
+          if (line.startsWith("event: ")) {
+            currentEvent = line.slice(7).trim();
+          } else if (line.startsWith("data: ")) {
+            const jsonStr = line.slice(6);
+            try {
+              const data = JSON.parse(jsonStr);
+              switch (currentEvent) {
+                case "status":
+                  onStatus(data.detail || "");
+                  break;
+                case "token":
+                  onToken(data.text || "");
+                  break;
+                case "done":
+                  onDone({
+                    content: data.content || "",
+                    chat_id: data.chat_id ?? null,
+                    was_fallback: data.was_fallback || false,
+                  });
+                  break;
+                case "fallback":
+                  onFallback(data.content || "", data.reason || "");
+                  break;
+                case "error":
+                  onError(data.detail || "Erro desconhecido.");
+                  break;
+              }
+            } catch {
+              // JSON parse error — incomplete, keep in buffer
+              buffer = line + "\n";
+            }
+            currentEvent = "";
+          } else if (line.trim() !== "") {
+            // Incomplete line, keep in buffer for next chunk
+            buffer += line + "\n";
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        onError("A requisição expirou (timeout de 4 minutos). Tente novamente.");
+      } else {
+        onError("Erro na conexão. Tente novamente.");
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  // Fallback: non-streaming fetch (used when SSE fails to connect)
+  const fetchResponseFallback = async (
+    message: string,
+    currentThreadId: string
+  ): Promise<{ content: string; chat_id: number | null } | null> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4 * 60 * 1000);
+    try {
       const res = await axios.request({
         url: `${BASE_API_URL}/chat`,
         method: "POST",
-        timeout: 0, // desativa timeout do axios — apenas o AbortController (240s) controla
+        timeout: 0,
         signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
@@ -380,6 +469,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
     setMessages((prev) => [...prev, { text, isUser: true }]);
     setInput("");
     setIsTyping(true);
+    setStatusText("");
+    setStreamingText("");
 
     let tid = threadId;
     if (!tid && threadError < 2) {
@@ -388,22 +479,100 @@ const ChatIA = ({ session }: ChatIAProps) => {
       tid = threadId;
     }
 
-    const reply = await fetchResponse(text, tid);
-    setIsTyping(false);
+    let accumulated = "";
+    let finished = false;
 
-    if (reply && reply.content) {
-      setMessages((prev) => [
-        ...prev,
-        { text: cleanText(reply.content), isUser: false, id: reply.chat_id || undefined },
-      ]);
-    } else {
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: "Desculpe, não consegui processar isso. Tente novamente.",
-          isUser: false,
-        },
-      ]);
+    await fetchResponseStream(
+      text,
+      tid,
+      // onToken — progressively build assistant response
+      (token) => {
+        accumulated += token;
+        setStreamingText(accumulated);
+      },
+      // onStatus — show current processing stage
+      (detail) => {
+        setStatusText(detail);
+      },
+      // onDone — finalize the message
+      (result) => {
+        finished = true;
+        setIsTyping(false);
+        setStatusText("");
+        setStreamingText("");
+        if (result.content) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              text: cleanText(result.content),
+              isUser: false,
+              id: result.chat_id || undefined,
+            },
+          ]);
+        }
+      },
+      // onFallback — OpenAI failed, show NotebookLM raw response
+      (content, reason) => {
+        finished = true;
+        setIsTyping(false);
+        setStatusText("");
+        setStreamingText("");
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: content,
+            isUser: false,
+          },
+        ]);
+      },
+      // onError — something went wrong
+      (detail) => {
+        if (!finished) {
+          finished = true;
+          setIsTyping(false);
+          setStatusText("");
+          setStreamingText("");
+          setMessages((prev) => [
+            ...prev,
+            {
+              text: detail || "Desculpe, não consegui processar isso. Tente novamente.",
+              isUser: false,
+            },
+          ]);
+        }
+      },
+    );
+
+    // Safety net: if no done/fallback/error event was received
+    if (!finished) {
+      setIsTyping(false);
+      setStatusText("");
+      if (accumulated) {
+        // We got tokens but no done event — show what we have
+        setStreamingText("");
+        setMessages((prev) => [
+          ...prev,
+          { text: cleanText(accumulated), isUser: false },
+        ]);
+      } else {
+        // Total failure — try fallback non-streaming endpoint
+        setStatusText("Tentando conexão alternativa...");
+        setIsTyping(true);
+        const reply = await fetchResponseFallback(text, tid);
+        setIsTyping(false);
+        setStatusText("");
+        if (reply && reply.content) {
+          setMessages((prev) => [
+            ...prev,
+            { text: cleanText(reply.content), isUser: false, id: reply.chat_id || undefined },
+          ]);
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            { text: "Desculpe, não consegui processar isso. Tente novamente.", isUser: false },
+          ]);
+        }
+      }
     }
   };
 
@@ -997,16 +1166,15 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   </Box>
                 ))}
 
-                {/* Typing indicator */}
-                {isTyping && (
-                  <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
+                {/* Streaming preview — shows tokens as they arrive */}
+                {isTyping && streamingText && (
+                  <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-end", gap: 1 }}>
                     <Box
                       sx={{
                         width: 28,
                         height: 28,
                         borderRadius: "50%",
-                        background:
-                          "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1015,6 +1183,80 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     >
                       <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
                     </Box>
+                    <Box
+                      sx={{
+                        maxWidth: "75%",
+                        px: 2,
+                        py: 1,
+                        borderRadius: "18px 18px 18px 4px",
+                        background: "#fff",
+                        color: "#1e1b4b",
+                        boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                        wordBreak: "break-word",
+                        "& p": { margin: 0, lineHeight: 1.6 },
+                        "& p + p": { mt: 0.5 },
+                        "& strong": { fontWeight: 700 },
+                        "& em": { fontStyle: "italic" },
+                        "& ul, & ol": { pl: 2.5, mt: 0.5, mb: 0.5 },
+                        "& li": { mb: 0.25 },
+                        "& code": {
+                          fontFamily: "monospace",
+                          fontSize: 12,
+                          bgcolor: "#f3f4f6",
+                          color: "#6366f1",
+                          px: 0.6,
+                          py: 0.2,
+                          borderRadius: 1,
+                        },
+                        "& pre": {
+                          bgcolor: "#f3f4f6",
+                          borderRadius: 1,
+                          p: 1,
+                          overflowX: "auto",
+                          mt: 0.5,
+                          mb: 0.5,
+                          "& code": { bgcolor: "transparent", p: 0 },
+                        },
+                        "& blockquote": {
+                          borderLeft: "3px solid #a5b4fc",
+                          pl: 1.5,
+                          ml: 0,
+                          my: 0.5,
+                          opacity: 0.85,
+                        },
+                        "& h1, & h2, & h3": { mt: 0.5, mb: 0.25, fontWeight: 700, lineHeight: 1.3 },
+                        "& a": { color: "#6366f1", textDecoration: "underline" },
+                        "& hr": { border: "none", borderTop: "1px solid rgba(0,0,0,0.1)", my: 1 },
+                        opacity: 0.85,
+                      }}
+                    >
+                      <ReactMarkdown>{streamingText}</ReactMarkdown>
+                    </Box>
+                  </Box>
+                )}
+
+                {/* Typing indicator with status text */}
+                {isTyping && (
+                  <Box sx={{ display: "flex", alignItems: "flex-end", gap: 1 }}>
+                    {!streamingText && (
+                      <Box
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                      </Box>
+                    )}
                     <Box
                       sx={{
                         px: 2,
@@ -1039,6 +1281,21 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           }}
                         />
                       ))}
+                      {statusText && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            ml: 1,
+                            color: "#9ca3af",
+                            fontSize: 11,
+                            fontStyle: "italic",
+                            whiteSpace: "nowrap",
+                            animation: `${fadeInUp} 0.3s ease-out`,
+                          }}
+                        >
+                          {statusText}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 )}
