@@ -315,9 +315,34 @@ export default function DashboardPage() {
           marginBottom: 24,
         }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
-          Chats por Usuário (diário) — Top 10
-        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
+            Chats por Usuário (diário)
+          </h2>
+          <select
+            title="Quantidade de usuários a exibir"
+            value={userLimit}
+            onChange={(e) => setUserLimit(Number(e.target.value))}
+            style={{
+              background: "var(--bg-surface)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              padding: "6px 12px",
+              fontSize: 13,
+              outline: "none",
+              cursor: "pointer",
+              fontFamily: "Inter, sans-serif"
+            }}
+          >
+            <option value={5}>Top 5</option>
+            <option value={10}>Top 10</option>
+            <option value={20}>Top 20</option>
+            <option value={50}>Top 50</option>
+            <option value={100}>Top 100</option>
+            <option value={999999}>Todos</option>
+          </select>
+        </div>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
