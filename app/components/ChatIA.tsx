@@ -22,6 +22,7 @@ import {
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import CloseIcon from "@mui/icons-material/Close";
 import SendIcon from "@mui/icons-material/Send";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import AddCommentOutlinedIcon from "@mui/icons-material/AddCommentOutlined";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import StarIcon from "@mui/icons-material/Star";
@@ -61,6 +62,7 @@ const dotBounce = keyframes`
 interface ChatMessage {
   text: string;
   isUser: boolean;
+  isAuditor?: boolean;
   id?: number;
   feedback_thumb?: number;
   feedback_text?: string;
@@ -89,6 +91,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const userEventsRef = useRef<EventSource | null>(null);
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -120,6 +123,45 @@ const ChatIA = ({ session }: ChatIAProps) => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
   };
+
+  // --- SSE: Conectar ao canal de eventos do usuário para receber mensagens do auditor ---
+  useEffect(() => {
+    // Fechar conexão anterior
+    if (userEventsRef.current) {
+      userEventsRef.current.close();
+      userEventsRef.current = null;
+    }
+
+    if (!threadId || !open) return;
+
+    const es = new EventSource(`${BASE_API_URL}/thread/${threadId}/user-events`);
+    userEventsRef.current = es;
+
+    es.addEventListener("auditor_message", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setMessages((prev) => [
+          ...prev,
+          {
+            text: data.message,
+            isUser: false,
+            isAuditor: true,
+            id: data.chat_id || undefined,
+          },
+        ]);
+      } catch {}
+    });
+
+    es.onerror = () => {
+      // Reconectar silenciosamente em caso de erro
+      console.warn("[user-events] SSE desconectado, tentando reconectar...");
+    };
+
+    return () => {
+      es.close();
+      userEventsRef.current = null;
+    };
+  }, [threadId, open]);
 
   useEffect(() => {
     scrollToBottom();
@@ -214,6 +256,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           id: m.id,
           text: m.content,
           isUser: m.role === "user",
+          isAuditor: m.role === "auditor",
           feedback_thumb: m.feedback_thumb,
           feedback_text: m.feedback_text,
         }));
@@ -752,7 +795,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 justifyContent: "center",
                 p: 3,
                 gap: 2,
-                bgcolor: "#fafafa",
+                bgcolor: "var(--bg-card)",
               }}
             >
               <Box
@@ -834,7 +877,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 alignItems: "stretch",
                 p: 3,
                 gap: 1.5,
-                bgcolor: "#fafafa",
+                bgcolor: "var(--bg-card)",
                 overflowY: "auto",
               }}
             >
@@ -872,7 +915,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                         {t.subject}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "var(--mui-palette-primary-main, var(--accent, #bd4140))", fontWeight: 500, mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: "var(--accent, #bd4140)", fontWeight: 500, mt: 0.5 }}>
                         {t.agent_title}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#6b7280", mt: 0.5 }}>
@@ -919,7 +962,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 alignItems: "stretch",
                 p: 3,
                 gap: 2,
-                bgcolor: "#fafafa",
+                bgcolor: "var(--bg-card)",
                 minHeight: 0,
                 overflowY: "auto",
                 "&::-webkit-scrollbar": { width: 4 },
@@ -1074,15 +1117,20 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           width: 28,
                           height: 28,
                           borderRadius: "50%",
-                          background:
-                            "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                          background: msg.isAuditor
+                            ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                            : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                        {msg.isAuditor ? (
+                          <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
+                        ) : (
+                          <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                        )}
                       </Box>
                     )}
                     <Box
@@ -1095,8 +1143,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           : "18px 18px 18px 4px",
                         background: msg.isUser
                           ? "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)"
-                          : "var(--bg-hover)",
-                        color: msg.isUser ? "#fff" : "var(--text-primary)",
+                          : msg.isAuditor
+                            ? "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)"
+                            : "var(--bg-hover)",
+                        color: msg.isUser ? "#fff" : msg.isAuditor ? "#92400e" : "var(--text-primary)",
+                        border: msg.isAuditor ? "1px solid #f59e0b" : "none",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
                         lineHeight: 1.5,
@@ -1329,7 +1380,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 3,
                       fontSize: 14,
-                      color: "var(--text-primary)",
+                      color: "#fff",
                       bgcolor: "var(--bg-surface)",
                       "& fieldset": { borderColor: "#e8eaff" },
                       "&:hover fieldset": { borderColor: "var(--accent, #bd4140)" },

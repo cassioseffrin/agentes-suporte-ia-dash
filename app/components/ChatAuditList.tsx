@@ -23,6 +23,9 @@ import StarIcon from "@mui/icons-material/Star";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import SendIcon from "@mui/icons-material/Send";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 
@@ -33,6 +36,12 @@ const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+`;
+
+const pulseOnline = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 `;
 
 interface ThreadItem {
@@ -54,6 +63,7 @@ interface ChatMessage {
   feedback_thumb?: number | null;
   feedback_text?: string | null;
   feedback_rating?: number | null;
+  isAuditor?: boolean;
 }
 
 const PAGE_SIZE = 15;
@@ -74,6 +84,12 @@ export default function ChatAuditList() {
 
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const presenceRef = useRef<EventSource | null>(null);
+
+  // Auditor messaging state
+  const [auditorInput, setAuditorInput] = useState("");
+  const [isUserOnline, setIsUserOnline] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   const fetchThreads = useCallback(
     async (p: number, q: string) => {
@@ -131,6 +147,92 @@ export default function ChatAuditList() {
   const handleBack = () => {
     setSelectedThread(null);
     setMessages([]);
+    setAuditorInput("");
+    setIsUserOnline(false);
+    // Fechar SSE de presença
+    if (presenceRef.current) {
+      presenceRef.current.close();
+      presenceRef.current = null;
+    }
+  };
+
+  // --- Conectar ao SSE de presença quando uma thread é selecionada ---
+  useEffect(() => {
+    if (!selectedThread) return;
+
+    // Fechar conexão anterior
+    if (presenceRef.current) {
+      presenceRef.current.close();
+    }
+
+    const es = new EventSource(
+      `${BASE_API_URL}/thread/${selectedThread.thread_id}/presence`
+    );
+    presenceRef.current = es;
+
+    es.addEventListener("presence", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setIsUserOnline(data.online === true);
+      } catch {}
+    });
+
+    es.addEventListener("auditor_message_sent", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // Adicionar confirmação visual da mensagem enviada
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: data.chat_id,
+            role: "auditor",
+            content: data.message,
+            isAuditor: true,
+          },
+        ]);
+      } catch {}
+    });
+
+    es.onerror = () => {
+      console.warn("[presence] SSE desconectado");
+    };
+
+    return () => {
+      es.close();
+      presenceRef.current = null;
+    };
+  }, [selectedThread]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // --- Enviar mensagem do auditor ---
+  const handleSendAuditorMessage = async () => {
+    const text = auditorInput.trim();
+    if (!text || !selectedThread || sendingMessage) return;
+
+    setSendingMessage(true);
+    try {
+      await axios.post(
+        `${BASE_API_URL}/thread/${selectedThread.thread_id}/auditor-message`,
+        { message: text },
+        { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
+      );
+      setAuditorInput("");
+    } catch (e) {
+      console.error("Erro ao enviar mensagem do auditor:", e);
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleAuditorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendAuditorMessage();
+    }
   };
 
   // ─── Fullscreen Audit View ───
@@ -206,6 +308,29 @@ export default function ChatAuditList() {
               }}
             />
           )}
+          {/* Online/Offline indicator */}
+          <Tooltip title={isUserOnline ? "Usuário online agora" : "Usuário offline"}>
+            <Chip
+              icon={
+                <FiberManualRecordIcon
+                  sx={{
+                    fontSize: "12px !important",
+                    color: isUserOnline ? "#10b981 !important" : "#9ca3af !important",
+                    animation: isUserOnline ? `${pulseOnline} 2s infinite` : "none",
+                  }}
+                />
+              }
+              label={isUserOnline ? "Online" : "Offline"}
+              size="small"
+              sx={{
+                bgcolor: isUserOnline ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.15)",
+                color: "#fff",
+                fontWeight: 600,
+                backdropFilter: "blur(8px)",
+                transition: "all 0.3s ease",
+              }}
+            />
+          </Tooltip>
         </Box>
 
         {/* Messages area */}
@@ -250,6 +375,7 @@ export default function ChatAuditList() {
           ) : (
             messages.map((msg, i) => {
               const isUser = msg.role === "user";
+              const isAuditor = msg.role === "auditor";
               return (
                 <Box
                   key={msg.id || i}
@@ -267,15 +393,20 @@ export default function ChatAuditList() {
                         width: 32,
                         height: 32,
                         borderRadius: "50%",
-                        background:
-                          "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                        background: isAuditor
+                          ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                          : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         flexShrink: 0,
                       }}
                     >
-                      <SmartToyIcon sx={{ color: "#fff", fontSize: 17 }} />
+                      {isAuditor ? (
+                        <SupportAgentIcon sx={{ color: "#fff", fontSize: 17 }} />
+                      ) : (
+                        <SmartToyIcon sx={{ color: "#fff", fontSize: 17 }} />
+                      )}
                     </Box>
                   )}
                   <Box sx={{ maxWidth: "75%", display: "flex", flexDirection: "column" }}>
@@ -288,8 +419,11 @@ export default function ChatAuditList() {
                           : "18px 18px 18px 4px",
                         background: isUser
                           ? "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)"
-                          : "var(--bg-hover)",
-                        color: isUser ? "#fff" : "var(--text-primary)",
+                          : isAuditor
+                            ? "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)"
+                            : "var(--bg-hover)",
+                        color: isUser ? "#fff" : isAuditor ? "#92400e" : "var(--text-primary)",
+                        border: isAuditor ? "1px solid #f59e0b" : "none",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
                         lineHeight: 1.6,
@@ -415,6 +549,79 @@ export default function ChatAuditList() {
             })
           )}
           <div ref={bottomRef} />
+        </Box>
+
+        {/* Auditor message input */}
+        <Box
+          sx={{
+            bgcolor: "var(--bg-surface, #fff)",
+            borderRadius: "0 0 16px 16px",
+            border: "1px solid var(--border, #e5e7eb)",
+            borderTop: "none",
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <SupportAgentIcon sx={{ color: "#f59e0b", fontSize: 22, flexShrink: 0 }} />
+          <TextField
+            fullWidth
+            size="small"
+            placeholder={
+              isUserOnline
+                ? "Enviar mensagem para o usuário (online agora)..."
+                : "Enviar mensagem para o usuário (offline — verá ao voltar)..."
+            }
+            value={auditorInput}
+            onChange={(e) => setAuditorInput(e.target.value)}
+            onKeyDown={handleAuditorKeyDown}
+            multiline
+            maxRows={3}
+            disabled={sendingMessage}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 3,
+                fontSize: 14,
+                bgcolor: "var(--bg-surface, #fff)",
+                color: "#fff",
+                "& fieldset": { borderColor: isUserOnline ? "#10b981" : "var(--border, #e5e7eb)" },
+                "&:hover fieldset": { borderColor: "#f59e0b" },
+                "&.Mui-focused fieldset": { borderColor: "#f59e0b" },
+              },
+            }}
+          />
+          <Tooltip title={isUserOnline ? "Enviar (usuário verá em tempo real)" : "Enviar (usuário verá quando voltar)"}>
+            <span>
+              <IconButton
+                onClick={handleSendAuditorMessage}
+                disabled={!auditorInput.trim() || sendingMessage}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  flexShrink: 0,
+                  background:
+                    !auditorInput.trim() || sendingMessage
+                      ? "#e0e0e0"
+                      : "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                  color: "#fff",
+                  "&:hover": {
+                    background:
+                      !auditorInput.trim() || sendingMessage
+                        ? "#e0e0e0"
+                        : "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
+                  },
+                  "&.Mui-disabled": { color: "#bbb" },
+                }}
+              >
+                {sendingMessage ? (
+                  <CircularProgress size={18} sx={{ color: "#f59e0b" }} />
+                ) : (
+                  <SendIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
         </Box>
       </Box>
     );
