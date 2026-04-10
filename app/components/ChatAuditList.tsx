@@ -10,6 +10,7 @@ import {
   Chip,
   InputAdornment,
   keyframes,
+  Button,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -148,11 +149,23 @@ export default function ChatAuditList() {
             gap: 2,
           }}
         >
-          <Tooltip title="Voltar à lista">
-            <IconButton onClick={handleBack} sx={{ color: "#fff" }}>
-              <ArrowBackIcon />
-            </IconButton>
-          </Tooltip>
+          <Button
+            onClick={handleBack}
+            startIcon={<ArrowBackIcon />}
+            sx={{
+              color: "#6366f1",
+              textTransform: "none",
+              fontWeight: 700,
+              bgcolor: "#fff",
+              borderRadius: 2,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              "&:hover": { bgcolor: "#f8f9ff" },
+              mr: 1,
+              flexShrink: 0,
+            }}
+          >
+            Voltar
+          </Button>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
               variant="subtitle1"
@@ -465,8 +478,8 @@ export default function ChatAuditList() {
               transition: "all 0.2s ease",
               animation: `${fadeIn} 0.25s ease ${idx * 0.03}s both`,
               "&:hover": {
-                borderColor: "#a5b4fc",
-                bgcolor: "#f5f3ff",
+                borderColor: "var(--accent)",
+                bgcolor: "var(--bg-hover)",
                 transform: "translateY(-1px)",
                 boxShadow: "0 4px 12px rgba(99,102,241,0.1)",
               },
@@ -553,7 +566,7 @@ export default function ChatAuditList() {
             >
               <Typography
                 variant="caption"
-                sx={{ color: "var(--text-muted, #9ca3af)", fontSize: 11 }}
+                sx={{ color: "var(--text-secondary)", fontSize: 11 }}
               >
                 {new Date(t.created_at).toLocaleString("pt-BR")}
               </Typography>
@@ -565,8 +578,8 @@ export default function ChatAuditList() {
                     height: 20,
                     fontSize: 11,
                     fontWeight: 600,
-                    bgcolor: "#eef2ff",
-                    color: "#6366f1",
+                    bgcolor: "rgba(99, 102, 241, 0.15)",
+                    color: "#a5b4fc",
                   }}
                 />
                 {t.feedback_rating && (
@@ -582,8 +595,8 @@ export default function ChatAuditList() {
                       height: 20,
                       fontSize: 11,
                       fontWeight: 600,
-                      bgcolor: "#fffbeb",
-                      color: "#92400e",
+                      bgcolor: "rgba(245, 158, 11, 0.15)",
+                      color: "#fcd34d",
                     }}
                   />
                 )}
@@ -592,7 +605,7 @@ export default function ChatAuditList() {
                 variant="caption"
                 sx={{
                   fontSize: 10,
-                  color: "var(--text-muted, #9ca3af)",
+                  color: "var(--text-secondary)",
                   fontFamily: "monospace",
                   opacity: 0.6,
                 }}
