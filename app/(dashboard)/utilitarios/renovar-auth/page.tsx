@@ -262,16 +262,16 @@ export default function RenovarAuthPage() {
         onDrop={handleDrop}
         onClick={() => !file && inputRef.current?.click()}
         style={{
-          border: `2px dashed ${isDragging ? "var(--accent)" : file ? "rgba(16,185,129,0.5)" : "rgba(99,102,241,0.25)"}`,
+          border: `2px dashed ${isDragging ? "var(--accent)" : file ? "rgba(16,185,129,0.5)" : "rgba(189, 65, 64, 0.5)"}`,
           borderRadius: "var(--radius)",
           padding: "40px 24px",
           textAlign: "center",
           cursor: file ? "default" : "pointer",
           background: isDragging
-            ? "rgba(99,102,241,0.08)"
+            ? "rgba(189, 65, 64, 0.08)"
             : file
             ? "rgba(16,185,129,0.05)"
-            : "rgba(99,102,241,0.03)",
+            : "rgba(189, 65, 64, 0.03)",
           transition: "all 0.2s ease",
           marginBottom: 20,
           position: "relative",
@@ -320,7 +320,7 @@ export default function RenovarAuthPage() {
             <div
               style={{
                 width: 56, height: 56, borderRadius: 14,
-                background: isDragging ? "rgba(99,102,241,0.15)" : "rgba(99,102,241,0.08)",
+                background: isDragging ? "rgba(189, 65, 64, 0.15)" : "rgba(189, 65, 64, 0.08)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 margin: "0 auto 16px",
                 transition: "all 0.2s ease",
@@ -350,11 +350,11 @@ export default function RenovarAuthPage() {
           style={{
             display: "inline-flex", alignItems: "center", gap: 10,
             padding: "12px 32px", borderRadius: "var(--radius-sm)", border: "none",
-            background: isUploading ? "var(--bg-hover)" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            background: isUploading ? "var(--bg-hover)" : "linear-gradient(135deg, var(--accent, #bd4140), var(--accent-hover, #a03534))",
             color: "#fff", fontSize: 15, fontWeight: 600,
             cursor: isUploading ? "not-allowed" : "pointer",
             transition: "all 0.2s ease", fontFamily: "Inter, sans-serif",
-            boxShadow: isUploading ? "none" : "0 4px 16px rgba(99,102,241,0.35)",
+            boxShadow: isUploading ? "none" : "0 4px 16px rgba(189, 65, 64, 0.35)",
             width: "100%", justifyContent: "center",
           }}
           onMouseEnter={(e) => {
@@ -426,13 +426,13 @@ const codeStyle: React.CSSProperties = {
   padding: "2px 6px",
   borderRadius: 4,
   fontSize: 12,
-  color: "var(--accent)",
+  color: "#fca5a5",
   fontFamily: "monospace",
 };
 
 const infoCardStyle: React.CSSProperties = {
-  background: "rgba(99,102,241,0.07)",
-  border: "1px solid rgba(99,102,241,0.2)",
+  background: "rgba(189, 65, 64, 0.07)",
+  border: "1px solid rgba(189, 65, 64, 0.2)",
   borderRadius: "var(--radius)",
   padding: 20,
   marginBottom: 24,

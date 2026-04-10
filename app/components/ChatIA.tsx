@@ -43,7 +43,7 @@ const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpas
 const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 
 const pulseIA = keyframes`
-  0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  0%   { box-shadow: 0 0 0 0 rgba(189, 65, 64, 0.6); }
   70%  { box-shadow: 0 0 0 16px rgba(99, 102, 241, 0); }
   100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
 `;
@@ -646,11 +646,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
             bottom: isSmall ? 76 : 84,
             right: { xs: 8, md: 24 },
             zIndex: 1000,
-            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+            background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
             color: "#fff",
             animation: open ? "none" : `${pulseIA} 2.4s infinite`,
             "&:hover": {
-              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+              background: "linear-gradient(135deg, var(--accent-hover, #a03534) 0%, #8a2b29 100%)",
               animation: "none",
             },
           }}
@@ -675,13 +675,13 @@ const ChatIA = ({ session }: ChatIAProps) => {
             flexDirection: "column",
             animation: `${fadeInUp} 0.25s ease-out`,
             transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            boxShadow: "0 24px 64px rgba(99,102,241,0.25)",
+            boxShadow: "0 24px 64px rgba(189, 65, 64, 0.25)",
           }}
         >
           {/* Header */}
           <Box
             sx={{
-              background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+              background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
               px: 2,
               py: 1.5,
               display: "flex",
@@ -761,7 +761,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   height: 64,
                   borderRadius: "50%",
                   background:
-                    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -771,7 +771,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               </Box>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: 700, textAlign: "center", color: "#1e1b4b" }}
+                sx={{ fontWeight: 700, textAlign: "center", color: "var(--text-primary)" }}
               >
                 Aviso de Privacidade e IA
               </Typography>
@@ -813,7 +813,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     py: 1,
                     cursor: "pointer",
                     background:
-                      "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                      "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                     color: "#fff",
                     fontWeight: 600,
                     fontSize: 14,
@@ -839,8 +839,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
-                <HistoryIcon sx={{ color: "#6366f1" }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e1b4b" }}>
+                <HistoryIcon sx={{ color: "var(--accent, #bd4140)" }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                   Histórico de Conversas
                 </Typography>
               </Box>
@@ -857,13 +857,13 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       px: 2,
                       borderRadius: 2,
                       borderColor: "#e8eaff",
-                      color: "#1e1b4b",
-                      bgcolor: "#fff",
+                      color: "var(--text-primary)",
+                      bgcolor: "var(--bg-surface)",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: 1,
-                      "&:hover": { borderColor: "#a5b4fc", bgcolor: "#f5f3ff",
+                      "&:hover": { borderColor: "var(--accent, #bd4140)", bgcolor: "var(--bg-hover)",
                         "& .delete-btn": { opacity: 1 }
                       }
                     }}
@@ -872,7 +872,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                         {t.subject}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "var(--mui-palette-primary-main, #6366f1)", fontWeight: 500, mt: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: "var(--mui-palette-primary-main, var(--accent, #bd4140))", fontWeight: 500, mt: 0.5 }}>
                         {t.agent_title}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#6b7280", mt: 0.5 }}>
@@ -924,7 +924,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 overflowY: "auto",
                 "&::-webkit-scrollbar": { width: 4 },
                 "&::-webkit-scrollbar-thumb": {
-                  bgcolor: "#c7d2fe",
+                  bgcolor: "#e5908e",
                   borderRadius: 2,
                 },
               }}
@@ -943,7 +943,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     width: 48,
                     height: 48,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                    background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -952,7 +952,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 >
                   <SmartToyIcon sx={{ color: "#fff", fontSize: 24 }} />
                 </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e1b4b" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                   Escolha o Assistente
                 </Typography>
                 <Typography variant="body2" sx={{ color: "#6b7280", textAlign: "center", fontSize: 13 }}>
@@ -978,11 +978,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         px: 1.5,
                         borderRadius: 2,
                         borderColor: "#e8eaff",
-                        color: "#1e1b4b",
+                        color: "var(--text-primary)",
                         minHeight: 0,
                         "&:hover": {
-                          borderColor: "#a5b4fc",
-                          bgcolor: "#f5f3ff",
+                          borderColor: "var(--accent, #bd4140)",
+                          bgcolor: "var(--bg-hover)",
                         },
                       }}
                     >
@@ -1009,10 +1009,10 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   display: "flex",
                   flexDirection: "column",
                   gap: 1,
-                  bgcolor: "#f8f9ff",
+                  bgcolor: "var(--bg-card)",
                   "&::-webkit-scrollbar": { width: 4 },
                   "&::-webkit-scrollbar-thumb": {
-                    bgcolor: "#c7d2fe",
+                    bgcolor: "#e5908e",
                     borderRadius: 2,
                   },
                 }}
@@ -1035,7 +1035,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         height: 64,
                         borderRadius: "50%",
                         background:
-                          "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                          "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1045,7 +1045,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     </Box>
                     <Typography
                       variant="h6"
-                      sx={{ fontWeight: 700, color: "#1e1b4b" }}
+                      sx={{ fontWeight: 700, color: "var(--text-primary)" }}
                     >
                       Assistente IA
                     </Typography>
@@ -1075,7 +1075,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           height: 28,
                           borderRadius: "50%",
                           background:
-                            "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                            "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1094,9 +1094,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           ? "18px 18px 4px 18px"
                           : "18px 18px 18px 4px",
                         background: msg.isUser
-                          ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
-                          : "#fff",
-                        color: msg.isUser ? "#fff" : "#1e1b4b",
+                          ? "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)"
+                          : "var(--bg-hover)",
+                        color: msg.isUser ? "#fff" : "var(--text-primary)",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
                         lineHeight: 1.5,
@@ -1111,7 +1111,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           fontFamily: "monospace",
                           fontSize: 12,
                           bgcolor: msg.isUser ? "rgba(255,255,255,0.2)" : "#f3f4f6",
-                          color: msg.isUser ? "#fff" : "#6366f1",
+                          color: msg.isUser ? "#fff" : "var(--accent, #bd4140)",
                           px: 0.6,
                           py: 0.2,
                           borderRadius: 1,
@@ -1126,14 +1126,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           "& code": { bgcolor: "transparent", p: 0 },
                         },
                         "& blockquote": {
-                          borderLeft: msg.isUser ? "3px solid rgba(255,255,255,0.5)" : "3px solid #a5b4fc",
+                          borderLeft: msg.isUser ? "3px solid rgba(255,255,255,0.5)" : "3px solid var(--accent, #bd4140)",
                           pl: 1.5,
                           ml: 0,
                           my: 0.5,
                           opacity: 0.85,
                         },
                         "& h1, & h2, & h3": { mt: 0.5, mb: 0.25, fontWeight: 700, lineHeight: 1.3 },
-                        "& a": { color: msg.isUser ? "#e0e7ff" : "#6366f1", textDecoration: "underline" },
+                        "& a": { color: msg.isUser ? "#f5d5d4" : "var(--accent, #bd4140)", textDecoration: "underline" },
                         "& hr": { border: "none", borderTop: "1px solid rgba(0,0,0,0.1)", my: 1 },
                       }}
                     >
@@ -1146,7 +1146,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       {!msg.isUser && msg.id && (
                         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, mt: 1 }}>
                           <Tooltip title="Copiar">
-                            <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "#6366f1", bgcolor: "rgba(99,102,241,0.1)" }}}>
+                            <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "var(--accent, #bd4140)", bgcolor: "rgba(189, 65, 64, 0.1)" }}}>
                               <ContentCopyIcon sx={{ fontSize: 16 }} />
                             </IconButton>
                           </Tooltip>
@@ -1174,7 +1174,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         width: 28,
                         height: 28,
                         borderRadius: "50%",
-                        background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                        background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -1190,7 +1190,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         py: 1,
                         borderRadius: "18px 18px 18px 4px",
                         background: "#fff",
-                        color: "#1e1b4b",
+                        color: "var(--text-primary)",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
                         lineHeight: 1.5,
@@ -1205,7 +1205,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           fontFamily: "monospace",
                           fontSize: 12,
                           bgcolor: "#f3f4f6",
-                          color: "#6366f1",
+                          color: "var(--accent, #bd4140)",
                           px: 0.6,
                           py: 0.2,
                           borderRadius: 1,
@@ -1220,14 +1220,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           "& code": { bgcolor: "transparent", p: 0 },
                         },
                         "& blockquote": {
-                          borderLeft: "3px solid #a5b4fc",
+                          borderLeft: "3px solid var(--accent, #bd4140)",
                           pl: 1.5,
                           ml: 0,
                           my: 0.5,
                           opacity: 0.85,
                         },
                         "& h1, & h2, & h3": { mt: 0.5, mb: 0.25, fontWeight: 700, lineHeight: 1.3 },
-                        "& a": { color: "#6366f1", textDecoration: "underline" },
+                        "& a": { color: "var(--accent, #bd4140)", textDecoration: "underline" },
                         "& hr": { border: "none", borderTop: "1px solid rgba(0,0,0,0.1)", my: 1 },
                         opacity: 0.85,
                       }}
@@ -1247,7 +1247,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           height: 28,
                           borderRadius: "50%",
                           background:
-                            "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                            "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1261,7 +1261,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       sx={{
                         px: 2,
                         py: 1.2,
-                        bgcolor: "#fff",
+                        bgcolor: "var(--bg-surface)",
                         borderRadius: "18px 18px 18px 4px",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         display: "flex",
@@ -1276,7 +1276,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                             width: 7,
                             height: 7,
                             borderRadius: "50%",
-                            bgcolor: "#a5b4fc",
+                            bgcolor: "var(--accent, #bd4140)",
                             animation: `${dotBounce} 1.2s ease-in-out ${d * 0.2}s infinite`,
                           }}
                         />
@@ -1306,7 +1306,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 sx={{
                   px: 2,
                   py: 1.5,
-                  bgcolor: "#fff",
+                  bgcolor: "var(--bg-surface)",
                   borderTop: "1px solid #e8eaff",
                   display: "flex",
                   alignItems: "center",
@@ -1329,11 +1329,11 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 3,
                       fontSize: 14,
-                      color: "#1e1b4b",
-                      bgcolor: "#fff",
+                      color: "var(--text-primary)",
+                      bgcolor: "var(--bg-surface)",
                       "& fieldset": { borderColor: "#e8eaff" },
-                      "&:hover fieldset": { borderColor: "#a5b4fc" },
-                      "&.Mui-focused fieldset": { borderColor: "#6366f1" },
+                      "&:hover fieldset": { borderColor: "var(--accent, #bd4140)" },
+                      "&.Mui-focused fieldset": { borderColor: "var(--accent, #bd4140)" },
                     },
                     "& .MuiInputBase-input::placeholder": {
                       color: "#9ca3af",
@@ -1351,18 +1351,18 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     background:
                       !input.trim() || isTyping
                         ? "#e0e0e0"
-                        : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                        : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                     color: "#fff",
                     "&:hover": {
                       background:
                         !input.trim() || isTyping
                           ? "#e0e0e0"
-                          : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                          : "linear-gradient(135deg, var(--accent-hover, #a03534) 0%, #8a2b29 100%)",
                     },
                   }}
                 >
                   {isTyping ? (
-                    <CircularProgress size={18} sx={{ color: "#6366f1" }} />
+                    <CircularProgress size={18} sx={{ color: "var(--accent, #bd4140)" }} />
                   ) : (
                     <SendIcon fontSize="small" />
                   )}
@@ -1373,7 +1373,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               {messages.length > 1 && (
                 <Box
                   sx={{
-                    bgcolor: "#fff",
+                    bgcolor: "var(--bg-surface)",
                     py: 0.5,
                     px: 2,
                     borderTop: "1px solid #f0f0f0",
@@ -1406,7 +1406,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               )}
               <Box
                 sx={{
-                  bgcolor: "#fff",
+                  bgcolor: "var(--bg-surface)",
                   py: 0.5,
                   textAlign: "center",
                   borderTop: "1px solid #f0f0f0",
@@ -1423,7 +1423,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
       )}
 
       <Dialog open={feedbackDialogOpen} onClose={() => setFeedbackDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: "#1e1b4b" }}>Como podemos melhorar?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, color: "var(--text-primary)" }}>Como podemos melhorar?</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: "#6b7280", mb: 2 }}>
             Sua opinião é fundamental. Por favor, conte-nos por que essa resposta não foi útil.
@@ -1443,7 +1443,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button onClick={() => setFeedbackDialogOpen(false)} sx={{ color: "#6b7280" }}>Cancelar</Button>
-          <Button onClick={submitFeedbackDialog} variant="contained" sx={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>Enviar Feedback</Button>
+          <Button onClick={submitFeedbackDialog} variant="contained" sx={{ background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)" }}>Enviar Feedback</Button>
         </DialogActions>
       </Dialog>
     </>

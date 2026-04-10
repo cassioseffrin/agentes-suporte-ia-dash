@@ -140,7 +140,7 @@ export default function ChatAuditList() {
         {/* Header bar */}
         <Box
           sx={{
-            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+            background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
             borderRadius: "16px 16px 0 0",
             px: 3,
             py: 2,
@@ -153,7 +153,7 @@ export default function ChatAuditList() {
             onClick={handleBack}
             startIcon={<ArrowBackIcon />}
             sx={{
-              color: "#6366f1",
+              color: "var(--accent, #bd4140)",
               textTransform: "none",
               fontWeight: 700,
               bgcolor: "#fff",
@@ -211,7 +211,7 @@ export default function ChatAuditList() {
         {/* Messages area */}
         <Box
           sx={{
-            bgcolor: "#f8f9ff",
+            bgcolor: "var(--bg-card)",
             borderRadius: "0 0 16px 16px",
             border: "1px solid var(--border, #e5e7eb)",
             borderTop: "none",
@@ -224,7 +224,7 @@ export default function ChatAuditList() {
             gap: 1.5,
             "&::-webkit-scrollbar": { width: 6 },
             "&::-webkit-scrollbar-thumb": {
-              bgcolor: "#c7d2fe",
+              bgcolor: "#e5908e",
               borderRadius: 3,
             },
           }}
@@ -238,7 +238,7 @@ export default function ChatAuditList() {
                 py: 8,
               }}
             >
-              <CircularProgress sx={{ color: "#6366f1" }} />
+              <CircularProgress sx={{ color: "var(--accent, #bd4140)" }} />
             </Box>
           ) : messages.length === 0 ? (
             <Typography
@@ -268,7 +268,7 @@ export default function ChatAuditList() {
                         height: 32,
                         borderRadius: "50%",
                         background:
-                          "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                          "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -287,9 +287,9 @@ export default function ChatAuditList() {
                           ? "18px 18px 4px 18px"
                           : "18px 18px 18px 4px",
                         background: isUser
-                          ? "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
-                          : "#fff",
-                        color: isUser ? "#fff" : "#1e1b4b",
+                          ? "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)"
+                          : "var(--bg-hover)",
+                        color: isUser ? "#fff" : "var(--text-primary)",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
                         lineHeight: 1.6,
@@ -305,7 +305,7 @@ export default function ChatAuditList() {
                           bgcolor: isUser
                             ? "rgba(255,255,255,0.2)"
                             : "#f3f4f6",
-                          color: isUser ? "#fff" : "#6366f1",
+                          color: isUser ? "#fff" : "var(--accent, #bd4140)",
                           px: 0.6,
                           py: 0.2,
                           borderRadius: 1,
@@ -324,14 +324,14 @@ export default function ChatAuditList() {
                         "& blockquote": {
                           borderLeft: isUser
                             ? "3px solid rgba(255,255,255,0.5)"
-                            : "3px solid #a5b4fc",
+                            : "3px solid var(--accent, #bd4140)",
                           pl: 1.5,
                           ml: 0,
                           my: 0.5,
                           opacity: 0.85,
                         },
                         "& a": {
-                          color: isUser ? "#e0e7ff" : "#6366f1",
+                          color: isUser ? "#f5d5d4" : "var(--accent, #bd4140)",
                           textDecoration: "underline",
                         },
                       }}
@@ -445,8 +445,8 @@ export default function ChatAuditList() {
               fontSize: 14,
               bgcolor: "var(--bg-surface, #fff)",
               "& fieldset": { borderColor: "var(--border, #e5e7eb)" },
-              "&:hover fieldset": { borderColor: "#a5b4fc" },
-              "&.Mui-focused fieldset": { borderColor: "#6366f1" },
+              "&:hover fieldset": { borderColor: "var(--accent, #bd4140)" },
+              "&.Mui-focused fieldset": { borderColor: "var(--accent, #bd4140)" },
             },
           }}
         />
@@ -457,7 +457,7 @@ export default function ChatAuditList() {
         <Typography variant="body2" sx={{ color: "var(--text-secondary, #6b7280)" }}>
           {total} conversa{total !== 1 ? "s" : ""} encontrada{total !== 1 ? "s" : ""}
         </Typography>
-        {loading && <CircularProgress size={16} sx={{ color: "#6366f1" }} />}
+        {loading && <CircularProgress size={16} sx={{ color: "var(--accent, #bd4140)" }} />}
       </Box>
 
       {/* Thread cards */}
@@ -481,7 +481,7 @@ export default function ChatAuditList() {
                 borderColor: "var(--accent)",
                 bgcolor: "var(--bg-hover)",
                 transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(99,102,241,0.1)",
+                boxShadow: "0 4px 12px rgba(189, 65, 64, 0.1)",
               },
             }}
           >
@@ -492,7 +492,7 @@ export default function ChatAuditList() {
                 height: 40,
                 borderRadius: "50%",
                 background:
-                  "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+                  "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -541,8 +541,9 @@ export default function ChatAuditList() {
                 <Typography
                   variant="caption"
                   sx={{
-                    color: "#6366f1",
-                    fontWeight: 500,
+                    color: "#fca5a5",
+                    fontSize: 14,
+                    fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
                     gap: 0.3,
@@ -578,8 +579,8 @@ export default function ChatAuditList() {
                     height: 20,
                     fontSize: 11,
                     fontWeight: 600,
-                    bgcolor: "rgba(99, 102, 241, 0.15)",
-                    color: "#a5b4fc",
+                    bgcolor: "rgba(189, 65, 64, 0.15)",
+                    color: "var(--accent, #bd4140)",
                   }}
                 />
                 {t.feedback_rating && (
@@ -658,7 +659,7 @@ export default function ChatAuditList() {
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             sx={{
-              color: "#6366f1",
+              color: "var(--accent, #bd4140)",
               "&.Mui-disabled": { color: "#d1d5db" },
             }}
           >
@@ -678,7 +679,7 @@ export default function ChatAuditList() {
             disabled={page >= pages}
             onClick={() => setPage((p) => Math.min(pages, p + 1))}
             sx={{
-              color: "#6366f1",
+              color: "var(--accent, #bd4140)",
               "&.Mui-disabled": { color: "#d1d5db" },
             }}
           >

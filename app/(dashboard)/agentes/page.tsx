@@ -25,7 +25,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
-    primary: { main: "#6366f1" },
+    primary: { main: "#bd4140" },
     background: { default: "#0f1117", paper: "#21253a" },
     text: { primary: "#f1f5f9", secondary: "#94a3b8" },
   },
@@ -39,7 +39,7 @@ const darkTheme = createTheme({
             backgroundColor: "#1a1d27",
             "& fieldset": { borderColor: "#2d3352" },
             "&:hover fieldset": { borderColor: "#374167" },
-            "&.Mui-focused fieldset": { borderColor: "#6366f1" },
+            "&.Mui-focused fieldset": { borderColor: "var(--accent, #bd4140)" },
           },
           "& .MuiInputLabel-root": { color: "#94a3b8" },
           "& input, & textarea": { color: "#f1f5f9", fontSize: 14 },
@@ -48,7 +48,7 @@ const darkTheme = createTheme({
     },
     MuiSwitch: {
       styleOverrides: {
-        switchBase: { "&.Mui-checked": { color: "#6366f1" }, "&.Mui-checked + .MuiSwitch-track": { backgroundColor: "#6366f1" } },
+        switchBase: { "&.Mui-checked": { color: "var(--accent, #bd4140)" }, "&.Mui-checked + .MuiSwitch-track": { backgroundColor: "var(--accent, #bd4140)" } },
       },
     },
   },
@@ -111,7 +111,7 @@ function AgentCard({
           height: 36,
           borderRadius: 8,
           background: selected
-            ? "linear-gradient(135deg, var(--accent), #8b5cf6)"
+            ? "linear-gradient(135deg, var(--accent), var(--accent-hover, #a03534))"
             : "var(--bg-hover)",
           display: "flex",
           alignItems: "center",
@@ -355,7 +355,7 @@ export default function AgentesPage() {
                       width: 40,
                       height: 40,
                       borderRadius: 10,
-                      background: "linear-gradient(135deg, var(--accent), #8b5cf6)",
+                      background: "linear-gradient(135deg, var(--accent), var(--accent-hover, #a03534))",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -496,7 +496,7 @@ export default function AgentesPage() {
                         background:
                           saveStatus === "saving" || !isDirty
                             ? "var(--bg-hover)"
-                            : "linear-gradient(135deg, var(--accent), #8b5cf6)",
+                            : "linear-gradient(135deg, var(--accent), var(--accent-hover, #a03534))",
                         color:
                           saveStatus === "saving" || !isDirty
                             ? "var(--text-muted)"

@@ -181,7 +181,7 @@ export default function DashboardPage() {
       style: { fontFamily: "Inter, sans-serif" },
     },
     colors: [
-      "#6366f1", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+      "#bd4140", "#10b981", "#f59e0b", "#ef4444", "#a03534",
       "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
     ],
   });

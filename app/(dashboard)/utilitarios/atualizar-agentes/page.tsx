@@ -77,7 +77,7 @@ export default function AtualizarAgentesPage() {
           padding: "12px 28px",
           borderRadius: "var(--radius-sm)",
           border: "none",
-          background: status === "loading" ? "var(--bg-hover)" : "linear-gradient(135deg, var(--accent), #8b5cf6)",
+          background: status === "loading" ? "var(--bg-hover)" : "linear-gradient(135deg, var(--accent), var(--accent-hover, #a03534))",
           color: "#fff",
           fontSize: 15,
           fontWeight: 600,
