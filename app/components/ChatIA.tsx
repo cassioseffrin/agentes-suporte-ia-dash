@@ -1240,7 +1240,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         px: 2,
                         py: 1,
                         borderRadius: "18px 18px 18px 4px",
-                        background: "#fff",
+                        background: "var(--bg-hover)",
                         color: "var(--text-primary)",
                         boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
                         fontSize: 14,
@@ -1280,7 +1280,6 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         "& h1, & h2, & h3": { mt: 0.5, mb: 0.25, fontWeight: 700, lineHeight: 1.3 },
                         "& a": { color: "var(--accent, #bd4140)", textDecoration: "underline" },
                         "& hr": { border: "none", borderTop: "1px solid rgba(0,0,0,0.1)", my: 1 },
-                        opacity: 0.85,
                       }}
                     >
                       <ReactMarkdown>{streamingText}</ReactMarkdown>
@@ -1385,10 +1384,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       "& fieldset": { borderColor: "#e8eaff" },
                       "&:hover fieldset": { borderColor: "var(--accent, #bd4140)" },
                       "&.Mui-focused fieldset": { borderColor: "var(--accent, #bd4140)" },
+                      "&.Mui-disabled fieldset": { borderColor: "#e8eaff" },
                     },
                     "& .MuiInputBase-input::placeholder": {
                       color: "#9ca3af",
                       opacity: 1,
+                    },
+                    "& .MuiInputBase-input.Mui-disabled": {
+                      WebkitTextFillColor: "#fff",
                     },
                   }}
                 />
