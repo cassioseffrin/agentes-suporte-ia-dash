@@ -193,6 +193,27 @@ export default function ChatAuditList() {
       } catch {}
     });
 
+    es.addEventListener("new_message", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setMessages((prev) => {
+          // Evitar duplicatas (se a mensagem já existe pelo id)
+          if (data.chat_id && prev.some((m) => m.id === data.chat_id)) {
+            return prev;
+          }
+          return [
+            ...prev,
+            {
+              id: data.chat_id || Date.now(),
+              role: data.role,
+              content: data.message,
+              isAuditor: data.role === "auditor",
+            },
+          ];
+        });
+      } catch {}
+    });
+
     es.onerror = () => {
       console.warn("[presence] SSE desconectado");
     };
