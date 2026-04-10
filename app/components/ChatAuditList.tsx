@@ -671,6 +671,7 @@ export default function ChatAuditList() {
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
               fontSize: 14,
+              color: "#fff",
               bgcolor: "var(--bg-surface, #fff)",
               "& fieldset": { borderColor: "var(--border, #e5e7eb)" },
               "&:hover fieldset": { borderColor: "var(--accent, #bd4140)" },
