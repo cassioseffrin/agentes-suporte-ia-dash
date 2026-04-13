@@ -11,6 +11,8 @@ import {
   InputAdornment,
   keyframes,
   Button,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -26,6 +28,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SendIcon from "@mui/icons-material/Send";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import QuizIcon from "@mui/icons-material/Quiz";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 
@@ -93,6 +96,11 @@ export default function ChatAuditList() {
   const [isUserOnline, setIsUserOnline] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
 
+  // FAQ state
+  const [faqStatus, setFaqStatus] = useState<{ faq_added: boolean; has_auditor: boolean } | null>(null);
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({ open: false, message: "", severity: "info" });
+
   const fetchThreads = useCallback(
     async (p: number, q: string, auditor_only: boolean) => {
       setLoading(true);
@@ -144,6 +152,20 @@ export default function ChatAuditList() {
     } finally {
       setLoadingMessages(false);
     }
+
+    // Buscar status de FAQ da thread
+    try {
+      const faqRes = await axios.get(
+        `${BASE_API_URL}/thread/${thread.thread_id}/faq-status`,
+        { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
+      );
+      if (faqRes.status === 200) {
+        setFaqStatus(faqRes.data);
+      }
+    } catch (e) {
+      console.error("Erro ao buscar status FAQ:", e);
+      setFaqStatus(null);
+    }
   };
 
   const handleBack = () => {
@@ -151,6 +173,8 @@ export default function ChatAuditList() {
     setMessages([]);
     setAuditorInput("");
     setIsUserOnline(false);
+    setFaqStatus(null);
+    setFaqLoading(false);
     // Fechar SSE de presença
     if (presenceRef.current) {
       presenceRef.current.close();
@@ -258,6 +282,39 @@ export default function ChatAuditList() {
     }
   };
 
+  // --- Adicionar a FAQ ---
+  const handleAddToFaq = async () => {
+    if (!selectedThread || faqLoading) return;
+    setFaqLoading(true);
+    try {
+      const res = await axios.post(
+        `${BASE_API_URL}/thread/${selectedThread.thread_id}/add-to-faq`,
+        {},
+        { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
+      );
+      if (res.status === 200) {
+        setFaqStatus({ faq_added: true, has_auditor: true });
+        setSnackbar({
+          open: true,
+          message: `FAQ gerada com sucesso para ${res.data.agent_title || "o agente"}!`,
+          severity: "success",
+        });
+      }
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { detail?: string }; status?: number } };
+      const detail = err?.response?.data?.detail || "Erro ao gerar FAQ";
+      const severity = err?.response?.status === 409 ? "info" : "error";
+      setSnackbar({ open: true, message: detail, severity });
+      if (err?.response?.status === 409) {
+        setFaqStatus((prev) => prev ? { ...prev, faq_added: true } : prev);
+      }
+    } finally {
+      setFaqLoading(false);
+    }
+  };
+
+  const isFaqButtonEnabled = faqStatus !== null && faqStatus.has_auditor && !faqStatus.faq_added && !faqLoading;
+
   // ─── Fullscreen Audit View ───
   if (selectedThread) {
     return (
@@ -353,6 +410,62 @@ export default function ChatAuditList() {
                 transition: "all 0.3s ease",
               }}
             />
+          </Tooltip>
+          {/* FAQ Button */}
+          <Tooltip
+            title={
+              !faqStatus
+                ? "Carregando status..."
+                : faqStatus.faq_added
+                  ? "FAQ já adicionada para esta conversa"
+                  : !faqStatus.has_auditor
+                    ? "Necessário interação do auditor para gerar FAQ"
+                    : "Gerar FAQ a partir desta conversa"
+            }
+          >
+            <span>
+              <Button
+                onClick={handleAddToFaq}
+                disabled={!isFaqButtonEnabled}
+                startIcon={
+                  faqLoading ? (
+                    <CircularProgress size={16} sx={{ color: "#fff" }} />
+                  ) : (
+                    <QuizIcon />
+                  )
+                }
+                size="small"
+                sx={{
+                  color: faqStatus?.faq_added ? "#6b7280" : "#fff",
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  bgcolor: faqStatus?.faq_added
+                    ? "rgba(255,255,255,0.15)"
+                    : isFaqButtonEnabled
+                      ? "rgba(16,185,129,0.85)"
+                      : "rgba(255,255,255,0.15)",
+                  borderRadius: 2,
+                  px: 1.5,
+                  backdropFilter: "blur(8px)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    bgcolor: isFaqButtonEnabled
+                      ? "rgba(16,185,129,1)"
+                      : "rgba(255,255,255,0.15)",
+                  },
+                  "&.Mui-disabled": {
+                    color: "rgba(255,255,255,0.45)",
+                  },
+                }}
+              >
+                {faqLoading
+                  ? "Gerando..."
+                  : faqStatus?.faq_added
+                    ? "FAQ Adicionada ✓"
+                    : "Adicionar a FAQ"}
+              </Button>
+            </span>
           </Tooltip>
         </Box>
 
@@ -646,6 +759,23 @@ export default function ChatAuditList() {
             </span>
           </Tooltip>
         </Box>
+
+        {/* Snackbar de feedback */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={5000}
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: "100%", fontWeight: 600 }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     );
   }
