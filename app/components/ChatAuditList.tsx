@@ -54,6 +54,7 @@ interface ThreadItem {
   created_at: string;
   message_count: number;
   feedback_rating: number | null;
+  has_auditor?: boolean;
 }
 
 interface ChatMessage {
@@ -75,6 +76,7 @@ export default function ChatAuditList() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [auditorOnly, setAuditorOnly] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Audit view state
@@ -92,11 +94,11 @@ export default function ChatAuditList() {
   const [sendingMessage, setSendingMessage] = useState(false);
 
   const fetchThreads = useCallback(
-    async (p: number, q: string) => {
+    async (p: number, q: string, auditor_only: boolean) => {
       setLoading(true);
       try {
         const res = await axios.get(`${BASE_API_URL}/admin/threads`, {
-          params: { page: p, limit: PAGE_SIZE, search: q },
+          params: { page: p, limit: PAGE_SIZE, search: q, auditor_only },
           headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
         });
         if (res.status === 200) {
@@ -114,8 +116,8 @@ export default function ChatAuditList() {
   );
 
   useEffect(() => {
-    fetchThreads(page, search);
-  }, [page, search, fetchThreads]);
+    fetchThreads(page, search, auditorOnly);
+  }, [page, search, auditorOnly, fetchThreads]);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
@@ -652,9 +654,8 @@ export default function ChatAuditList() {
   return (
     <Box sx={{ animation: `${fadeIn} 0.3s ease` }}>
       {/* Search bar */}
-      <Box sx={{ mb: 2.5 }}>
+      <Box sx={{ mb: 2.5, display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
         <TextField
-          fullWidth
           size="small"
           placeholder="Buscar por assunto, usuário, email ou thread ID..."
           value={searchInput}
@@ -667,6 +668,8 @@ export default function ChatAuditList() {
             ),
           }}
           sx={{
+            flex: 1,
+            minWidth: 280,
             maxWidth: 500,
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
@@ -679,6 +682,27 @@ export default function ChatAuditList() {
             },
           }}
         />
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            color: "var(--text-secondary)",
+            fontSize: "14px",
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={auditorOnly}
+            onChange={(e) => {
+              setAuditorOnly(e.target.checked);
+              setPage(1);
+            }}
+            style={{ accentColor: "var(--accent, #bd4140)", width: 16, height: 16 }}
+          />
+          🛡️ Intervenção do Auditor
+        </label>
       </Box>
 
       {/* Stats */}
@@ -827,6 +851,21 @@ export default function ChatAuditList() {
                       fontWeight: 600,
                       bgcolor: "rgba(245, 158, 11, 0.15)",
                       color: "#fcd34d",
+                    }}
+                  />
+                )}
+                {t.has_auditor && (
+                  <Chip
+                    icon={<SupportAgentIcon sx={{ color: "#d97706 !important", fontSize: 13 }} />}
+                    label="Auditor"
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      bgcolor: "#fef3c7",
+                      color: "#b45309",
+                      border: "1px solid #fde68a"
                     }}
                   />
                 )}
