@@ -144,7 +144,7 @@ export default function DashboardPage() {
     chart: {
       type: "line",
       background: "transparent",
-      toolbar: { show: true, tools: { download: true, selection: true, zoom: true, zoomin: true, zoomout: true, pan: true } },
+      toolbar: { show: false },
       zoom: { enabled: true },
       animations: { enabled: true, speed: 600, dynamicAnimation: { enabled: true, speed: 400 } },
     },
