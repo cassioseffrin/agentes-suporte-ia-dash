@@ -101,19 +101,25 @@ sequenceDiagram
     end
 
     rect rgba(0, 80, 120, 0.4)
-        Note over A,U: FASE 4 — Auditoria e Intervenção do Suporte
+        Note over A,U: FASE 4 — Auditoria e Intervenção do Suporte (Injeção da Verdade)
         A->>Audit: Acessa conversa em andamento
         Audit->>Backend: GET /thread/{threadId}/presence (Conecta no SSE)
         Backend-->>Audit: event: presence { online: true }
         Audit-->>A: Mostra indicador verde "Online"
         
-        A->>Audit: Digita e envia mensagem para o usuário
+        A->>Audit: Digita e envia correção/mensagem para o usuário
         Audit->>Backend: POST /thread/{threadId}/auditor-message
         Backend->>DB: Persiste chat com origem='auditor'
         Backend-->>Chat: Pusheia mensagem por GET /user-events -- event: auditor_message
-        Backend-->>Audit: Retorna status OK
+        Backend-->>Audit: Retorna status OK (e new_message pro SSE do Auditor)
         
         Chat-->>U: Renderiza a mensagem do auditor em dourado com ícone humano
+        
+        Backend->>Backend: Anexa à session em memória como {role: "system", "[CORREÇÃO DO SUPORTE HUMANO]: ..."}
+        Note over Backend,OAI: Nas próximas perguntas do Usuário:
+        Backend->>OAI: Query Rewrite é instruído a incorporar a correção humana
+        Backend->>OAI: build_messages injeta bloco [VERDADE ABSOLUTA...]<br/>com prioridade sobre o contexto RAG
+        OAI-->>Backend: Nova geração de IA respeita a correção do auditor!
     end
 
     rect rgba(100, 0, 0, 0.4)
