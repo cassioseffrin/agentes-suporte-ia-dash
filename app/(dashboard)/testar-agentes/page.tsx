@@ -64,7 +64,7 @@ export default function TestarAgentesPage() {
         <ChatAuditList />
       </div>
 
-      {/* ChatIA balloon — preserved as-is for testing new chats */}
+      {/* ChatIA balloon - preserved as-is for testing new chats */}
       <ChatIA 
         session={{
           user: {

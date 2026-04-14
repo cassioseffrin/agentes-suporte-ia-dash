@@ -707,7 +707,7 @@ export default function ChatAuditList() {
             placeholder={
               isUserOnline
                 ? "Enviar mensagem para o usuário (online agora)..."
-                : "Enviar mensagem para o usuário (offline — verá ao voltar)..."
+                : "Enviar mensagem para o usuário (offline - verá ao voltar)..."
             }
             value={auditorInput}
             onChange={(e) => setAuditorInput(e.target.value)}

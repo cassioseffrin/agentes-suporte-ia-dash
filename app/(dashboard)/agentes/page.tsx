@@ -233,7 +233,7 @@ export default function AgentesPage() {
   };
 
   const fmtDate = (iso: string | null) => {
-    if (!iso) return "—";
+    if (!iso) return "-";
     return new Date(iso).toLocaleString("pt-BR", {
       day: "2-digit",
       month: "2-digit",

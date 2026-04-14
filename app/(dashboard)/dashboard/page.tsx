@@ -288,13 +288,13 @@ export default function DashboardPage() {
       >
         <StatCard
           label="Total de Chats"
-          value={loading ? "—" : totalChats}
+          value={loading ? " " : totalChats}
           sub={`últimos ${days} dias`}
           accent="var(--accent)"
         />
         <StatCard
           label="Usuários Ativos"
-          value={loading ? "—" : totalUsers}
+          value={loading ? " " : totalUsers}
           sub="top usuarios"
         />
         <StatCard
@@ -581,7 +581,7 @@ export default function DashboardPage() {
                           {u.avg_rating} ★
                         </span>
                       ) : (
-                        <span style={{ color: "var(--text-muted)", fontSize: 13 }}>—</span>
+                        <span style={{ color: "var(--text-muted)", fontSize: 13 }}>-</span>
                       )}
                       
                       {u.thumb_avg !== undefined && u.thumb_avg !== null ? (

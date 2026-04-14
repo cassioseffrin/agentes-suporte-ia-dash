@@ -378,7 +378,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
     onFallback: (content: string, reason: string) => void,
     onError: (detail: string) => void,
   ) => {
-    // ─── Timeout de 4 minutos (240s) — alinhado ao diagrama de sequência ───
+    // ─── Timeout de 4 minutos (240s) - alinhado ao diagrama de sequência ───
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4 * 60 * 1000);
 
@@ -446,7 +446,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   break;
               }
             } catch {
-              // JSON parse error — incomplete, keep in buffer
+              // JSON parse error - incomplete, keep in buffer
               buffer = line + "\n";
             }
             currentEvent = "";
@@ -528,16 +528,16 @@ const ChatIA = ({ session }: ChatIAProps) => {
     await fetchResponseStream(
       text,
       tid,
-      // onToken — progressively build assistant response
+      // onToken - progressively build assistant response
       (token) => {
         accumulated += token;
         setStreamingText(accumulated);
       },
-      // onStatus — show current processing stage
+      // onStatus - show current processing stage
       (detail) => {
         setStatusText(detail);
       },
-      // onDone — finalize the message
+      // onDone - finalize the message
       (result) => {
         finished = true;
         setIsTyping(false);
@@ -554,7 +554,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           ]);
         }
       },
-      // onFallback — OpenAI failed, show NotebookLM raw response
+      // onFallback - OpenAI failed, show NotebookLM raw response
       (content, reason) => {
         finished = true;
         setIsTyping(false);
@@ -568,7 +568,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           },
         ]);
       },
-      // onError — something went wrong
+      // onError - something went wrong
       (detail) => {
         if (!finished) {
           finished = true;
@@ -591,14 +591,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
       setIsTyping(false);
       setStatusText("");
       if (accumulated) {
-        // We got tokens but no done event — show what we have
+        // We got tokens but no done event - show what we have
         setStreamingText("");
         setMessages((prev) => [
           ...prev,
           { text: cleanText(accumulated), isUser: false },
         ]);
       } else {
-        // Total failure — try fallback non-streaming endpoint
+        // Total failure - try fallback non-streaming endpoint
         setStatusText("Tentando conexão alternativa...");
         setIsTyping(true);
         const reply = await fetchResponseFallback(text, tid);
@@ -1217,7 +1217,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   </Box>
                 ))}
 
-                {/* Streaming preview — shows tokens as they arrive */}
+                {/* Streaming preview - shows tokens as they arrive */}
                 {isTyping && streamingText && (
                   <Box sx={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-end", gap: 1 }}>
                     <Box
@@ -1423,7 +1423,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 </IconButton>
               </Box>
 
-              {/* Footer — Rating + Disclaimer */}
+              {/* Footer - Rating + Disclaimer */}
               {messages.length > 1 && (
                 <Box
                   sx={{
