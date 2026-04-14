@@ -245,7 +245,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-          Visão Geral
+          Dashboard
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
           Métricas de uso dos agentes de suporte IA
