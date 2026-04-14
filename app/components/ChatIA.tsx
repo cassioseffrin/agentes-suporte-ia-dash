@@ -998,7 +998,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
                   Escolha o Assistente
                 </Typography>
-                <Typography variant="body2" sx={{ color: "#6b7280", textAlign: "center", fontSize: 13 }}>
+                <Typography variant="body2" sx={{ color: "#9ca3af", textAlign: "center", fontSize: 13 }}>
                   Sobre qual assunto ou manual você deseja falar?<br/>
                   <span style={{ fontSize: "0.85em", opacity: 0.8 }}>Dica: Você também pode acessar conversas anteriores no ícone de histórico acima.</span>
                 </Typography>
@@ -1033,7 +1033,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3 }}>
                           {agent.title}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: "#6b7280", fontSize: 11 }}>
+                        <Typography variant="caption" sx={{ color: "#9ca3af", fontSize: 11 }}>
                           Agente: {agent.name}
                         </Typography>
                       </Box>
