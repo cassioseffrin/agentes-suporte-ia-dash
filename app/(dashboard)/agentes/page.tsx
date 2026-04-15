@@ -349,12 +349,7 @@ function FaqEditor({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns:
-                activeTab === "split"
-                  ? "1fr 1fr"
-                  : activeTab === "edit"
-                  ? "1fr"
-                  : "0fr 1fr",
+              gridTemplateColumns: activeTab === "split" ? "1fr 1fr" : "1fr",
               minHeight: 360,
               maxHeight: 520,
             }}
