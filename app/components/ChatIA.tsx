@@ -412,47 +412,56 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
         buffer += decoder.decode(value, { stream: true });
 
-        // Parse SSE events from buffer
-        const lines = buffer.split("\n");
-        buffer = "";
+        // SSE events are delimited by double newlines (\n\n).
+        // Splitting on \n\n ensures event type + data are always
+        // processed as an atomic unit, even when a long data line
+        // (e.g. the "done" event with full response content) is
+        // split across multiple network chunks.
+        const parts = buffer.split("\n\n");
+        // Last part may be incomplete — keep it in buffer
+        buffer = parts.pop() || "";
 
-        let currentEvent = "";
-        for (const line of lines) {
-          if (line.startsWith("event: ")) {
-            currentEvent = line.slice(7).trim();
-          } else if (line.startsWith("data: ")) {
-            const jsonStr = line.slice(6);
-            try {
-              const data = JSON.parse(jsonStr);
-              switch (currentEvent) {
-                case "status":
-                  onStatus(data.detail || "");
-                  break;
-                case "token":
-                  onToken(data.text || "");
-                  break;
-                case "done":
-                  onDone({
-                    content: data.content || "",
-                    chat_id: data.chat_id ?? null,
-                    was_fallback: data.was_fallback || false,
-                  });
-                  break;
-                case "fallback":
-                  onFallback(data.content || "", data.reason || "");
-                  break;
-                case "error":
-                  onError(data.detail || "Erro desconhecido.");
-                  break;
-              }
-            } catch {
-              // JSON parse error - incomplete, keep in buffer
-              buffer = line + "\n";
+        for (const rawEvent of parts) {
+          if (!rawEvent.trim()) continue;
+
+          let eventType = "";
+          let eventData = "";
+
+          for (const line of rawEvent.split("\n")) {
+            if (line.startsWith("event: ")) {
+              eventType = line.slice(7).trim();
+            } else if (line.startsWith("data: ")) {
+              eventData = line.slice(6);
             }
-            currentEvent = "";
-          } else if (line.trim() !== "") {
-            // Incomplete line, keep in buffer for next chunk
-            buffer += line + "\n";
+          }
+
+          if (!eventType || !eventData) continue;
+
+          try {
+            const data = JSON.parse(eventData);
+            switch (eventType) {
+              case "status":
+                onStatus(data.detail || "");
+                break;
+              case "token":
+                onToken(data.text || "");
+                break;
+              case "done":
+                onDone({
+                  content: data.content || "",
+                  chat_id: data.chat_id ?? null,
+                  was_fallback: data.was_fallback || false,
+                });
+                break;
+              case "fallback":
+                onFallback(data.content || "", data.reason || "");
+                break;
+              case "error":
+                onError(data.detail || "Erro desconhecido.");
+                break;
+            }
+          } catch (e) {
+            console.warn("[SSE] Falha ao processar evento:", eventType, e);
           }
         }
       }
