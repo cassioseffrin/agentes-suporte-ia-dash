@@ -31,6 +31,7 @@ import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import QuizIcon from "@mui/icons-material/Quiz";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
+import { useAuditor } from "../context/AuditorContext";
 
 const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -72,7 +73,46 @@ interface ChatMessage {
 
 const PAGE_SIZE = 15;
 
+// Helper: render auditor avatar (custom SVG or fallback icon)
+function AuditorAvatar({ iconSvg, size = 32 }: { iconSvg?: string | null; size?: number }) {
+  if (iconSvg) {
+    return (
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          overflow: "hidden",
+          flexShrink: 0,
+          background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        dangerouslySetInnerHTML={{ __html: iconSvg }}
+      />
+    );
+  }
+  return (
+    <Box
+      sx={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <SupportAgentIcon sx={{ color: "#fff", fontSize: size * 0.53 }} />
+    </Box>
+  );
+}
+
 export default function ChatAuditList() {
+  const { auditor } = useAuditor();
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -264,7 +304,11 @@ export default function ChatAuditList() {
     try {
       await axios.post(
         `${BASE_API_URL}/thread/${selectedThread.thread_id}/auditor-message`,
-        { message: text },
+        {
+          message: text,
+          // Inclui auditor_id do usuário logado para rastreabilidade
+          auditor_id: auditor?.id ?? null,
+        },
         { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
       );
       setAuditorInput("");
@@ -524,26 +568,24 @@ export default function ChatAuditList() {
                   }}
                 >
                   {!isUser && (
-                    <Box
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background: isAuditor
-                          ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                          : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {isAuditor ? (
-                        <SupportAgentIcon sx={{ color: "#fff", fontSize: 17 }} />
-                      ) : (
+                    isAuditor ? (
+                      <AuditorAvatar iconSvg={auditor?.icon_svg} size={32} />
+                    ) : (
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: "50%",
+                          background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
                         <SmartToyIcon sx={{ color: "#fff", fontSize: 17 }} />
-                      )}
-                    </Box>
+                      </Box>
+                    )
                   )}
                   <Box sx={{ maxWidth: "75%", display: "flex", flexDirection: "column" }}>
                     <Box
@@ -700,7 +742,8 @@ export default function ChatAuditList() {
             gap: 1,
           }}
         >
-          <SupportAgentIcon sx={{ color: "#f59e0b", fontSize: 22, flexShrink: 0 }} />
+          {/* Ícone do auditor logado — SVG customizado ou SupportAgentIcon padrão */}
+          <AuditorAvatar iconSvg={auditor?.icon_svg} size={36} />
           <TextField
             fullWidth
             size="small"

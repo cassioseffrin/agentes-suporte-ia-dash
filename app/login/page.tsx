@@ -32,8 +32,11 @@ export default function LoginPage() {
 
       const data = await res.json();
       if (data.status === "ok") {
-        // Sucesso
+        // Sucesso — salvar autenticação e dados do auditor
         localStorage.setItem("isAuthenticated", "true");
+        if (data.user) {
+          localStorage.setItem("auditor", JSON.stringify(data.user));
+        }
         router.push("/dashboard");
       } else {
         setError(data.detail || "Erro ao fazer login");

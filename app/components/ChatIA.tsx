@@ -66,6 +66,8 @@ interface ChatMessage {
   id?: number;
   feedback_thumb?: number;
   feedback_text?: string;
+  /** SVG string for the auditor's custom avatar (null = use SupportAgentIcon) */
+  auditor_icon_svg?: string | null;
 }
 
 interface ChatIAProps {
@@ -147,6 +149,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
             isUser: false,
             isAuditor: true,
             id: data.chat_id || undefined,
+            // Persist the auditor's custom icon so the bubble renders correctly
+            auditor_icon_svg: data.auditor_icon_svg ?? null,
           },
         ]);
       } catch {}
@@ -1133,12 +1137,18 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
+                          overflow: msg.isAuditor && msg.auditor_icon_svg ? "hidden" : undefined,
                         }}
+                        {...(msg.isAuditor && msg.auditor_icon_svg
+                          ? { dangerouslySetInnerHTML: { __html: msg.auditor_icon_svg } }
+                          : {})}
                       >
-                        {msg.isAuditor ? (
-                          <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
-                        ) : (
-                          <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                        {!(msg.isAuditor && msg.auditor_icon_svg) && (
+                          msg.isAuditor ? (
+                            <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
+                          ) : (
+                            <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                          )
                         )}
                       </Box>
                     )}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Dashboard as DashboardIcon,
   SmartToy as AgentIcon,
@@ -11,8 +11,11 @@ import {
   Close as CloseIcon,
   Circle as CircleIcon,
   AccountTree as DiagramIcon,
+  Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useState } from "react";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import { useAuditor } from "../context/AuditorContext";
 
 const navGroups = [
   {
@@ -40,7 +43,14 @@ const navGroups = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { auditor, logout } = useAuditor();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   const SidebarContent = () => (  
     <aside
@@ -188,16 +198,80 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* Footer — auditor identity */}
       <div
         style={{
-          padding: "16px 20px",
+          padding: "12px 16px",
           borderTop: "1px solid var(--border)",
-          fontSize: 11,
-          color: "var(--text-muted)",
         }}
       >
-        API: {process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br"}
+        {auditor ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Avatar */}
+            {auditor.icon_svg ? (
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                dangerouslySetInnerHTML={{ __html: auditor.icon_svg }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <SupportAgentIcon style={{ color: "#fff", fontSize: 18 }} />
+              </div>
+            )}
+            {/* Name */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {auditor.nickname || auditor.name || auditor.login}
+              </div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {auditor.email || auditor.login}
+              </div>
+            </div>
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              title="Sair"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)",
+                padding: 4,
+                borderRadius: 6,
+                display: "flex",
+                alignItems: "center",
+                flexShrink: 0,
+              }}
+            >
+              <LogoutIcon style={{ fontSize: 16 }} />
+            </button>
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+            API: {process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br"}
+          </div>
+        )}
       </div>
     </aside>
   );
