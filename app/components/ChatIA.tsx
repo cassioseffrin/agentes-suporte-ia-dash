@@ -68,6 +68,8 @@ interface ChatMessage {
   feedback_text?: string;
   /** SVG string for the auditor's custom avatar (null = use SupportAgentIcon) */
   auditor_icon_svg?: string | null;
+  /** Nickname do auditor que enviou a mensagem */
+  auditor_nickname?: string | null;
 }
 
 interface ChatIAProps {
@@ -151,6 +153,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
             id: data.chat_id || undefined,
             // Persist the auditor's custom icon so the bubble renders correctly
             auditor_icon_svg: data.auditor_icon_svg ?? null,
+            auditor_nickname: data.auditor_nickname ?? data.auditor_name ?? null,
           },
         ]);
       } catch {}
@@ -1127,28 +1130,54 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     {!msg.isUser && (
                       <Box
                         sx={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          background: msg.isAuditor
-                            ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                            : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
                           display: "flex",
+                          flexDirection: "column",
                           alignItems: "center",
-                          justifyContent: "center",
+                          gap: 0.25,
                           flexShrink: 0,
-                          overflow: msg.isAuditor && msg.auditor_icon_svg ? "hidden" : undefined,
                         }}
-                        {...(msg.isAuditor && msg.auditor_icon_svg
-                          ? { dangerouslySetInnerHTML: { __html: msg.auditor_icon_svg } }
-                          : {})}
                       >
-                        {!(msg.isAuditor && msg.auditor_icon_svg) && (
-                          msg.isAuditor ? (
-                            <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
-                          ) : (
-                            <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
-                          )
+                        <Box
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: msg.isAuditor
+                              ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
+                              : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            overflow: msg.isAuditor && msg.auditor_icon_svg ? "hidden" : undefined,
+                          }}
+                          {...(msg.isAuditor && msg.auditor_icon_svg
+                            ? { dangerouslySetInnerHTML: { __html: msg.auditor_icon_svg } }
+                            : {})}
+                        >
+                          {!(msg.isAuditor && msg.auditor_icon_svg) && (
+                            msg.isAuditor ? (
+                              <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
+                            ) : (
+                              <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
+                            )
+                          )}
+                        </Box>
+                        {msg.isAuditor && (
+                          <Typography
+                            sx={{
+                              fontSize: 9,
+                              color: "#fff",
+                              lineHeight: 1,
+                              maxWidth: 40,
+                              textAlign: "center",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              textShadow: "0 1px 2px rgba(0,0,0,0.3)",
+                            }}
+                          >
+                            {msg.auditor_nickname || "Suporte"}
+                          </Typography>
                         )}
                       </Box>
                     )}

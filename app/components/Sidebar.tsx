@@ -12,6 +12,7 @@ import {
   Circle as CircleIcon,
   AccountTree as DiagramIcon,
   Logout as LogoutIcon,
+  PowerSettingsNew as PowerOffIcon,
 } from "@mui/icons-material";
 import { useState } from "react";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
@@ -100,6 +101,48 @@ export default function Sidebar() {
             Agentes IA
           </div>
           <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Dashboard Admin</div>
+          {auditor && (
+            <>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "var(--accent, #bd4140)",
+                  marginTop: 2,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: 110,
+                }}
+                title={auditor.name || auditor.login}
+              >
+                {auditor.nickname || auditor.name || auditor.login}
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Sair do sistema"
+                style={{
+                  marginTop: 4,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                  color: "var(--text-muted)",
+                  fontSize: 10,
+                  lineHeight: 1,
+                  transition: "color 0.15s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent, #bd4140)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+              >
+                <PowerOffIcon style={{ fontSize: 13 }} />
+                <span>Sair</span>
+              </button>
+            </>
+          )}
         </div>
         <button
           onClick={() => setOpen(false)}
