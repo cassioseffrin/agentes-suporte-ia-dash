@@ -59,6 +59,7 @@ interface ThreadItem {
   message_count: number;
   feedback_rating: number | null;
   has_auditor?: boolean;
+  auditor_nickname?: string | null;
 }
 
 interface ChatMessage {
@@ -1030,7 +1031,7 @@ export default function ChatAuditList() {
                 {t.has_auditor && (
                   <Chip
                     icon={<SupportAgentIcon sx={{ color: "#d97706 !important", fontSize: 13 }} />}
-                    label="Auditor"
+                    label={t.auditor_nickname || "Auditor"}
                     size="small"
                     sx={{
                       height: 20,
