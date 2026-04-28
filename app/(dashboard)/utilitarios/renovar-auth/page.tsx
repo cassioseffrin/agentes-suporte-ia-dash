@@ -10,6 +10,8 @@ import {
   Close as CloseIcon,
   WifiProtectedSetup as RefreshStatusIcon,
   Circle as DotIcon,
+  Apple as AppleIcon,
+  Window as WindowsIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -42,6 +44,7 @@ export default function RenovarAuthPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
+  const [os, setOs] = useState<"mac" | "windows">("mac");
 
   const fetchAuthStatus = useCallback(async () => {
     setLoadingStatus(true);
@@ -137,7 +140,7 @@ export default function RenovarAuthPage() {
           Renovar Autenticação
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-          Faça upload do <code style={codeStyle}>storage_state.json</code> do Mac
+          Faça upload do <code style={codeStyle}>storage_state.json</code> gerado em sua máquina
           para renovar a sessão do NotebookLM no servidor.
         </p>
       </div>
@@ -226,82 +229,7 @@ export default function RenovarAuthPage() {
         </button>
       </div>
 
-      {/* Instructions */}
-      <div style={infoCardStyle}>
-        <InfoOutlined sx={{ color: "var(--accent)", fontSize: 22, flexShrink: 0, mt: "2px" }} />
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8, width: "100%" }}>
-          <strong style={{ color: "var(--text-primary)", fontSize: 15, display: "block", marginBottom: 12 }}>
-            Como renovar a autenticação:
-          </strong>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Step 1 */}
-            <div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={stepNumberStyle}>1</span> Preparar Ambiente (Venv)
-              </div>
-              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                Se for a primeira vez ou se não tiver o ambiente configurado no Mac:
-              </p>
-              <div style={{ marginLeft: 30 }}>
-                <code style={terminalStyle}>
-                  cd dev/agentes-suporte-ia<br />
-                  python3 -m venv venv<br />
-                  source venv/bin/activate<br />
-                  pip install "notebooklm-py[browser]"<br />
-                  playwright install chromium
-                </code>
-              </div>
-            </div>
 
-            {/* Step 2 */}
-            <div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={stepNumberStyle}>2</span> Iniciar Autenticação
-              </div>
-              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                Com o terminal aberto e o <strong>venv ativo</strong>, execute:
-              </p>
-              <div style={{ marginLeft: 30 }}>
-                <code style={terminalStyle}>
-                  # Certifique-se de estar com o venv ativo (source venv/bin/activate)<br />
-                  notebooklm login
-                </code>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={stepNumberStyle}>3</span> Fluxo no Navegador
-              </div>
-              <ul style={{ margin: "4px 0 0 30px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
-                <li>• Complete o login do Google no navegador que será aberto automaticamente.</li>
-                <li>• Aguarde carregar a página inicial do NotebookLM (onde aparecem seus notebooks).</li>
-                <li>• Volte ao Terminal e pressione <kbd style={kbdStyle}>ENTER</kbd> para salvar a sessão.</li>
-              </ul>
-            </div>
-
-            {/* Step 4 */}
-            <div>
-              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={stepNumberStyle}>4</span> Coletar e Upload
-              </div>
-              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                O arquivo será gerado em <code>~/.notebooklm/storage_state.json</code>.
-              </p>
-              <div style={{ marginLeft: 30 }}>
-                <code style={terminalStyle}>
-                  cp ~/.notebooklm/storage_state.json ~/Desktop
-                </code>
-              </div>
-              <p style={{ margin: "8px 0 0 30px", fontSize: 12, fontStyle: "italic" }}>
-                Arraste o arquivo da sua Área de Trabalho para a zona de upload abaixo.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Drop Zone */}
       <div
@@ -463,6 +391,127 @@ export default function RenovarAuthPage() {
           </button>
         </div>
       )}
+
+            {/* Instructions */}
+      <div style={infoCardStyle}>
+        <InfoOutlined sx={{ color: "var(--accent)", fontSize: 22, flexShrink: 0, mt: "2px" }} />
+        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8, width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <strong style={{ color: "var(--text-primary)", fontSize: 15 }}>
+              Como renovar a autenticação:
+            </strong>
+            <div style={{
+              display: "flex",
+              background: "var(--bg-hover)",
+              padding: 3,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+            }}>
+              <button
+                onClick={() => setOs("mac")}
+                style={{
+                  ...osToggleBtnStyle,
+                  background: os === "mac" ? "var(--bg-surface)" : "transparent",
+                  color: os === "mac" ? "var(--text-primary)" : "var(--text-muted)",
+                  boxShadow: os === "mac" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              >
+                <AppleIcon sx={{ fontSize: 16 }} /> Mac
+              </button>
+              <button
+                onClick={() => setOs("windows")}
+                style={{
+                  ...osToggleBtnStyle,
+                  background: os === "windows" ? "var(--bg-surface)" : "transparent",
+                  color: os === "windows" ? "var(--text-primary)" : "var(--text-muted)",
+                  boxShadow: os === "windows" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              >
+                <WindowsIcon sx={{ fontSize: 16 }} /> Windows
+              </button>
+            </div>
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Step 1 */}
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={stepNumberStyle}>1</span> Preparar Ambiente (Venv)
+              </div>
+              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
+                Se for a primeira vez ou se não tiver o ambiente configurado:
+              </p>
+              <div style={{ marginLeft: 30 }}>
+                {os === "mac" ? (
+                  <code style={terminalStyle}>
+                    cd dev/agentes-suporte-ia<br />
+                    python3 -m venv venv<br />
+                    source venv/bin/activate<br />
+                    pip install "notebooklm-py[browser]"<br />
+                    playwright install chromium
+                  </code>
+                ) : (
+                  <code style={terminalStyle}>
+                    cd dev\agentes-suporte-ia<br />
+                    python -m venv venv<br />
+                    venv\Scripts\activate<br />
+                    pip install "notebooklm-py[browser]"<br />
+                    playwright install chromium
+                  </code>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={stepNumberStyle}>2</span> Iniciar Autenticação
+              </div>
+              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
+                Com o terminal aberto e o <strong>venv ativo</strong>, execute:
+              </p>
+              <div style={{ marginLeft: 30 }}>
+                <code style={terminalStyle}>
+                  # Certifique-se de estar com o venv ativo ({os === "mac" ? "source venv/bin/activate" : "venv\\Scripts\\activate"})<br />
+                  notebooklm login
+                </code>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={stepNumberStyle}>3</span> Fluxo no Navegador
+              </div>
+              <ul style={{ margin: "4px 0 0 30px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
+                <li>• Complete o login do Google no navegador que será aberto automaticamente.</li>
+                <li>• Aguarde carregar a página inicial do NotebookLM (onde aparecem seus notebooks).</li>
+                <li>• Volte ao Terminal e pressione <kbd style={kbdStyle}>ENTER</kbd> para salvar a sessão.</li>
+              </ul>
+            </div>
+
+            {/* Step 4 */}
+            <div>
+              <div style={{ fontWeight: 600, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={stepNumberStyle}>4</span> Coletar e Upload
+              </div>
+              <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
+                O arquivo será gerado em <code>{os === "mac" ? "~/.notebooklm/storage_state.json" : "C:\\Users\\SeuUsuario\\.notebooklm\\storage_state.json"}</code>.
+              </p>
+              <div style={{ marginLeft: 30 }}>
+                <code style={terminalStyle}>
+                  {os === "mac" 
+                    ? "cp ~/.notebooklm/storage_state.json ~/Desktop"
+                    : "copy %USERPROFILE%\\.notebooklm\\storage_state.json %USERPROFILE%\\Desktop"}
+                </code>
+              </div>
+              <p style={{ margin: "8px 0 0 30px", fontSize: 12, fontStyle: "italic" }}>
+                Arraste o arquivo da sua Área de Trabalho para a zona de upload abaixo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -546,3 +595,17 @@ const secondaryBtnStyle: React.CSSProperties = {
   fontFamily: "Inter, sans-serif",
   transition: "all 0.15s ease",
 };
+
+const osToggleBtnStyle: React.CSSProperties = {
+  padding: "4px 12px",
+  borderRadius: 6,
+  border: "none",
+  fontSize: 12,
+  fontWeight: 600,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  transition: "all 0.2s ease",
+};
+
