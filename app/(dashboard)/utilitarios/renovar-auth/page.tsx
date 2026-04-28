@@ -15,7 +15,7 @@ import {
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || "";
+const API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 
 type Status = "idle" | "dragging" | "ready" | "uploading" | "success" | "error";
 

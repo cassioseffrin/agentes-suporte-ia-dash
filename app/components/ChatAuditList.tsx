@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -113,6 +114,14 @@ function AuditorAvatar({ iconSvg, size = 32 }: { iconSvg?: string | null; size?:
 }
 
 export default function ChatAuditList() {
+  return (
+    <Suspense fallback={<Box sx={{ p: 4, textAlign: "center" }}><CircularProgress /></Box>}>
+      <ChatAuditListContent />
+    </Suspense>
+  );
+}
+
+function ChatAuditListContent() {
   const { auditor } = useAuditor();
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -141,6 +150,10 @@ export default function ChatAuditList() {
   const [faqStatus, setFaqStatus] = useState<{ faq_added: boolean; has_auditor: boolean } | null>(null);
   const [faqLoading, setFaqLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({ open: false, message: "", severity: "info" });
+  
+  const searchParams = useSearchParams();
+  const threadIdFromUrl = searchParams.get("thread");
+  const [autoSelectFirst, setAutoSelectFirst] = useState(false);
 
   const fetchThreads = useCallback(
     async (p: number, q: string, auditor_only: boolean) => {
@@ -167,6 +180,23 @@ export default function ChatAuditList() {
   useEffect(() => {
     fetchThreads(page, search, auditorOnly);
   }, [page, search, auditorOnly, fetchThreads]);
+
+  // Handle initial thread from URL
+  useEffect(() => {
+    if (threadIdFromUrl) {
+      setSearch(threadIdFromUrl);
+      setSearchInput(threadIdFromUrl);
+      setAutoSelectFirst(true);
+    }
+  }, [threadIdFromUrl]);
+
+  // Auto-select first result when using thread ID from URL
+  useEffect(() => {
+    if (autoSelectFirst && threads.length > 0) {
+      handleSelectThread(threads[0]);
+      setAutoSelectFirst(false);
+    }
+  }, [autoSelectFirst, threads]);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
