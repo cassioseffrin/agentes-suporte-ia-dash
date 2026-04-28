@@ -421,19 +421,25 @@ export default function FeedbacksPage() {
                       style={{
                         fontSize: 14,
                         fontWeight: 500,
-                        color: "var(--text-primary)",
+                        color: fb.feedback_text ? "var(--text-primary)" : "var(--text-muted)",
                         marginBottom: 8,
                         lineHeight: 1.5,
+                        fontStyle: fb.feedback_text ? "normal" : "italic",
                       }}
                     >
-                      {/* Quote mark */}
-                      <span style={{ color: "var(--accent)", fontWeight: 700, marginRight: 4 }}>"</span>
-                      {isExpanded
-                        ? fb.feedback_text
-                        : fb.feedback_text.length > 180
-                        ? fb.feedback_text.slice(0, 180) + "…"
-                        : fb.feedback_text}
-                      <span style={{ color: "var(--accent)", fontWeight: 700, marginLeft: 2 }}>"</span>
+                      {fb.feedback_text ? (
+                        <>
+                          <span style={{ color: "var(--accent)", fontWeight: 700, marginRight: 4 }}>"</span>
+                          {isExpanded
+                            ? fb.feedback_text
+                            : fb.feedback_text.length > 180
+                            ? fb.feedback_text.slice(0, 180) + "…"
+                            : fb.feedback_text}
+                          <span style={{ color: "var(--accent)", fontWeight: 700, marginLeft: 2 }}>"</span>
+                        </>
+                      ) : (
+                        "Feedback enviado sem comentário de texto"
+                      )}
                     </div>
 
                     {/* Meta row */}
