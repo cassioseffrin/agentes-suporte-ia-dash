@@ -408,17 +408,6 @@ export default function RenovarAuthPage() {
               border: "1px solid var(--border)",
             }}>
               <button
-                onClick={() => setOs("mac")}
-                style={{
-                  ...osToggleBtnStyle,
-                  background: os === "mac" ? "var(--bg-surface)" : "transparent",
-                  color: os === "mac" ? "var(--text-primary)" : "var(--text-muted)",
-                  boxShadow: os === "mac" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
-                }}
-              >
-                <AppleIcon sx={{ fontSize: 16 }} /> Mac
-              </button>
-              <button
                 onClick={() => setOs("windows")}
                 style={{
                   ...osToggleBtnStyle,
@@ -428,6 +417,17 @@ export default function RenovarAuthPage() {
                 }}
               >
                 <WindowsIcon sx={{ fontSize: 16 }} /> Windows
+              </button>
+              <button
+                onClick={() => setOs("mac")}
+                style={{
+                  ...osToggleBtnStyle,
+                  background: os === "mac" ? "var(--bg-surface)" : "transparent",
+                  color: os === "mac" ? "var(--text-primary)" : "var(--text-muted)",
+                  boxShadow: os === "mac" ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
+                }}
+              >
+                <AppleIcon sx={{ fontSize: 16 }} /> Mac
               </button>
             </div>
           </div>
