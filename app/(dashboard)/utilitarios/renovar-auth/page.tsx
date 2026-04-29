@@ -44,7 +44,7 @@ export default function RenovarAuthPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
-  const [os, setOs] = useState<"mac" | "windows">("mac");
+  const [os, setOs] = useState<"mac" | "windows">("windows");
 
   const fetchAuthStatus = useCallback(async () => {
     setLoadingStatus(true);
