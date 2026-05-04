@@ -14,6 +14,10 @@ import {
   Button,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -27,6 +31,9 @@ import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SendIcon from "@mui/icons-material/Send";
+
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import QuizIcon from "@mui/icons-material/Quiz";
@@ -150,6 +157,10 @@ function ChatAuditListContent() {
   const [faqStatus, setFaqStatus] = useState<{ faq_added: boolean; has_auditor: boolean } | null>(null);
   const [faqLoading, setFaqLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" | "info" }>({ open: false, message: "", severity: "info" });
+
+  // FAQ Preview Modal state
+  const [faqModalOpen, setFaqModalOpen] = useState(false);
+  const [faqPairs, setFaqPairs] = useState<{ question: string; answer: string }[]>([]);
   
   const searchParams = useSearchParams();
   const threadIdFromUrl = searchParams.get("thread");
@@ -287,6 +298,7 @@ function ChatAuditListContent() {
             isAuditor: true,
           },
         ]);
+        setFaqStatus((prev) => (prev ? { ...prev, has_auditor: true } : prev));
       } catch {}
     });
 
@@ -308,6 +320,9 @@ function ChatAuditListContent() {
             },
           ];
         });
+        if (data.role === "auditor") {
+          setFaqStatus((prev) => (prev ? { ...prev, has_auditor: true } : prev));
+        }
       } catch {}
     });
 
@@ -343,6 +358,7 @@ function ChatAuditListContent() {
         { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
       );
       setAuditorInput("");
+      setFaqStatus((prev) => (prev ? { ...prev, has_auditor: true } : prev));
     } catch (e) {
       console.error("Erro ao enviar mensagem do auditor:", e);
     } finally {
@@ -357,14 +373,81 @@ function ChatAuditListContent() {
     }
   };
 
-  // --- Adicionar a FAQ ---
-  const handleAddToFaq = async () => {
+  // --- Extract Q&A pairs from conversation messages ---
+  const extractQAPairs = useCallback((): { question: string; answer: string }[] => {
+    const pairs: { question: string; answer: string }[] = [];
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i];
+      if (msg.role !== "user") continue;
+      // Find the next non-user message (auditor takes priority, then assistant)
+      let answerMsg: ChatMessage | null = null;
+      for (let j = i + 1; j < messages.length; j++) {
+        if (messages[j].role === "user") break;
+        if (messages[j].role === "auditor") {
+          answerMsg = messages[j];
+          break; // auditor answer takes priority
+        }
+        if (messages[j].role === "assistant" && !answerMsg) {
+          answerMsg = messages[j];
+        }
+      }
+      if (answerMsg) {
+        pairs.push({
+          question: msg.content.trim(),
+          answer: answerMsg.content.trim(),
+        });
+      }
+    }
+    return pairs;
+  }, [messages]);
+
+  // --- Open FAQ Preview Modal ---
+  const handleOpenFaqModal = () => {
+    const pairs = extractQAPairs();
+    if (pairs.length === 0) {
+      setSnackbar({ open: true, message: "Nenhum par de Pergunta/Resposta encontrado nesta conversa.", severity: "info" });
+      return;
+    }
+    setFaqPairs(pairs);
+    setFaqModalOpen(true);
+  };
+
+  // --- FAQ pair editing helpers ---
+  const handleFaqPairChange = (index: number, field: "question" | "answer", value: string) => {
+    setFaqPairs((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  };
+
+  const handleRemoveFaqPair = (index: number) => {
+    setFaqPairs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddFaqPair = () => {
+    setFaqPairs((prev) => [...prev, { question: "", answer: "" }]);
+  };
+
+  // --- Build FAQ markdown text from pairs ---
+  const buildFaqText = (): string => {
+    return faqPairs
+      .filter((p) => p.question.trim() && p.answer.trim())
+      .map((p) => `## ${p.question.trim()}\n\n${p.answer.trim()}`)
+      .join("\n\n---\n\n");
+  };
+
+  // --- Adicionar a FAQ (com texto editado) ---
+  const handleConfirmAddToFaq = async () => {
     if (!selectedThread || faqLoading) return;
+    const validPairs = faqPairs.filter((p) => p.question.trim() && p.answer.trim());
+    if (validPairs.length === 0) {
+      setSnackbar({ open: true, message: "Adicione pelo menos um par de Pergunta/Resposta válido.", severity: "error" });
+      return;
+    }
     setFaqLoading(true);
+    setFaqModalOpen(false);
     try {
+      const faqText = buildFaqText();
       const res = await axios.post(
         `${BASE_API_URL}/thread/${selectedThread.thread_id}/add-to-faq`,
-        {},
+        { faq_text: faqText },
         { headers: { Authorization: `Bearer ${BACKEND_API_KEY}` } }
       );
       if (res.status === 200) {
@@ -388,7 +471,17 @@ function ChatAuditListContent() {
     }
   };
 
-  const isFaqButtonEnabled = faqStatus !== null && faqStatus.has_auditor && !faqStatus.faq_added && !faqLoading;
+  // Legacy direct call (kept for backward compat)
+  const handleAddToFaq = () => handleOpenFaqModal();
+
+  const hasAuditorInteraction =
+    faqStatus?.has_auditor || messages.some((m) => m.role === "auditor");
+
+  const isFaqButtonEnabled =
+    faqStatus !== null &&
+    hasAuditorInteraction &&
+    !faqStatus.faq_added &&
+    !faqLoading;
 
   // ─── Fullscreen Audit View ───
   if (selectedThread) {
@@ -493,14 +586,14 @@ function ChatAuditListContent() {
                 ? "Carregando status..."
                 : faqStatus.faq_added
                   ? "FAQ já adicionada para esta conversa"
-                  : !faqStatus.has_auditor
+                  : !hasAuditorInteraction
                     ? "Necessário interação do auditor para gerar FAQ"
                     : "Gerar FAQ a partir desta conversa"
             }
           >
             <span>
               <Button
-                onClick={handleAddToFaq}
+                onClick={handleOpenFaqModal}
                 disabled={!isFaqButtonEnabled}
                 startIcon={
                   faqLoading ? (
@@ -833,6 +926,282 @@ function ChatAuditListContent() {
             </span>
           </Tooltip>
         </Box>
+
+        {/* FAQ Preview Modal */}
+        <Dialog
+          open={faqModalOpen}
+          onClose={() => setFaqModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              bgcolor: "var(--bg-card, #1a1d27)",
+              backgroundImage: "none",
+              border: "1px solid var(--border, #2d3352)",
+              borderRadius: 4,
+              maxHeight: "85vh",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              bgcolor: "var(--bg-surface, #12151e)",
+              borderBottom: "1px solid var(--border, #2d3352)",
+              py: 2,
+              px: 3,
+            }}
+          >
+            <QuizIcon sx={{ color: "var(--accent, #bd4140)", fontSize: 22 }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary, #f1f5f9)" }}>
+                Revisar FAQ antes de enviar
+              </Typography>
+              <Typography sx={{ fontSize: 12, color: "var(--text-secondary, #94a3b8)", mt: 0.3 }}>
+                Edite as perguntas e respostas extraídas da conversa. Pares vazios serão ignorados.
+              </Typography>
+            </Box>
+            <Chip
+              label={`${faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length} par(es)`}
+              size="small"
+              sx={{
+                bgcolor: "rgba(189,65,64,0.15)",
+                color: "var(--accent, #bd4140)",
+                fontWeight: 700,
+                fontSize: 11,
+              }}
+            />
+          </DialogTitle>
+
+          <DialogContent
+            sx={{
+              px: 3,
+              py: 2.5,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2.5,
+              overflowY: "auto",
+              "&::-webkit-scrollbar": { width: 6 },
+              "&::-webkit-scrollbar-thumb": { bgcolor: "#e5908e", borderRadius: 3 },
+            }}
+          >
+            {faqPairs.map((pair, idx) => (
+              <Box
+                key={idx}
+                sx={{
+                  border: "1px solid var(--border, #2d3352)",
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  animation: `${fadeIn} 0.2s ease ${idx * 0.05}s both`,
+                  transition: "border-color 0.2s",
+                  "&:hover": { borderColor: "var(--accent, #bd4140)" },
+                }}
+              >
+                {/* Pair header */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 2,
+                    py: 1,
+                    bgcolor: "var(--bg-surface, #12151e)",
+                    borderBottom: "1px solid var(--border, #2d3352)",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      bgcolor: "var(--accent, #bd4140)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      color: "#fff",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {idx + 1}
+                  </Box>
+                  <Typography sx={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary, #94a3b8)", flex: 1 }}>
+                    Par {idx + 1}
+                  </Typography>
+                  <Tooltip title="Remover este par">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleRemoveFaqPair(idx)}
+                      sx={{
+                        color: "var(--text-secondary, #6b7280)",
+                        "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.1)" },
+                      }}
+                    >
+                      <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+
+                {/* Question */}
+                <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      color: "#10b981",
+                      mb: 0.8,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    <PersonIcon sx={{ fontSize: 13 }} /> Pergunta
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    minRows={1}
+                    maxRows={4}
+                    value={pair.question}
+                    onChange={(e) => handleFaqPairChange(idx, "question", e.target.value)}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        color: "var(--text-primary, #f1f5f9)",
+                        bgcolor: "rgba(16,185,129,0.04)",
+                        borderRadius: 2,
+                        "& fieldset": { borderColor: "rgba(16,185,129,0.2)" },
+                        "&:hover fieldset": { borderColor: "rgba(16,185,129,0.4)" },
+                        "&.Mui-focused fieldset": { borderColor: "#10b981" },
+                      },
+                    }}
+                  />
+                </Box>
+
+                {/* Answer */}
+                <Box sx={{ px: 2, pt: 0.5, pb: 2 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      color: "var(--accent, #bd4140)",
+                      mb: 0.8,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    <SmartToyIcon sx={{ fontSize: 13 }} /> Resposta
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    maxRows={8}
+                    value={pair.answer}
+                    onChange={(e) => handleFaqPairChange(idx, "answer", e.target.value)}
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        fontSize: 13,
+                        lineHeight: 1.6,
+                        color: "var(--text-primary, #f1f5f9)",
+                        bgcolor: "rgba(189,65,64,0.04)",
+                        borderRadius: 2,
+                        "& fieldset": { borderColor: "rgba(189,65,64,0.2)" },
+                        "&:hover fieldset": { borderColor: "rgba(189,65,64,0.4)" },
+                        "&.Mui-focused fieldset": { borderColor: "var(--accent, #bd4140)" },
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
+            ))}
+
+            {/* Add new pair button */}
+            <Button
+              onClick={handleAddFaqPair}
+              startIcon={<AddCircleOutlineIcon />}
+              sx={{
+                color: "var(--text-secondary, #94a3b8)",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: 13,
+                border: "1px dashed var(--border, #2d3352)",
+                borderRadius: 3,
+                py: 1.5,
+                transition: "all 0.2s",
+                "&:hover": {
+                  borderColor: "var(--accent, #bd4140)",
+                  color: "var(--accent, #bd4140)",
+                  bgcolor: "rgba(189,65,64,0.05)",
+                },
+              }}
+            >
+              Adicionar novo par
+            </Button>
+          </DialogContent>
+
+          <DialogActions
+            sx={{
+              px: 3,
+              py: 2,
+              borderTop: "1px solid var(--border, #2d3352)",
+              bgcolor: "var(--bg-surface, #12151e)",
+              gap: 1.5,
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography sx={{ fontSize: 11, color: "var(--text-secondary, #6b7280)" }}>
+              {faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length} par(es) válido(s) ·
+              O processo de revisão de perguntas existentes será mantido
+            </Typography>
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button
+                onClick={() => setFaqModalOpen(false)}
+                sx={{
+                  color: "var(--text-secondary, #94a3b8)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.05)" },
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmAddToFaq}
+                disabled={faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length === 0}
+                variant="contained"
+                startIcon={faqLoading ? <CircularProgress size={14} sx={{ color: "#fff" }} /> : <QuizIcon />}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  bgcolor: "rgba(16,185,129,0.85)",
+                  borderRadius: 2,
+                  px: 3,
+                  boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+                  "&:hover": { bgcolor: "rgba(16,185,129,1)" },
+                  "&.Mui-disabled": { bgcolor: "#1e2233", color: "#4a5068" },
+                }}
+              >
+                {faqLoading ? "Enviando..." : "Confirmar e Enviar FAQ"}
+              </Button>
+            </Box>
+          </DialogActions>
+        </Dialog>
 
         {/* Snackbar de feedback */}
         <Snackbar
