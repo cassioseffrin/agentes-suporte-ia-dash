@@ -59,6 +59,21 @@ const dotBounce = keyframes`
   40%            { transform: translateY(-6px); }
 `;
 
+const formatDateTimePtBr = (dateInput?: Date | string | number) => {
+  if (!dateInput) return "";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "";
+  const pad = (num: number, size: number) => num.toString().padStart(size, '0');
+  const d = pad(date.getDate(), 2);
+  const m = pad(date.getMonth() + 1, 2);
+  const y = date.getFullYear();
+  const h = pad(date.getHours(), 2);
+  const min = pad(date.getMinutes(), 2);
+  const s = pad(date.getSeconds(), 2);
+  const ms = pad(date.getMilliseconds(), 3);
+  return `${d}/${m}/${y} ${h}:${min}:${s}.${ms}`;
+};
+
 interface ChatMessage {
   text: string;
   isUser: boolean;
@@ -70,6 +85,7 @@ interface ChatMessage {
   auditor_icon_svg?: string | null;
   /** Nickname do auditor que enviou a mensagem */
   auditor_nickname?: string | null;
+  timestamp?: Date;
 }
 
 interface ChatIAProps {
@@ -154,6 +170,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
             // Persist the auditor's custom icon so the bubble renders correctly
             auditor_icon_svg: data.auditor_icon_svg ?? null,
             auditor_nickname: data.auditor_nickname ?? data.auditor_name ?? null,
+            timestamp: data.created_at ? new Date(data.created_at) : new Date(),
           },
         ]);
       } catch {}
@@ -197,6 +214,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           {
             text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
             isUser: false,
+            timestamp: new Date(),
           },
         ]);
       }
@@ -266,10 +284,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
           isAuditor: m.role === "auditor",
           feedback_thumb: m.feedback_thumb,
           feedback_text: m.feedback_text,
+          timestamp: m.created_at ? new Date(m.created_at) : new Date(),
         }));
         const greeting: ChatMessage = {
           text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
           isUser: false,
+          timestamp: data.messages[0]?.created_at
+            ? new Date(new Date(data.messages[0].created_at).getTime() - 1000)
+            : new Date(),
         };
         const existingRating = data.messages.find(
           (m: any) => m.feedback_rating != null,
@@ -525,7 +547,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
     const text = input.trim();
     if (!text || isTyping) return;
 
-    setMessages((prev) => [...prev, { text, isUser: true }]);
+    setMessages((prev) => [...prev, { text, isUser: true, timestamp: new Date() }]);
     setInput("");
     setIsTyping(true);
     setStatusText("");
@@ -566,6 +588,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               text: cleanText(result.content),
               isUser: false,
               id: result.chat_id || undefined,
+              timestamp: new Date(),
             },
           ]);
         }
@@ -581,6 +604,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           {
             text: content,
             isUser: false,
+            timestamp: new Date(),
           },
         ]);
       },
@@ -596,6 +620,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
             {
               text: detail || "Desculpe, não consegui processar isso. Tente novamente.",
               isUser: false,
+              timestamp: new Date(),
             },
           ]);
         }
@@ -611,7 +636,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
         setStreamingText("");
         setMessages((prev) => [
           ...prev,
-          { text: cleanText(accumulated), isUser: false },
+          { text: cleanText(accumulated), isUser: false, timestamp: new Date() },
         ]);
       } else {
         // Total failure - try fallback non-streaming endpoint
@@ -623,12 +648,12 @@ const ChatIA = ({ session }: ChatIAProps) => {
         if (reply && reply.content) {
           setMessages((prev) => [
             ...prev,
-            { text: cleanText(reply.content), isUser: false, id: reply.chat_id || undefined },
+            { text: cleanText(reply.content), isUser: false, id: reply.chat_id || undefined, timestamp: new Date() },
           ]);
         } else {
           setMessages((prev) => [
             ...prev,
-            { text: "Desculpe, não consegui processar isso. Tente novamente.", isUser: false },
+            { text: "Desculpe, não consegui processar isso. Tente novamente.", isUser: false, timestamp: new Date() },
           ]);
         }
       }
@@ -935,7 +960,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         {t.agent_title}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#6b7280", mt: 0.5 }}>
-                        {new Date(t.created_at).toLocaleString()}
+                        {new Date(t.created_at).toLocaleString("pt-BR")}
                       </Typography>
                     </Box>
                     <Tooltip title="Excluir conversa">
@@ -1242,25 +1267,55 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         <ReactMarkdown>{msg.text}</ReactMarkdown>
                       )}
 
-                      {!msg.isUser && msg.id && (
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, mt: 1 }}>
-                          <Tooltip title="Copiar">
-                            <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "var(--accent, #bd4140)", bgcolor: "rgba(189, 65, 64, 0.1)" }}}>
-                              <ContentCopyIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Gostei">
-                            <IconButton size="small" onClick={() => handleMessageFeedback(msg.id!, 1)} sx={{ p: 0.5, color: msg.feedback_thumb === 1 ? "#10b981" : "#9ca3af", "&:hover": { color: "#10b981", bgcolor: "rgba(16,185,129,0.1)" }}}>
-                              {msg.feedback_thumb === 1 ? <ThumbUpIcon sx={{ fontSize: 16 }} /> : <ThumbUpOutlinedIcon sx={{ fontSize: 16 }} />}
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Não Gostei">
-                            <IconButton size="small" onClick={() => openFeedbackDialog(msg.id!)} sx={{ p: 0.5, color: msg.feedback_thumb === -1 ? "#ef4444" : "#9ca3af", "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.1)" }}}>
-                              {msg.feedback_thumb === -1 ? <ThumbDownIcon sx={{ fontSize: 16 }} /> : <ThumbDownOutlinedIcon sx={{ fontSize: 16 }} />}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          gap: 1.5,
+                          mt: 1,
+                          pt: 0.5,
+                          borderTop: msg.isUser
+                            ? "1px solid rgba(255, 255, 255, 0.15)"
+                            : "1px solid rgba(0, 0, 0, 0.06)",
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: "10px",
+                            opacity: 0.7,
+                            color: msg.isUser
+                              ? "rgba(255,255,255,0.85)"
+                              : msg.isAuditor
+                                ? "#92400e"
+                                : "var(--text-secondary)",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {formatDateTimePtBr(msg.timestamp || new Date())}
+                        </Typography>
+
+                        {!msg.isUser && msg.id && (
+                          <Box sx={{ display: "flex", gap: 0.5 }}>
+                            <Tooltip title="Copiar">
+                              <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "var(--accent, #bd4140)", bgcolor: "rgba(189, 65, 64, 0.1)" }}}>
+                                <ContentCopyIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Gostei">
+                              <IconButton size="small" onClick={() => handleMessageFeedback(msg.id!, 1)} sx={{ p: 0.5, color: msg.feedback_thumb === 1 ? "#10b981" : "#9ca3af", "&:hover": { color: "#10b981", bgcolor: "rgba(16,185,129,0.1)" }}}>
+                                {msg.feedback_thumb === 1 ? <ThumbUpIcon sx={{ fontSize: 14 }} /> : <ThumbUpOutlinedIcon sx={{ fontSize: 14 }} />}
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Não Gostei">
+                              <IconButton size="small" onClick={() => openFeedbackDialog(msg.id!)} sx={{ p: 0.5, color: msg.feedback_thumb === -1 ? "#ef4444" : "#9ca3af", "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.1)" }}}>
+                                {msg.feedback_thumb === -1 ? <ThumbDownIcon sx={{ fontSize: 14 }} /> : <ThumbDownOutlinedIcon sx={{ fontSize: 14 }} />}
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   </Box>
                 ))}
@@ -1331,6 +1386,28 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       }}
                     >
                       <ReactMarkdown>{streamingText}</ReactMarkdown>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          mt: 1,
+                          pt: 0.5,
+                          borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontSize: "10px",
+                            opacity: 0.7,
+                            color: "var(--text-secondary)",
+                            fontFamily: "monospace",
+                          }}
+                        >
+                          {formatDateTimePtBr(new Date())}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Box>
                 )}
