@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sync as SyncIcon, CheckCircle, ErrorOutline } from "@mui/icons-material";
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 
@@ -8,18 +8,65 @@ type Status = "idle" | "loading" | "success" | "error";
 
 export default function AtualizarAgentesPage() {
   const [status, setStatus] = useState<Status>("idle");
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const [result, setResult] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Profile-based sync state
+  const [profiles, setProfiles] = useState<string[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<string>("all");
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const res = await fetch(`${API}/authStatus/all`);
+        if (res.ok) {
+          const json = await res.json();
+          const list = (json.profiles ?? []).map((p: any) => p.profile);
+          if (list.length === 0) list.push("default");
+          setProfiles(list);
+        }
+      } catch {
+        setProfiles(["default"]);
+      }
+    };
+    fetchProfiles();
+  }, []);
 
   const handleUpdate = async () => {
     setStatus("loading");
     setResult(null);
     setError(null);
     try {
-      const res = await fetch(`${API}/updateNotebooks`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.detail || `HTTP ${res.status}`);
-      setResult(json);
+      const targets = selectedProfile === "all" ? profiles : [selectedProfile];
+      
+      let total = 0;
+      let inseridos = 0;
+      let atualizados = 0;
+      let desativados = 0;
+      let erros: any[] = [];
+
+      for (const prof of targets) {
+        const res = await fetch(`${API}/updateNotebooks?profile=${encodeURIComponent(prof)}`);
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.detail || `Falha ao atualizar o profile '${prof}': HTTP ${res.status}`);
+        }
+        total += json.total ?? 0;
+        inseridos += json.inseridos ?? 0;
+        atualizados += json.atualizados ?? 0;
+        desativados += json.desativados ?? 0;
+        if (json.erros) {
+          erros = [...erros, ...json.erros];
+        }
+      }
+
+      setResult({
+        total,
+        inseridos,
+        atualizados,
+        desativados,
+        erros,
+      });
       setStatus("success");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erro desconhecido");
@@ -49,7 +96,7 @@ export default function AtualizarAgentesPage() {
         }}
       >
         <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
-          Ao clicar no botão abaixo, será executada uma chamada para{" "}
+          Será executada uma chamada para{" "}
           <code
             style={{
               background: "var(--bg-hover)",
@@ -61,9 +108,49 @@ export default function AtualizarAgentesPage() {
           >
             GET /updateNotebooks
           </code>{" "}
-          que irá listar todos os notebooks disponíveis no NotebookLM e sincronizá-los com o banco de
-          dados (inserindo novos, atualizando existentes e <strong>desativando</strong> os que não existem mais - sem deletar).
+          para cada conta / profile selecionado. Isso listará os notebooks disponíveis naquela conta do NotebookLM
+          e os sincronizará com o banco de dados (inserindo novos, atualizando existentes e <strong>desativando</strong> os que não pertencem mais àquele profile específico, garantindo isolamento total).
         </p>
+      </div>
+
+      {/* Profile Selector */}
+      <div style={{ marginBottom: 24 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            marginBottom: 8,
+          }}
+        >
+          Selecione a Conta / Profile para Sincronizar:
+        </label>
+        <select
+          value={selectedProfile}
+          onChange={(e) => setSelectedProfile(e.target.value)}
+          disabled={status === "loading"}
+          style={{
+            width: "100%",
+            maxWidth: 320,
+            padding: "10px 14px",
+            borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border)",
+            background: "var(--bg-card)",
+            color: "var(--text-primary)",
+            fontSize: 14,
+            outline: "none",
+            cursor: status === "loading" ? "not-allowed" : "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          <option value="all">🌐 Todos os Profiles ({profiles.length})</option>
+          {profiles.map((prof) => (
+            <option key={prof} value={prof}>
+              🔑 {prof}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Action button */}
@@ -85,6 +172,7 @@ export default function AtualizarAgentesPage() {
           transition: "all 0.2s ease",
           fontFamily: "Inter, sans-serif",
           boxShadow: status === "loading" ? "none" : "0 4px 16px rgba(99, 102, 241, 0.4)",
+          marginBottom: 24,
         }}
         onMouseEnter={(e) => {
           if (status !== "loading")
@@ -109,7 +197,7 @@ export default function AtualizarAgentesPage() {
       {status === "success" && result && (
         <div
           style={{
-            marginTop: 24,
+            marginTop: 12,
             background: "rgba(16, 185, 129, 0.08)",
             border: "1px solid rgba(16, 185, 129, 0.25)",
             borderRadius: "var(--radius)",
@@ -125,10 +213,10 @@ export default function AtualizarAgentesPage() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
-              ["Total", result.total],
-              ["Inseridos", result.inseridos],
-              ["Atualizados", result.atualizados],
-              ["Desativados", result.desativados],
+              ["Total Encontrados", result.total],
+              ["Novos Inseridos", result.inseridos],
+              ["Existentes Atualizados", result.atualizados],
+              ["Removidos Desativados", result.desativados],
             ].map(([label, val]) => (
               <div
                 key={label as string}
@@ -159,7 +247,7 @@ export default function AtualizarAgentesPage() {
       {status === "error" && (
         <div
           style={{
-            marginTop: 24,
+            marginTop: 12,
             background: "rgba(239, 68, 68, 0.08)",
             border: "1px solid rgba(239, 68, 68, 0.25)",
             borderRadius: "var(--radius)",

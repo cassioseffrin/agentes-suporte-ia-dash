@@ -69,6 +69,7 @@ interface Agent {
   creation: string | null;
   modification: string | null;
   faq_content: string | null;
+  notebooklm_profile: string;
 }
 
 type FormValues = Omit<Agent, "id" | "creation" | "modification">;
@@ -664,6 +665,8 @@ export default function AgentesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showFaq, setShowFaq] = useState(false);
 
+  const [profiles, setProfiles] = useState<string[]>(["default"]);
+
   const {
     control,
     register,
@@ -685,8 +688,23 @@ export default function AgentesPage() {
     }
   };
 
+  const fetchProfiles = async () => {
+    try {
+      const res = await fetch(`${API}/authStatus/all`);
+      if (res.ok) {
+        const json = await res.json();
+        const list = (json.profiles ?? []).map((p: any) => p.profile);
+        const uniqueList = Array.from(new Set(["default", ...list]));
+        setProfiles(uniqueList);
+      }
+    } catch {
+      /* ignored */
+    }
+  };
+
   useEffect(() => {
     fetchAgents();
+    fetchProfiles();
   }, []);
 
   const selectAgent = (agent: Agent) => {
@@ -702,6 +720,7 @@ export default function AgentesPage() {
       overview: agent.overview ?? "",
       sort_order: agent.sort_order,
       active: agent.active,
+      notebooklm_profile: agent.notebooklm_profile ?? "default",
     });
   };
 
@@ -1005,6 +1024,21 @@ export default function AgentesPage() {
                       )}
                     />
                   </div>
+
+                  {/* Row 3: NotebookLM Profile */}
+                  <TextField
+                    select
+                    label="Profile NotebookLM"
+                    {...register("notebooklm_profile")}
+                    SelectProps={{ native: true }}
+                    helperText="Selecione o profile de autenticação no NotebookLM"
+                  >
+                    {profiles.map((prof) => (
+                      <option key={prof} value={prof}>
+                        {prof}
+                      </option>
+                    ))}
+                  </TextField>
 
                   {/* Overview */}
                   <TextField
