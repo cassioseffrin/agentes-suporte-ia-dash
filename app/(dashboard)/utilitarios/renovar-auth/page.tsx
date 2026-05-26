@@ -14,6 +14,7 @@ import {
   Window as WindowsIcon,
   SmartToy as AgentIcon,
   ExpandMore as ExpandIcon,
+  Edit as EditIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -56,6 +57,11 @@ export default function RenovarAuthPage() {
   // New Profile inline creation
   const [isAddingProfile, setIsAddingProfile] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+
+  // Renaming state
+  const [isRenamingProfile, setIsRenamingProfile] = useState(false);
+  const [renamingName, setRenamingName] = useState("");
+  const [renameLoading, setRenameLoading] = useState(false);
 
   // Upload state per profile
   const [uploadStatus, setUploadStatus] = useState<Status>("idle");
@@ -112,6 +118,51 @@ export default function RenovarAuthPage() {
   useEffect(() => {
     fetchProfiles();
   }, []);
+
+  const handleRenameProfile = async () => {
+    if (!selectedProfile) return;
+    const oldP = selectedProfile;
+    const newP = renamingName.trim().toLowerCase().replace(/[^a-z0-9-_]/g, "");
+    if (!newP) return;
+
+    if (newP === oldP) {
+      setIsRenamingProfile(false);
+      return;
+    }
+
+    if (profiles.some((p) => p.profile === newP)) {
+      alert("Este profile já existe!");
+      return;
+    }
+
+    setRenameLoading(true);
+    try {
+      const res = await fetch(`${API}/renameProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          old_profile: oldP,
+          new_profile: newP,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Erro ao renomear o profile.");
+      }
+
+      alert(data.message || "Profile renomeado com sucesso!");
+      setIsRenamingProfile(false);
+      setSelectedProfile(newP);
+      await fetchProfiles();
+    } catch (err: any) {
+      alert(err.message || "Erro de conexão ao renomear.");
+    } finally {
+      setRenameLoading(false);
+    }
+  };
 
   const currentProfile = profiles.find((p) => p.profile === selectedProfile) || null;
 
@@ -172,6 +223,7 @@ export default function RenovarAuthPage() {
   const selectProfile = (profileName: string) => {
     setSelectedProfile(profileName);
     resetUpload();
+    setIsRenamingProfile(false);
   };
 
   const isDragging = uploadStatus === "dragging";
@@ -502,11 +554,97 @@ export default function RenovarAuthPage() {
                 >
                   🔑
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 18, fontFamily: "monospace" }}>
-                    {currentProfile.profile}
-                  </div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                <div style={{ flex: 1 }}>
+                  {isRenamingProfile ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <input
+                        type="text"
+                        value={renamingName}
+                        onChange={(e) => setRenamingName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          border: "1px solid var(--border)",
+                          background: "var(--bg-surface)",
+                          color: "var(--text-primary)",
+                          fontSize: 14,
+                          fontFamily: "monospace",
+                          outline: "none",
+                          width: "150px",
+                        }}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRenameProfile();
+                          if (e.key === "Escape") setIsRenamingProfile(false);
+                        }}
+                        disabled={renameLoading}
+                      />
+                      <button
+                        onClick={handleRenameProfile}
+                        disabled={renameLoading || !renamingName.trim()}
+                        style={{
+                          background: "var(--accent)",
+                          border: "none",
+                          color: "white",
+                          borderRadius: 4,
+                          padding: "4px 8px",
+                          fontSize: 12,
+                          cursor: (renameLoading || !renamingName.trim()) ? "not-allowed" : "pointer",
+                          fontWeight: 600,
+                          opacity: (renameLoading || !renamingName.trim()) ? 0.5 : 1,
+                        }}
+                      >
+                        {renameLoading ? "Salvando..." : "Salvar"}
+                      </button>
+                      <button
+                        onClick={() => setIsRenamingProfile(false)}
+                        disabled={renameLoading}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: renameLoading ? "not-allowed" : "pointer",
+                          fontSize: 12,
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 700, fontSize: 18, fontFamily: "monospace" }}>
+                        {currentProfile.profile}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setRenamingName(currentProfile.profile);
+                          setIsRenamingProfile(true);
+                        }}
+                        title="Renomear Profile"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          padding: 4,
+                          borderRadius: 4,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--accent)";
+                          e.currentTarget.style.background = "var(--bg-hover)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-muted)";
+                          e.currentTarget.style.background = "none";
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: 14 }} />
+                      </button>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                     {currentProfile.agents.length} agente{currentProfile.agents.length !== 1 ? "s" : ""} associado{currentProfile.agents.length !== 1 ? "s" : ""}
                   </div>
                 </div>
