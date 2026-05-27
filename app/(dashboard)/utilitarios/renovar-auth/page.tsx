@@ -62,6 +62,7 @@ export default function RenovarAuthPage() {
   const [isRenamingProfile, setIsRenamingProfile] = useState(false);
   const [renamingName, setRenamingName] = useState("");
   const [renameLoading, setRenameLoading] = useState(false);
+  const [showRenameWarning, setShowRenameWarning] = useState(false);
 
   // Upload state per profile
   const [uploadStatus, setUploadStatus] = useState<Status>("idle");
@@ -617,8 +618,7 @@ export default function RenovarAuthPage() {
                       </span>
                       <button
                         onClick={() => {
-                          setRenamingName(currentProfile.profile);
-                          setIsRenamingProfile(true);
+                          setShowRenameWarning(true);
                         }}
                         title="Renomear Profile"
                         style={{
@@ -691,15 +691,14 @@ export default function RenovarAuthPage() {
                   background: currentProfile.valid
                     ? "rgba(16,185,129,0.07)"
                     : currentProfile.exists
-                    ? "rgba(245,158,11,0.07)"
-                    : "rgba(239,68,68,0.07)",
-                  border: `1px solid ${
-                    currentProfile.valid
-                      ? "rgba(16,185,129,0.25)"
-                      : currentProfile.exists
+                      ? "rgba(245,158,11,0.07)"
+                      : "rgba(239,68,68,0.07)",
+                  border: `1px solid ${currentProfile.valid
+                    ? "rgba(16,185,129,0.25)"
+                    : currentProfile.exists
                       ? "rgba(245,158,11,0.25)"
                       : "rgba(239,68,68,0.25)"
-                  }`,
+                    }`,
                   borderRadius: "var(--radius)",
                   padding: "16px 20px",
                   marginBottom: 20,
@@ -718,8 +717,8 @@ export default function RenovarAuthPage() {
                     background: currentProfile.valid
                       ? "#10b981"
                       : currentProfile.exists
-                      ? "#f59e0b"
-                      : "#ef4444",
+                        ? "#f59e0b"
+                        : "#ef4444",
                     boxShadow: currentProfile.valid
                       ? "0 0 6px rgba(16,185,129,0.6)"
                       : "none",
@@ -735,8 +734,8 @@ export default function RenovarAuthPage() {
                       color: currentProfile.valid
                         ? "var(--success)"
                         : currentProfile.exists
-                        ? "var(--warning, #f59e0b)"
-                        : "var(--danger)",
+                          ? "var(--warning, #f59e0b)"
+                          : "var(--danger)",
                       marginBottom: 4,
                     }}
                   >
@@ -784,13 +783,12 @@ export default function RenovarAuthPage() {
                 onDrop={handleDrop}
                 onClick={() => !uploadFile && inputRef.current?.click()}
                 style={{
-                  border: `2px dashed ${
-                    isDragging
-                      ? "var(--accent)"
-                      : uploadFile
+                  border: `2px dashed ${isDragging
+                    ? "var(--accent)"
+                    : uploadFile
                       ? "rgba(16,185,129,0.5)"
                       : "rgba(189, 65, 64, 0.5)"
-                  }`,
+                    }`,
                   borderRadius: "var(--radius)",
                   padding: "36px 24px",
                   textAlign: "center",
@@ -798,8 +796,8 @@ export default function RenovarAuthPage() {
                   background: isDragging
                     ? "rgba(189, 65, 64, 0.08)"
                     : uploadFile
-                    ? "rgba(16,185,129,0.05)"
-                    : "rgba(189, 65, 64, 0.03)",
+                      ? "rgba(16,185,129,0.05)"
+                      : "rgba(189, 65, 64, 0.03)",
                   transition: "all 0.2s ease",
                   marginBottom: 16,
                 }}
@@ -1116,13 +1114,13 @@ export default function RenovarAuthPage() {
                           <code style={terminalStyle}>
                             cd dev/agentes-suporte-ia
                             <br />
-                            python3 -m venv venv
+                            opcional: python3 -m venv venv
                             <br />
                             source venv/bin/activate
                             <br />
-                            pip install &quot;notebooklm-py[browser]&quot;
+                            opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
                             <br />
-                            playwright install chromium
+                            opcional (1 vez): playwright install chromium
                           </code>
                         ) : (
                           <code style={terminalStyle}>
@@ -1132,9 +1130,9 @@ export default function RenovarAuthPage() {
                             <br />
                             venv\Scripts\activate
                             <br />
-                            pip install &quot;notebooklm-py[browser]&quot;
+                            opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
                             <br />
-                            playwright install chromium
+                            opcional (1 vez): playwright install chromium
                           </code>
                         )}
                       </div>
@@ -1157,6 +1155,22 @@ export default function RenovarAuthPage() {
                         Com o terminal aberto e o <strong>venv ativo</strong>, execute para o
                         profile <code style={codeStyle}>{selectedProfile}</code>:
                       </p>
+
+                      {/* Sub-instrução para múltiplos perfis */}
+                      <div style={{ marginLeft: 30, marginBottom: 12, padding: "8px 12px", background: "rgba(234, 179, 8, 0.05)", borderLeft: "3px solid var(--accent)", borderRadius: "0 6px 6px 0" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text-primary)", display: "block", marginBottom: 4, fontSize: 12 }}>
+                          ⚠️ IMPORTANTE (Se for alternar de conta Google):
+                        </span>
+                        <span style={{ display: "block", fontSize: 12, opacity: 0.8, marginBottom: 8, lineHeight: 1.5 }}>
+                          Para evitar que o Google invalide as sessões ativas em produção (o que derruba outros agentes ao clicar em &quot;Sair&quot; no navegador), limpe a pasta temporária do navegador antes de logar:
+                        </span>
+                        <code style={{ ...terminalStyle, padding: "8px 12px", display: "inline-block", width: "100%", boxSizing: "border-box" }}>
+                          {os === "mac"
+                            ? "rm -rf ~/.notebooklm/browser_profile"
+                            : "rmdir /s /q %USERPROFILE%\\.notebooklm\\browser_profile"}
+                        </code>
+                      </div>
+
                       <div style={{ marginLeft: 30 }}>
                         <code style={terminalStyle}>
                           # Certifique-se de estar com o venv ativo (
@@ -1256,6 +1270,97 @@ export default function RenovarAuthPage() {
           )}
         </div>
       </div>
+      {showRenameWarning && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              padding: "24px 28px",
+              maxWidth: 480,
+              width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)",
+            }}
+          >
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--danger)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              ⚠️ Alerta!
+            </h3>
+            <p style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: "1.6", marginBottom: 20 }}>
+              Esta operação vai modificar os token de autenticação e pastas do que armazenam cokies, bem como relacionamentos no banco de dados que apontam para este profile. Esta operação requer uma revisão completa e possivelmente manutenção no serviço que roda os agentes deste profile.
+            </p>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 24 }}>
+              Confirmar?
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <button
+                onClick={() => setShowRenameWarning(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "var(--radius-sm)",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--bg-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowRenameWarning(false);
+                  if (currentProfile) {
+                    setRenamingName(currentProfile.profile);
+                    setIsRenamingProfile(true);
+                  }
+                }}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: "var(--radius-sm)",
+                  background: "var(--accent)",
+                  border: "none",
+                  color: "white",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--accent-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--accent)";
+                }}
+              >
+                Sim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

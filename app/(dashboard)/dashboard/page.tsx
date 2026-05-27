@@ -21,6 +21,11 @@ interface FeedbackDashboardData {
   feedbacks: { name: string; avg_rating: number; total_ratings: number; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number }[];
 }
 
+interface DashboardTotals {
+  total_chats: number;
+  total_users: number;
+}
+
 function StatCard({
   label,
   value,
@@ -77,6 +82,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [agentData, setAgentData] = useState<DashboardData | null>(null);
   const [feedbackData, setFeedbackData] = useState<FeedbackDashboardData | null>(null);
+  const [totals, setTotals] = useState<DashboardTotals | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
@@ -86,17 +92,19 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [resUsers, resAgents, resFeedbacks] = await Promise.all([
+      const [resUsers, resAgents, resFeedbacks, resTotals] = await Promise.all([
         fetch(`${API}/dashboard/chats-per-user?days=${d}&limit=${lim}`),
         fetch(`${API}/dashboard/chats-per-agent?days=${d}`),
-        fetch(`${API}/dashboard/feedback-per-agent?days=${d}`)
+        fetch(`${API}/dashboard/feedback-per-agent?days=${d}`),
+        fetch(`${API}/dashboard/totals?days=${d}`)
       ]);
-      if (!resUsers.ok || !resAgents.ok || !resFeedbacks.ok) throw new Error(`HTTP Error`);
+      if (!resUsers.ok || !resAgents.ok || !resFeedbacks.ok || !resTotals.ok) throw new Error(`HTTP Error`);
       
-      const [jsonUsers, jsonAgents, jsonFeedbacks] = await Promise.all([
+      const [jsonUsers, jsonAgents, jsonFeedbacks, jsonTotals] = await Promise.all([
         resUsers.json(),
         resAgents.json(),
-        resFeedbacks.json()
+        resFeedbacks.json(),
+        resTotals.json()
       ]);
 
       const formatDateBR = (dateStr: string) => {
@@ -126,6 +134,7 @@ export default function DashboardPage() {
       setData(jsonUsers);
       setAgentData(jsonAgents);
       setFeedbackData(jsonFeedbacks);
+      setTotals(jsonTotals);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erro ao carregar dados");
     } finally {
@@ -137,8 +146,8 @@ export default function DashboardPage() {
     load(days, userLimit);
   }, [days, userLimit]);
 
-  const totalChats = data?.top_users?.reduce((s, u) => s + u.total, 0) ?? 0;
-  const totalUsers = data?.top_users?.length ?? 0;
+  const totalChats = totals?.total_chats ?? 0;
+  const totalUsers = totals?.total_users ?? 0;
 
   const getChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
     chart: {
@@ -295,7 +304,7 @@ export default function DashboardPage() {
         <StatCard
           label="Usuários Ativos"
           value={loading ? " " : totalUsers}
-          sub="top usuarios"
+          sub="no período"
         />
         <StatCard
           label="Período"
