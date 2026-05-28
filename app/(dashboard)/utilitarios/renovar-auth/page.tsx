@@ -1121,6 +1121,8 @@ export default function RenovarAuthPage() {
                             opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
                             <br />
                             opcional (1 vez): playwright install chromium
+                            <br />
+                            notebooklm login
                           </code>
                         ) : (
                           <code style={terminalStyle}>
@@ -1133,6 +1135,8 @@ export default function RenovarAuthPage() {
                             opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
                             <br />
                             opcional (1 vez): playwright install chromium
+                            <br />
+                            notebooklm login
                           </code>
                         )}
                       </div>
