@@ -257,19 +257,18 @@ export default function RenovarAuthPage() {
       </div>
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-        {/* Left: Profile list */}
-        <div
-          style={{
-            width: 260,
-            flexShrink: 0,
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius)",
-            padding: 16,
-            maxHeight: "calc(100vh - 200px)",
-            overflowY: "auto",
-          }}
-        >
+        {/* Left: Profile list and details warning */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16, width: 260, flexShrink: 0 }}>
+          <div
+            style={{
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              padding: 16,
+              maxHeight: "calc(100vh - 380px)",
+              overflowY: "auto",
+            }}
+          >
           <div
             style={{
               display: "flex",
@@ -505,6 +504,33 @@ export default function RenovarAuthPage() {
               </div>
             </div>
           )}
+          </div>
+
+          {/* Info Box about cookie-based expiration */}
+          <div
+            style={{
+              background: "rgba(245,158,11,0.04)",
+              border: "1px solid rgba(245,158,11,0.15)",
+              borderRadius: "var(--radius)",
+              padding: 12,
+              fontSize: 11,
+              lineHeight: 1.45,
+              color: "var(--text-secondary)",
+            }}
+          >
+            <div style={{ fontWeight: 600, color: "var(--warning, #f59e0b)", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
+              💡 Validade da Autenticação
+            </div>
+            <p style={{ margin: 0, marginBottom: 6 }}>
+              O status de expiração (ex: <code>27d 23h</code>) é estimado a partir dos cookies do arquivo <code>storage_state.json</code>.
+            </p>
+            <p style={{ margin: 0, fontSize: 10, opacity: 0.85 }}>
+              O servidor identifica o cookie que expira mais cedo (<code>min(expires)</code>) e calcula o tempo restante.
+            </p>
+            <p style={{ margin: "8px 0 0 0", fontSize: 10, color: "var(--text-muted)", borderTop: "1px dashed var(--border)", paddingTop: 8 }}>
+              ⚠️ <strong>Nota:</strong> Este prazo é apenas nominal. O Google pode invalidar a sessão antes do tempo por segurança, não sendo uma garantia exata de funcionamento.
+            </p>
+          </div>
         </div>
 
         {/* Right: Profile detail & upload */}
