@@ -265,7 +265,7 @@ export default function RenovarAuthPage() {
               border: "1px solid var(--border)",
               borderRadius: "var(--radius)",
               padding: 16,
-              maxHeight: "calc(100vh - 380px)",
+              maxHeight: "calc(100vh - 430px)",
               overflowY: "auto",
             }}
           >
@@ -521,11 +521,17 @@ export default function RenovarAuthPage() {
             <div style={{ fontWeight: 600, color: "var(--warning, #f59e0b)", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
               💡 Validade da Autenticação
             </div>
-            <p style={{ margin: 0, marginBottom: 6 }}>
+            <p style={{ margin: 0, marginBottom: 8 }}>
               O status de expiração (ex: <code>27d 23h</code>) é estimado a partir dos cookies do arquivo <code>storage_state.json</code>.
             </p>
-            <p style={{ margin: 0, fontSize: 10, opacity: 0.85 }}>
+            <p style={{ margin: 0, marginBottom: 8, fontSize: 10, opacity: 0.85 }}>
               O servidor identifica o cookie que expira mais cedo (<code>min(expires)</code>) e calcula o tempo restante.
+            </p>
+            <p style={{ margin: 0, marginBottom: 8, fontSize: 10, opacity: 0.85 }}>
+              Esses cookies são gerados pelo Google durante o fluxo de login no navegador. Quando você executa o comando <code>notebooklm login</code> (que usa a biblioteca Playwright por baixo), ele abre o navegador para você se autenticar. Após o login bem-sucedido, o Playwright exporta toda a sessão ativa (cookies, tokens e localStorage) e salva tudo estruturado em formato JSON dentro do arquivo <code>storage_state.json</code>.
+            </p>
+            <p style={{ margin: 0, fontSize: 10, opacity: 0.85 }}>
+              Ao rodar os agentes, o sistema lê esse arquivo e injeta esses mesmos cookies no navegador automatizado para que o Google o reconheça como já autenticado, sem precisar digitar usuário e senha toda vez.
             </p>
             <p style={{ margin: "8px 0 0 0", fontSize: 10, color: "var(--text-muted)", borderTop: "1px dashed var(--border)", paddingTop: 8 }}>
               ⚠️ <strong>Nota:</strong> Este prazo é apenas nominal. O Google pode invalidar a sessão antes do tempo por segurança, não sendo uma garantia exata de funcionamento.
