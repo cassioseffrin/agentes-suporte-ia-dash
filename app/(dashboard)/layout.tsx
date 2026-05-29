@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import { AuditorProvider } from "../context/AuditorContext";
+import { NotificationProvider } from "../context/NotificationContext";
 
 export default function DashboardShellLayout({
   children,
@@ -26,26 +27,28 @@ export default function DashboardShellLayout({
 
   return (
     <AuditorProvider>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Sidebar />
-        <main
-          style={{
-            marginLeft: "var(--sidebar-width)",
-            flex: 1,
-            padding: "32px",
-            minHeight: "100vh",
-            background: "var(--bg-base)",
-          }}
-        >
-          {children}
-        </main>
+      <NotificationProvider>
+        <div style={{ display: "flex", minHeight: "100vh" }}>
+          <Sidebar />
+          <main
+            style={{
+              marginLeft: "var(--sidebar-width)",
+              flex: 1,
+              padding: "32px",
+              minHeight: "100vh",
+              background: "var(--bg-base)",
+            }}
+          >
+            {children}
+          </main>
 
-        <style>{`
-          @media (max-width: 768px) {
-            main { margin-left: 0 !important; padding: 16px !important; padding-top: 56px !important; }
-          }
-        `}</style>
-      </div>
+          <style>{`
+            @media (max-width: 768px) {
+              main { margin-left: 0 !important; padding: 16px !important; padding-top: 56px !important; }
+            }
+          `}</style>
+        </div>
+      </NotificationProvider>
     </AuditorProvider>
   );
 }

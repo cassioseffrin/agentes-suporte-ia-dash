@@ -34,14 +34,13 @@ import SendIcon from "@mui/icons-material/Send";
 
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import VolumeUpIcon from "@mui/icons-material/VolumeUp";
-import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import QuizIcon from "@mui/icons-material/Quiz";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 import { useAuditor } from "../context/AuditorContext";
+import { useNotification } from "../context/NotificationContext";
 
 const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -57,60 +56,6 @@ const pulseOnline = keyframes`
   70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 `;
-
-const pulseWarning = keyframes`
-  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
-  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-`;
-
-const playNotificationBeep = () => {
-  return new Promise<void>((resolve) => {
-    if (typeof window === "undefined") {
-      resolve();
-      return;
-    }
-    try {
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) {
-        resolve();
-        return;
-      }
-      const ctx = new AudioContextClass();
-
-      const playChime = (time: number, freq: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gainNode = ctx.createGain();
-
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, time);
-
-        gainNode.gain.setValueAtTime(0, time);
-        gainNode.gain.linearRampToValueAtTime(0.2, time + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-        osc.connect(gainNode);
-        gainNode.connect(ctx.destination);
-
-        osc.start(time);
-        osc.stop(time + duration);
-      };
-
-      const now = ctx.currentTime;
-      // High-quality double chime: E6 (1318.51 Hz) then A6 (1760.00 Hz)
-      playChime(now, 1318.51, 0.15);
-      playChime(now + 0.07, 1760.00, 0.25);
-
-      setTimeout(() => {
-        ctx.close();
-        resolve();
-      }, 400);
-    } catch (e) {
-      console.error("[TTS] Erro ao reproduzir beep:", e);
-      resolve();
-    }
-  });
-};
 
 interface ThreadItem {
   thread_id: string;
@@ -202,6 +147,7 @@ export default function ChatAuditList() {
 
 function ChatAuditListContent() {
   const { auditor } = useAuditor();
+  const { lastThreadUpdate } = useNotification();
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -238,113 +184,6 @@ function ChatAuditListContent() {
   const threadIdFromUrl = searchParams.get("thread");
   const [autoSelectFirst, setAutoSelectFirst] = useState(false);
 
-  // ─── TTS Notification state ───
-  const [ttsEnabled, setTtsEnabled] = useState(true);
-  const [ttsInteractionRequired, setTtsInteractionRequired] = useState(false);
-  const knownThreadsRef = useRef<Map<string, string>>(new Map());
-  const initialLoadDoneRef = useRef(false);
-  const ttsQueueRef = useRef<string[]>([]);
-  const ttsPlayingRef = useRef(false);
-
-  // Check if a subject is AI-generated (not the default "Nova conversa com..." template)
-  const isAiGeneratedSubject = useCallback((subject: string | null | undefined): boolean => {
-    if (!subject) return false;
-    if (subject === "indefinido") return false;
-    if (subject.startsWith("Nova conversa com ")) return false;
-    return true;
-  }, []);
-
-  // Play TTS audio for a notification text
-  const playTtsNotification = useCallback(async (text: string) => {
-    let audioUrl = "";
-    try {
-      // 1. Play premium WhatsApp-like chime beep
-      await playNotificationBeep();
-
-      // 2. Play the spoken info via TTS
-      const res = await axios.post(
-        `${BASE_API_URL}/admin/tts`,
-        { text },
-        {
-          headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
-          responseType: "blob",
-        }
-      );
-      const audioBlob = new Blob([res.data], { type: "audio/mpeg" });
-      audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        await playPromise;
-      }
-
-      return new Promise<void>((resolve) => {
-        audio.addEventListener("ended", () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        });
-        audio.addEventListener("error", () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        });
-      });
-    } catch (e: any) {
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl);
-      }
-      // Check if blocked by browser autoplay policy
-      if (e && (e.name === "NotAllowedError" || (e.message && e.message.includes("interact")))) {
-        console.warn("[TTS] Reprodução de áudio automática bloqueada pelo navegador. Aguardando interação do usuário.");
-        setTtsInteractionRequired(true);
-      } else {
-        console.error("[TTS] Erro ao reproduzir áudio:", e);
-      }
-    }
-  }, []);
-
-  // Process TTS queue sequentially
-  const processTtsQueue = useCallback(async () => {
-    if (ttsPlayingRef.current) return;
-    ttsPlayingRef.current = true;
-    while (ttsQueueRef.current.length > 0) {
-      const text = ttsQueueRef.current.shift()!;
-      await playTtsNotification(text);
-    }
-    ttsPlayingRef.current = false;
-  }, [playTtsNotification]);
-
-  // Enqueue a TTS notification
-  const enqueueTts = useCallback((text: string) => {
-    ttsQueueRef.current.push(text);
-    processTtsQueue();
-  }, [processTtsQueue]);
-
-  // Proactively unlock audio context on first user interaction
-  useEffect(() => {
-    const unlockAudio = () => {
-      const audio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAAA");
-      audio.play()
-        .then(() => {
-          setTtsInteractionRequired(false);
-          processTtsQueue();
-          window.removeEventListener("click", unlockAudio, { capture: true });
-          window.removeEventListener("keydown", unlockAudio, { capture: true });
-        })
-        .catch(() => {
-          // Play failed, still waiting for a valid user gesture
-        });
-    };
-
-    window.addEventListener("click", unlockAudio, { capture: true });
-    window.addEventListener("keydown", unlockAudio, { capture: true });
-
-    return () => {
-      window.removeEventListener("click", unlockAudio, { capture: true });
-      window.removeEventListener("keydown", unlockAudio, { capture: true });
-    };
-  }, [processTtsQueue]);
-
   const fetchThreads = useCallback(
     async (p: number, q: string, auditor_only: boolean) => {
       setLoading(true);
@@ -354,34 +193,9 @@ function ChatAuditListContent() {
           headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
         });
         if (res.status === 200) {
-          const newThreads: ThreadItem[] = res.data.threads || [];
-          setThreads(newThreads);
+          setThreads(res.data.threads || []);
           setTotal(res.data.total || 0);
           setPages(res.data.pages || 1);
-
-          // TTS notification for new threads or threads transitioning to AI-generated subjects
-          if (initialLoadDoneRef.current && ttsEnabled && p === 1 && !q) {
-            for (const thread of newThreads) {
-              const prevSubject = knownThreadsRef.current.get(thread.thread_id);
-              const wasAiGenerated = prevSubject !== undefined && isAiGeneratedSubject(prevSubject);
-              const isAiGenerated = isAiGeneratedSubject(thread.subject);
-
-              if (isAiGenerated && !wasAiGenerated) {
-                const clientName = thread.user_name || thread.user_email || "Desconhecido";
-                const agentName = thread.agent_title || thread.agent_name || "Agente";
-                const ttsText = `cliente: ${clientName}, ${agentName}, ${thread.subject}`;
-                enqueueTts(ttsText);
-              }
-            }
-          }
-
-          // Update known thread subjects
-          for (const thread of newThreads) {
-            knownThreadsRef.current.set(thread.thread_id, thread.subject);
-          }
-          if (!initialLoadDoneRef.current) {
-            initialLoadDoneRef.current = true;
-          }
         }
       } catch (e) {
         console.error("Erro ao buscar threads:", e);
@@ -389,19 +203,26 @@ function ChatAuditListContent() {
         setLoading(false);
       }
     },
-    [ttsEnabled, isAiGeneratedSubject, enqueueTts]
+    []
   );
 
   useEffect(() => {
     fetchThreads(page, search, auditorOnly);
   }, [page, search, auditorOnly, fetchThreads]);
 
-  // Auto-refresh polling every 15 seconds (only on page 1, no search filter)
+  // Real-time thread update listener via SSE
+  useEffect(() => {
+    if (lastThreadUpdate) {
+      fetchThreads(page, search, auditorOnly);
+    }
+  }, [lastThreadUpdate, fetchThreads, page, search, auditorOnly]);
+
+  // Auto-refresh polling every 60 seconds (only on page 1, no search filter)
   useEffect(() => {
     if (page !== 1 || search || selectedThread) return;
     const interval = setInterval(() => {
       fetchThreads(1, "", auditorOnly);
-    }, 15000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [page, search, auditorOnly, selectedThread, fetchThreads]);
 
@@ -1519,60 +1340,6 @@ function ChatAuditListContent() {
           />
           🛡️ Intervenção do Auditor
         </label>
-        <Tooltip
-          title={
-            !ttsEnabled
-              ? "Notificações por voz desativadas — clique para ativar"
-              : ttsInteractionRequired
-                ? "Clique na página para ativar o áudio (bloqueado pelo navegador)"
-                : "Notificações por voz ativadas — clique para desativar"
-          }
-        >
-          <IconButton
-            onClick={() => {
-              if (ttsInteractionRequired) {
-                setTtsInteractionRequired(false);
-              }
-              setTtsEnabled((v) => !v);
-              // Play a quick dummy sound if turning on, to trigger browser unlock
-              if (!ttsEnabled) {
-                const a = new Audio();
-                a.play().catch(() => { });
-              }
-            }}
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              bgcolor: !ttsEnabled
-                ? "rgba(156,163,175,0.15)"
-                : ttsInteractionRequired
-                  ? "rgba(245, 158, 11, 0.15)"
-                  : "rgba(16,185,129,0.15)",
-              color: !ttsEnabled
-                ? "#9ca3af"
-                : ttsInteractionRequired
-                  ? "#f59e0b"
-                  : "#10b981",
-              border: !ttsEnabled
-                ? "1px solid rgba(156,163,175,0.2)"
-                : ttsInteractionRequired
-                  ? "1px solid rgba(245, 158, 11, 0.3)"
-                  : "1px solid rgba(16,185,129,0.3)",
-              animation: ttsEnabled && ttsInteractionRequired ? `${pulseWarning} 2s infinite` : "none",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                bgcolor: !ttsEnabled
-                  ? "rgba(156,163,175,0.25)"
-                  : ttsInteractionRequired
-                    ? "rgba(245, 158, 11, 0.25)"
-                    : "rgba(16,185,129,0.25)",
-              },
-            }}
-          >
-            {ttsEnabled ? <VolumeUpIcon sx={{ fontSize: 20 }} /> : <VolumeOffIcon sx={{ fontSize: 20 }} />}
-          </IconButton>
-        </Tooltip>
       </Box>
 
       {/* Stats */}

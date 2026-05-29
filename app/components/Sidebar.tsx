@@ -18,6 +18,18 @@ import {
 import { useState } from "react";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import { useAuditor } from "../context/AuditorContext";
+import { useNotification } from "../context/NotificationContext";
+import { Tooltip, IconButton, keyframes } from "@mui/material";
+import {
+  VolumeUp as VolumeUpIcon,
+  VolumeOff as VolumeOffIcon,
+} from "@mui/icons-material";
+
+const pulseWarning = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+`;
 
 const navGroups = [
   {
@@ -49,6 +61,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { auditor, logout } = useAuditor();
+  const { ttsEnabled, setTtsEnabled, ttsInteractionRequired, setTtsInteractionRequired } = useNotification();
 
   const handleLogout = () => {
     logout();
@@ -162,23 +175,81 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Status indicator */}
-      <div
-        style={{
-          margin: "12px 16px",
-          padding: "8px 12px",
-          borderRadius: "var(--radius-sm)",
-          background: "rgba(16, 185, 129, 0.1)",
-          border: "1px solid rgba(16, 185, 129, 0.2)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          fontSize: 12,
-          color: "var(--success)",
-        }}
-      >
-        <CircleIcon sx={{ fontSize: 8 }} />
-        Backend conectado
+      {/* Status indicator & TTS Toggle */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "12px 16px", gap: 8 }}>
+        <div
+          style={{
+            flex: 1,
+            padding: "8px 12px",
+            borderRadius: "var(--radius-sm)",
+            background: "rgba(16, 185, 129, 0.1)",
+            border: "1px solid rgba(16, 185, 129, 0.2)",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 12,
+            color: "var(--success)",
+          }}
+        >
+          <CircleIcon sx={{ fontSize: 8 }} />
+          Backend conectado
+        </div>
+
+        <Tooltip
+          title={
+            !ttsEnabled
+              ? "Notificações por voz desativadas — clique para ativar"
+              : ttsInteractionRequired
+                ? "Clique na página para ativar o áudio (bloqueado pelo navegador)"
+                : "Notificações por voz ativadas — clique para desativar"
+          }
+        >
+          <IconButton
+            onClick={() => {
+              if (ttsInteractionRequired) {
+                setTtsInteractionRequired(false);
+              }
+              setTtsEnabled(!ttsEnabled);
+              // Play a quick dummy sound if turning on, to trigger browser unlock
+              if (!ttsEnabled) {
+                const a = new Audio();
+                a.play().catch(() => {});
+              }
+            }}
+            size="small"
+            sx={{
+              width: 32,
+              height: 32,
+              borderRadius: 1,
+              bgcolor: !ttsEnabled
+                ? "rgba(156,163,175,0.15)"
+                : ttsInteractionRequired
+                  ? "rgba(245, 158, 11, 0.15)"
+                  : "rgba(16,185,129,0.15)",
+              color: !ttsEnabled
+                ? "#9ca3af"
+                : ttsInteractionRequired
+                  ? "#f59e0b"
+                  : "#10b981",
+              border: !ttsEnabled
+                ? "1px solid rgba(156,163,175,0.2)"
+                : ttsInteractionRequired
+                  ? "1px solid rgba(245, 158, 11, 0.3)"
+                  : "1px solid rgba(16,185,129,0.3)",
+              animation: ttsEnabled && ttsInteractionRequired ? `${pulseWarning} 2s infinite` : "none",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                bgcolor: !ttsEnabled
+                  ? "rgba(156,163,175,0.25)"
+                  : ttsInteractionRequired
+                    ? "rgba(245, 158, 11, 0.25)"
+                    : "rgba(16,185,129,0.25)",
+              },
+            }}
+          >
+            {ttsEnabled ? <VolumeUpIcon sx={{ fontSize: 18 }} /> : <VolumeOffIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        </Tooltip>
       </div>
 
       {/* Nav */}
