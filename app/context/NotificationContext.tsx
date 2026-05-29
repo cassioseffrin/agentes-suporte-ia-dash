@@ -21,9 +21,9 @@ interface NotificationContextValue {
 
 const NotificationContext = createContext<NotificationContextValue>({
   ttsEnabled: true,
-  setTtsEnabled: () => {},
+  setTtsEnabled: () => { },
   ttsInteractionRequired: false,
-  setTtsInteractionRequired: () => {},
+  setTtsInteractionRequired: () => { },
   lastThreadUpdate: null,
 });
 
@@ -226,14 +226,18 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
         setToast({
           open: true,
-          clientName: user_name || "Desconhecido",
+          clientName: user_name || "Cliente desconhecido",
           agentName: agent_name || "Agente",
           firstMessage: first_message || "",
         });
 
-        const clientNameClean = user_name || "Desconhecido";
+        const clientNameClean = user_name || "Cliente desconhecido";
         const agentNameClean = agent_name || "Agente";
-        const ttsText = `cliente: ${clientNameClean}, ${agentNameClean}, ${first_message || ""}`;
+        const messageText = first_message || "";
+        const messageLimited = messageText.length > 250
+          ? `${messageText.substring(0, 250)}, ... abreviado.`
+          : messageText;
+        const ttsText = `cliente: ${clientNameClean}, ${agentNameClean}, ${messageLimited}`;
         enqueueTts(ttsText);
 
         setLastThreadUpdate({
