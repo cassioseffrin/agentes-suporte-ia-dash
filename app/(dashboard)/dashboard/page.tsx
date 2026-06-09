@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { format, parseISO } from "date-fns";
+import { useNotification } from "../../context/NotificationContext";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -88,8 +89,10 @@ export default function DashboardPage() {
   const [days, setDays] = useState(30);
   const [userLimit, setUserLimit] = useState(20);
 
-  const load = async (d: number, lim: number) => {
-    setLoading(true);
+  const load = async (d: number, lim: number, silent = false) => {
+    if (!silent) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [resUsers, resAgents, resFeedbacks, resTotals] = await Promise.all([
@@ -142,9 +145,16 @@ export default function DashboardPage() {
     }
   };
 
+  const { lastThreadUpdate } = useNotification();
+  const lastProcessedUpdateRef = useRef<number | null>(null);
+
   useEffect(() => {
-    load(days, userLimit);
-  }, [days, userLimit]);
+    const isSseUpdate = lastThreadUpdate && lastThreadUpdate.timestamp !== lastProcessedUpdateRef.current;
+    if (lastThreadUpdate) {
+      lastProcessedUpdateRef.current = lastThreadUpdate.timestamp;
+    }
+    load(days, userLimit, !!isSseUpdate);
+  }, [days, userLimit, lastThreadUpdate]);
 
   const totalChats = totals?.total_chats ?? 0;
   const totalUsers = totals?.total_users ?? 0;

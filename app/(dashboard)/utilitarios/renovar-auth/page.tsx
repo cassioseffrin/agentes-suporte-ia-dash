@@ -269,241 +269,241 @@ export default function RenovarAuthPage() {
               overflowY: "auto",
             }}
           >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
             <div
               style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--text-muted)",
-              }}
-            >
-              {profiles.length} Profile{profiles.length !== 1 ? "s" : ""}
-            </div>
-            <button
-              onClick={fetchProfiles}
-              disabled={loading}
-              title="Atualizar"
-              style={{
-                background: "none",
-                border: "none",
-                cursor: loading ? "default" : "pointer",
-                color: "var(--text-muted)",
-                padding: 4,
-                borderRadius: 6,
-                opacity: loading ? 0.4 : 1,
-                display: "flex",
-              }}
-            >
-              <RefreshStatusIcon
-                fontSize="small"
-                style={{ animation: loading ? "spin 1s linear infinite" : "none" }}
-              />
-            </button>
-          </div>
-
-          {loading && profiles.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
-              Carregando profiles...
-            </div>
-          ) : profiles.length === 0 ? (
-            <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
-              Nenhum profile encontrado.
-              Configure o campo &quot;Profile NotebookLM&quot; nos agentes.
-            </div>
-          ) : (
-            profiles.map((p) => {
-              const isSelected = selectedProfile === p.profile;
-              return (
-                <div
-                  key={p.profile}
-                  onClick={() => selectProfile(p.profile)}
-                  style={{
-                    padding: "12px 14px",
-                    borderRadius: "var(--radius-sm)",
-                    border: "1px solid",
-                    borderColor: isSelected ? "var(--accent)" : "var(--border)",
-                    background: isSelected ? "var(--accent-light)" : "var(--bg-card)",
-                    cursor: "pointer",
-                    transition: "all 0.15s ease",
-                    marginBottom: 8,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected)
-                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border-light)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected)
-                      (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        background: p.valid ? "#10b981" : p.exists ? "#f59e0b" : "#ef4444",
-                        boxShadow: p.valid
-                          ? "0 0 4px rgba(16,185,129,0.6)"
-                          : "none",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: isSelected ? "var(--accent)" : "var(--text-primary)",
-                        fontFamily: "monospace",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {p.profile}
-                    </span>
-                  </div>
-                  {/* Agent count */}
-                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 16 }}>
-                    {p.agents.length} agente{p.agents.length !== 1 ? "s" : ""}
-                    {p.exists && p.expires_at && (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          color: p.valid ? "var(--text-muted)" : "var(--danger)",
-                          fontWeight: p.valid ? 400 : 600,
-                        }}
-                      >
-                        ⏰ {getExpiresLabel(p.expires_at)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
-
-          {/* Add profile section */}
-          {!isAddingProfile ? (
-            <button
-              onClick={() => setIsAddingProfile(true)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                marginTop: 12,
-                borderRadius: "var(--radius-sm)",
-                border: "1px dashed var(--border)",
-                background: "transparent",
-                color: "var(--text-secondary)",
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                const target = e.currentTarget as HTMLElement;
-                target.style.borderColor = "var(--accent)";
-                target.style.color = "var(--accent)";
-                target.style.background = "var(--accent-light)";
-              }}
-              onMouseLeave={(e) => {
-                const target = e.currentTarget as HTMLElement;
-                target.style.borderColor = "var(--border)";
-                target.style.color = "var(--text-secondary)";
-                target.style.background = "transparent";
+                justifyContent: "space-between",
+                marginBottom: 12,
               }}
             >
-              + Adicionar Novo Profile
-            </button>
-          ) : (
-            <div
-              style={{
-                marginTop: 12,
-                padding: 10,
-                borderRadius: "var(--radius-sm)",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: "var(--text-secondary)" }}>
-                Nome do Novo Profile:
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                }}
+              >
+                {profiles.length} Profile{profiles.length !== 1 ? "s" : ""}
               </div>
-              <input
-                type="text"
-                value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
-                placeholder="ex: empresa-b"
+              <button
+                onClick={fetchProfiles}
+                disabled={loading}
+                title="Atualizar"
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: loading ? "default" : "pointer",
+                  color: "var(--text-muted)",
+                  padding: 4,
+                  borderRadius: 6,
+                  opacity: loading ? 0.4 : 1,
+                  display: "flex",
+                }}
+              >
+                <RefreshStatusIcon
+                  fontSize="small"
+                  style={{ animation: loading ? "spin 1s linear infinite" : "none" }}
+                />
+              </button>
+            </div>
+
+            {loading && profiles.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
+                Carregando profiles...
+              </div>
+            ) : profiles.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
+                Nenhum profile encontrado.
+                Configure o campo &quot;Profile NotebookLM&quot; nos agentes.
+              </div>
+            ) : (
+              profiles.map((p) => {
+                const isSelected = selectedProfile === p.profile;
+                return (
+                  <div
+                    key={p.profile}
+                    onClick={() => selectProfile(p.profile)}
+                    style={{
+                      padding: "12px 14px",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid",
+                      borderColor: isSelected ? "var(--accent)" : "var(--border)",
+                      background: isSelected ? "var(--accent-light)" : "var(--bg-card)",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      marginBottom: 8,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected)
+                        (e.currentTarget as HTMLElement).style.borderColor = "var(--border-light)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected)
+                        (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: p.valid ? "#10b981" : p.exists ? "#f59e0b" : "#ef4444",
+                          boxShadow: p.valid
+                            ? "0 0 4px rgba(16,185,129,0.6)"
+                            : "none",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: isSelected ? "var(--accent)" : "var(--text-primary)",
+                          fontFamily: "monospace",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {p.profile}
+                      </span>
+                    </div>
+                    {/* Agent count */}
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 16 }}>
+                      {p.agents.length} agente{p.agents.length !== 1 ? "s" : ""}
+                      {p.exists && p.expires_at && (
+                        <span
+                          style={{
+                            marginLeft: 8,
+                            color: p.valid ? "var(--text-muted)" : "var(--danger)",
+                            fontWeight: p.valid ? 400 : 600,
+                          }}
+                        >
+                          ⏰ {getExpiresLabel(p.expires_at)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Add profile section */}
+            {!isAddingProfile ? (
+              <button
+                onClick={() => setIsAddingProfile(true)}
                 style={{
                   width: "100%",
-                  padding: "6px 10px",
-                  borderRadius: 4,
-                  border: "1px solid var(--border)",
-                  background: "var(--bg-surface)",
-                  color: "var(--text-primary)",
+                  padding: "10px 12px",
+                  marginTop: 12,
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px dashed var(--border)",
+                  background: "transparent",
+                  color: "var(--text-secondary)",
                   fontSize: 12,
-                  fontFamily: "monospace",
-                  outline: "none",
-                  marginBottom: 8,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  transition: "all 0.15s ease",
                 }}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveNewProfile();
-                  if (e.key === "Escape") {
-                    setIsAddingProfile(false);
-                    setNewProfileName("");
-                  }
+                onMouseEnter={(e) => {
+                  const target = e.currentTarget as HTMLElement;
+                  target.style.borderColor = "var(--accent)";
+                  target.style.color = "var(--accent)";
+                  target.style.background = "var(--accent-light)";
                 }}
-              />
-              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                <button
-                  onClick={() => {
-                    setIsAddingProfile(false);
-                    setNewProfileName("");
-                  }}
+                onMouseLeave={(e) => {
+                  const target = e.currentTarget as HTMLElement;
+                  target.style.borderColor = "var(--border)";
+                  target.style.color = "var(--text-secondary)";
+                  target.style.background = "transparent";
+                }}
+              >
+                + Adicionar Novo Profile
+              </button>
+            ) : (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 10,
+                  borderRadius: "var(--radius-sm)",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: "var(--text-secondary)" }}>
+                  Nome do Novo Profile:
+                </div>
+                <input
+                  type="text"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
+                  placeholder="ex: empresa-b"
                   style={{
-                    padding: "4px 8px",
-                    fontSize: 11,
-                    background: "none",
-                    border: "none",
-                    color: "var(--text-muted)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveNewProfile}
-                  disabled={!newProfileName.trim()}
-                  style={{
-                    padding: "4px 10px",
-                    fontSize: 11,
+                    width: "100%",
+                    padding: "6px 10px",
                     borderRadius: 4,
-                    background: "var(--accent)",
-                    border: "none",
-                    color: "white",
-                    fontWeight: 600,
-                    cursor: newProfileName.trim() ? "pointer" : "not-allowed",
-                    opacity: newProfileName.trim() ? 1 : 0.5,
+                    border: "1px solid var(--border)",
+                    background: "var(--bg-surface)",
+                    color: "var(--text-primary)",
+                    fontSize: 12,
+                    fontFamily: "monospace",
+                    outline: "none",
+                    marginBottom: 8,
                   }}
-                >
-                  Confirmar
-                </button>
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveNewProfile();
+                    if (e.key === "Escape") {
+                      setIsAddingProfile(false);
+                      setNewProfileName("");
+                    }
+                  }}
+                />
+                <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => {
+                      setIsAddingProfile(false);
+                      setNewProfileName("");
+                    }}
+                    style={{
+                      padding: "4px 8px",
+                      fontSize: 11,
+                      background: "none",
+                      border: "none",
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveNewProfile}
+                    disabled={!newProfileName.trim()}
+                    style={{
+                      padding: "4px 10px",
+                      fontSize: 11,
+                      borderRadius: 4,
+                      background: "var(--accent)",
+                      border: "none",
+                      color: "white",
+                      fontWeight: 600,
+                      cursor: newProfileName.trim() ? "pointer" : "not-allowed",
+                      opacity: newProfileName.trim() ? 1 : 0.5,
+                    }}
+                  >
+                    Confirmar
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
 
           {/* Info Box about cookie-based expiration */}
@@ -1144,7 +1144,7 @@ export default function RenovarAuthPage() {
                       <div style={{ marginLeft: 30 }}>
                         {os === "mac" ? (
                           <code style={terminalStyle}>
-                            cd dev/agentes-suporte-ia
+                            cd ~dev/agentes-suporte-ia
                             <br />
                             opcional: python3 -m venv venv
                             <br />
