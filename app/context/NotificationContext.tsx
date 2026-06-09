@@ -202,74 +202,101 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Fechar conexão existente para evitar múltiplas conexões
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
+    const connectSSE = () => {
+      // Fechar conexão existente para evitar múltiplas conexões
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
 
-    console.log("[NotificationProvider] Conectando EventSource ao SSE:", `${BASE_API_URL}/admin/events`);
+      console.log("[NotificationProvider] Conectando EventSource ao SSE:", `${BASE_API_URL}/admin/events`);
 
-    const es = new EventSource(
-      `${BASE_API_URL}/admin/events?token=${encodeURIComponent(BACKEND_API_KEY)}`
-    );
-    eventSourceRef.current = es;
+      const es = new EventSource(
+        `${BASE_API_URL}/admin/events?token=${encodeURIComponent(BACKEND_API_KEY)}`
+      );
+      eventSourceRef.current = es;
 
-    es.onopen = () => {
-      console.log("[NotificationProvider] SSE conectado com sucesso!");
+      es.onopen = () => {
+        console.log("[NotificationProvider] SSE conectado com sucesso!");
+      };
+
+      es.addEventListener("new_chat", (e) => {
+        console.log("[NotificationProvider] Evento new_chat recebido:", e.data);
+        try {
+          const data = JSON.parse(e.data);
+          const { user_name, agent_name, first_message, thread_id } = data;
+
+          setToast({
+            open: true,
+            clientName: user_name || "Cliente desconhecido",
+            agentName: agent_name || "Agente",
+            firstMessage: first_message || "",
+          });
+
+          const clientNameClean = user_name || "Cliente desconhecido";
+          const agentNameClean = agent_name || "Agente";
+          const messageText = first_message || "";
+          const messageLimited = messageText.length > 250
+            ? `${messageText.substring(0, 250)}, ... abreviado.`
+            : messageText;
+          const ttsText = `cliente: ${clientNameClean}, ${agentNameClean}, ${messageLimited}`;
+          enqueueTts(ttsText);
+
+          setLastThreadUpdate({
+            threadId: thread_id || "",
+            timestamp: Date.now(),
+          });
+        } catch (err) {
+          console.error("[SSE] Erro ao processar evento new_chat:", err);
+        }
+      });
+
+      es.addEventListener("thread_updated", (e) => {
+        console.log("[NotificationProvider] Evento thread_updated recebido:", e.data);
+        try {
+          const data = JSON.parse(e.data);
+          const { thread_id } = data;
+          setLastThreadUpdate({
+            threadId: thread_id || "",
+            timestamp: Date.now(),
+          });
+        } catch (err) {
+          console.error("[SSE] Erro ao processar evento thread_updated:", err);
+        }
+      });
+
+      es.onerror = (err) => {
+        console.error("[NotificationProvider] Erro/desconexão no EventSource de /admin/events:", err);
+      };
     };
 
-    es.addEventListener("new_chat", (e) => {
-      console.log("[NotificationProvider] Evento new_chat recebido:", e.data);
-      try {
-        const data = JSON.parse(e.data);
-        const { user_name, agent_name, first_message, thread_id } = data;
+    connectSSE();
 
-        setToast({
-          open: true,
-          clientName: user_name || "Cliente desconhecido",
-          agentName: agent_name || "Agente",
-          firstMessage: first_message || "",
-        });
-
-        const clientNameClean = user_name || "Cliente desconhecido";
-        const agentNameClean = agent_name || "Agente";
-        const messageText = first_message || "";
-        const messageLimited = messageText.length > 250
-          ? `${messageText.substring(0, 250)}, ... abreviado.`
-          : messageText;
-        const ttsText = `cliente: ${clientNameClean}, ${agentNameClean}, ${messageLimited}`;
-        enqueueTts(ttsText);
-
-        setLastThreadUpdate({
-          threadId: thread_id || "",
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        console.error("[SSE] Erro ao processar evento new_chat:", err);
+    // Health check/reconnect listeners for network state and wake from sleep
+    const handleReconnectIfNeeded = () => {
+      const es = eventSourceRef.current;
+      console.log("[NotificationProvider] Verificando conexão SSE após alteração de rede/visibilidade. Estado atual:", es ? es.readyState : "NULO");
+      if (!es || es.readyState !== EventSource.OPEN) {
+        console.log("[NotificationProvider] Conexão inativa ou inexistente. Recriando conexão SSE...");
+        connectSSE();
       }
-    });
-
-    es.addEventListener("thread_updated", (e) => {
-      console.log("[NotificationProvider] Evento thread_updated recebido:", e.data);
-      try {
-        const data = JSON.parse(e.data);
-        const { thread_id } = data;
-        setLastThreadUpdate({
-          threadId: thread_id || "",
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        console.error("[SSE] Erro ao processar evento thread_updated:", err);
-      }
-    });
-
-    es.onerror = (err) => {
-      console.error("[NotificationProvider] Erro/desconexão no EventSource de /admin/events:", err);
     };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        handleReconnectIfNeeded();
+      }
+    };
+
+    window.addEventListener("online", handleReconnectIfNeeded);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      es.close();
-      eventSourceRef.current = null;
+      window.removeEventListener("online", handleReconnectIfNeeded);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, [auditor]);
 
