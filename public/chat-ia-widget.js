@@ -115,9 +115,9 @@
       \
       /* Header */\
       .header { background: linear-gradient(135deg, ' + ac + ' 0%, ' + ac + 'cc 100%); padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }\
-      .header-info { flex: 1; }\
+      .header-info { flex: 1; min-width: 0; }\
       .header-title { font-size: 14px; font-weight: 700; color: #fff; }\
-      .header-sub { font-size: 11px; color: rgba(255,255,255,.8); }\
+      .header-sub { font-size: 11px; color: rgba(255,255,255,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
       .hbtn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s, background .2s; }\
       .hbtn:hover { opacity: 1; background: rgba(255,255,255,.15); }\
       \
@@ -386,7 +386,7 @@
 
       var headerInfo = header.querySelector('.header-info');
       if (!headerInfo) {
-        var subText = 'Agente: ' + (this.agentName || 'N/A');
+        var subText = this.agentName || 'N/A';
         if (this.userEmail) {
           subText += ' | ' + this.userEmail;
         }
@@ -416,7 +416,7 @@
       } else {
         var sub = headerInfo.querySelector('.header-sub');
         if (sub) {
-          var subText = 'Agente: ' + (this.agentName || 'N/A');
+          var subText = this.agentName || 'N/A';
           if (this.userEmail) {
             subText += ' | ' + this.userEmail;
           }
