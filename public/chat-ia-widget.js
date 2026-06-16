@@ -283,7 +283,32 @@
               'api-url', 'api-key', 'accent-color', 'position', 'hide-fab'];
     }
 
-    attributeChangedCallback() { /* re-render on attr change */ }
+    attributeChangedCallback(name, oldValue, newValue) {
+      if (oldValue === newValue) return;
+
+      if (this.isConnected) {
+        if (['user-email', 'user-cnpj', 'agent-id', 'agent-name'].indexOf(name) !== -1) {
+          // Reset thread details for the new user or context
+          this._threadId = '';
+          this._messages = [];
+          this._history = [];
+          this._feedbackRating = 0;
+          this._feedbackSent = false;
+          this._streamingText = '';
+          this._statusText = '';
+          this._isTyping = false;
+          this._closeUserEvents();
+
+          if (this._open) {
+            this._handleOpen();
+          } else {
+            this._render(true);
+          }
+        } else {
+          this._render(false);
+        }
+      }
+    }
 
     /* ── Getters ── */
     get agentId()    { return this.getAttribute('agent-id') || ''; }
@@ -361,10 +386,14 @@
 
       var headerInfo = header.querySelector('.header-info');
       if (!headerInfo) {
+        var subText = 'Agente: ' + (this.agentName || 'N/A');
+        if (this.userEmail) {
+          subText += ' | ' + this.userEmail;
+        }
         header.innerHTML = '\
           <div class="header-info">\
             <div class="header-title">Assistente IA</div>\
-            <div class="header-sub">Agente: ' + this._esc(this.agentName || 'N/A') + '</div>\
+            <div class="header-sub">' + this._esc(subText) + '</div>\
           </div>';
 
         var btnHistory = this._hBtn(ICONS.history, 'Histórico de Conversas', function () {
@@ -386,7 +415,13 @@
         header.appendChild(btnClose);
       } else {
         var sub = headerInfo.querySelector('.header-sub');
-        if (sub) sub.textContent = 'Agente: ' + (this.agentName || 'N/A');
+        if (sub) {
+          var subText = 'Agente: ' + (this.agentName || 'N/A');
+          if (this.userEmail) {
+            subText += ' | ' + this.userEmail;
+          }
+          sub.textContent = subText;
+        }
 
         var btnExp = header.querySelector('#btn-expand');
         if (btnExp) {
