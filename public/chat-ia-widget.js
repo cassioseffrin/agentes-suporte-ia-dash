@@ -299,7 +299,7 @@
 
     /* ── Lifecycle ── */
     connectedCallback() {
-      this._render();
+      this._render(true);
     }
 
     disconnectedCallback() {
@@ -307,70 +307,155 @@
     }
 
     /* ───────────────────────── RENDER ───────────────────────── */
-    _render() {
+    _render(forceScroll) {
+      if (forceScroll === undefined) forceScroll = false;
       var self = this;
       var s = this._shadow;
 
-      // Build DOM
-      s.innerHTML = '';
-      var style = document.createElement('style');
+      // Ensure style tag exists
+      var style = s.querySelector('style');
+      if (!style) {
+        style = document.createElement('style');
+        s.appendChild(style);
+      }
       style.textContent = buildCSS(this.accentColor);
-      s.appendChild(style);
 
       // ── FAB ──
-      var fab = document.createElement('button');
+      var fab = s.querySelector('.fab');
+      if (!fab) {
+        fab = document.createElement('button');
+        fab.innerHTML = ICONS.sparkle;
+        fab.title = 'Assistente IA';
+        fab.addEventListener('click', function () { self._handleOpen(); });
+        s.appendChild(fab);
+        this._fabEl = fab;
+      }
       fab.className = 'fab ' + this.posClass + (this._open ? '' : ' pulse') + (this.hideFab ? ' hidden' : '');
-      fab.innerHTML = ICONS.sparkle;
-      fab.title = 'Assistente IA';
-      fab.addEventListener('click', function () { self._handleOpen(); });
-      s.appendChild(fab);
-      this._fabEl = fab;
 
-      if (!this._open) return;
+      if (!this._open) {
+        var existingPanel = s.querySelector('.panel');
+        if (existingPanel) {
+          existingPanel.remove();
+          this._panelEl = null;
+        }
+        return;
+      }
 
       // ── Panel ──
-      var panel = document.createElement('div');
+      var panel = s.querySelector('.panel');
+      if (!panel) {
+        panel = document.createElement('div');
+        s.appendChild(panel);
+        this._panelEl = panel;
+      }
       panel.className = 'panel ' + this.posClass + ' ' + (this._expanded ? 'expanded' : 'normal');
-      s.appendChild(panel);
-      this._panelEl = panel;
 
-      // Header
-      var header = document.createElement('div');
-      header.className = 'header';
-      header.innerHTML = '\
-        <div class="header-info">\
-          <div class="header-title">Assistente IA</div>\
-          <div class="header-sub">Agente: ' + this._esc(this.agentName || 'N/A') + '</div>\
-        </div>';
+      // ── Header ──
+      var header = panel.querySelector('.header');
+      if (!header) {
+        header = document.createElement('div');
+        header.className = 'header';
+        panel.appendChild(header);
+      }
 
-      // Header buttons
-      var btnHistory = this._hBtn(ICONS.history, 'Histórico de Conversas', function () {
-        if (self._showHistory) { self._showHistory = false; self._render(); }
-        else self._openHistory();
-      });
-      var btnNew = this._hBtn(ICONS.newChat, 'Novo Chat', function () { self._handleReset(); });
-      var btnExp = this._hBtn(this._expanded ? ICONS.collapse : ICONS.expand, this._expanded ? 'Recolher' : 'Expandir', function () {
-        self._expanded = !self._expanded; self._render();
-      });
-      var btnClose = this._hBtn(ICONS.close, 'Fechar', function () {
-        self._open = false; self._render();
-      });
-      header.appendChild(btnHistory);
-      header.appendChild(btnNew);
-      header.appendChild(btnExp);
-      header.appendChild(btnClose);
-      panel.appendChild(header);
+      var headerInfo = header.querySelector('.header-info');
+      if (!headerInfo) {
+        header.innerHTML = '\
+          <div class="header-info">\
+            <div class="header-title">Assistente IA</div>\
+            <div class="header-sub">Agente: ' + this._esc(this.agentName || 'N/A') + '</div>\
+          </div>';
 
-      // Body — depends on state
-      if (this._showConsent) {
-        this._renderConsent(panel);
-      } else if (this._showHistory) {
-        this._renderHistory(panel);
+        var btnHistory = this._hBtn(ICONS.history, 'Histórico de Conversas', function () {
+          if (self._showHistory) { self._showHistory = false; self._render(); }
+          else self._openHistory();
+        });
+        var btnNew = this._hBtn(ICONS.newChat, 'Novo Chat', function () { self._handleReset(); });
+        var btnExp = this._hBtn(this._expanded ? ICONS.collapse : ICONS.expand, this._expanded ? 'Recolher' : 'Expandir', function () {
+          self._expanded = !self._expanded; self._render();
+        });
+        var btnClose = this._hBtn(ICONS.close, 'Fechar', function () {
+          self._open = false; self._render();
+        });
+
+        btnExp.setAttribute('id', 'btn-expand');
+        header.appendChild(btnHistory);
+        header.appendChild(btnNew);
+        header.appendChild(btnExp);
+        header.appendChild(btnClose);
       } else {
-        this._renderChat(panel);
+        var sub = headerInfo.querySelector('.header-sub');
+        if (sub) sub.textContent = 'Agente: ' + (this.agentName || 'N/A');
+
+        var btnExp = header.querySelector('#btn-expand');
+        if (btnExp) {
+          btnExp.innerHTML = this._expanded ? ICONS.collapse : ICONS.expand;
+          btnExp.title = this._expanded ? 'Recolher' : 'Expandir';
+        }
+      }
+
+      // ── View Containers ──
+      var consentView = panel.querySelector('.consent');
+      if (!consentView) {
+        consentView = document.createElement('div');
+        consentView.className = 'consent hidden';
+        panel.appendChild(consentView);
+      }
+
+      var historyView = panel.querySelector('.history');
+      if (!historyView) {
+        historyView = document.createElement('div');
+        historyView.className = 'history hidden';
+        panel.appendChild(historyView);
+      }
+
+      var chatView = panel.querySelector('.chat-view');
+      if (!chatView) {
+        chatView = document.createElement('div');
+        chatView.className = 'chat-view';
+
+        var body = document.createElement('div');
+        body.className = 'body';
+        chatView.appendChild(body);
+
+        var rbar = document.createElement('div');
+        rbar.className = 'rating-bar hidden';
+        chatView.appendChild(rbar);
+
+        var inputArea = document.createElement('div');
+        inputArea.className = 'input-area';
+        chatView.appendChild(inputArea);
+
+        var footer = document.createElement('div');
+        footer.className = 'footer';
+        footer.innerHTML = '<span class="footer-text">O Assistente de IA pode cometer erros.</span>';
+        chatView.appendChild(footer);
+
+        panel.appendChild(chatView);
+      }
+
+      // Hide / Show views based on state
+      if (this._showConsent) {
+        consentView.classList.remove('hidden');
+        historyView.classList.add('hidden');
+        chatView.classList.add('hidden');
+        this._renderConsent(consentView);
+      } else if (this._showHistory) {
+        consentView.classList.add('hidden');
+        historyView.classList.remove('hidden');
+        chatView.classList.add('hidden');
+        this._renderHistory(historyView);
+      } else {
+        consentView.classList.add('hidden');
+        historyView.classList.add('hidden');
+        chatView.classList.remove('hidden');
+        this._renderChat(chatView, forceScroll);
       }
 
       // Feedback dialog overlay
+      var overlay = panel.querySelector('.dialog-overlay');
+      if (overlay) overlay.remove();
+
       if (this._feedbackDialogOpen) {
         this._renderFeedbackDialog(panel);
       }
@@ -387,45 +472,43 @@
     }
 
     /* ── Consent screen ── */
-    _renderConsent(panel) {
+    _renderConsent(consentView) {
       var self = this;
-      var el = document.createElement('div');
-      el.className = 'consent';
-      el.innerHTML = '\
-        <div class="consent-icon">' + ICONS.robot + '</div>\
-        <h3>Aviso de Privacidade e IA</h3>\
-        <p>Este assistente utiliza inteligência artificial fornecida pela OpenAI. Suas mensagens serão enviadas para processamento. Seus dados <strong>não</strong> são usados para treinar modelos da OpenAI.</p>\
-        <div class="consent-buttons">\
-          <button class="btn-decline">Não aceito</button>\
-          <button class="btn-accept">Aceito</button>\
-        </div>';
-      el.querySelector('.btn-decline').addEventListener('click', function () {
-        self._showConsent = false; self._open = false; self._render();
-      });
-      el.querySelector('.btn-accept').addEventListener('click', function () {
-        try { localStorage.setItem('ia_consent', 'true'); } catch (e) {}
-        self._consentGiven = true; self._showConsent = false;
-        self._createNewThread();
-      });
-      panel.appendChild(el);
+      if (!consentView.innerHTML.trim()) {
+        consentView.innerHTML = '\
+          <div class="consent-icon">' + ICONS.robot + '</div>\
+          <h3>Aviso de Privacidade e IA</h3>\
+          <p>Este assistente utiliza inteligência artificial fornecida pela OpenAI. Suas mensagens serão enviadas para processamento. Seus dados <strong>não</strong> são usados para treinar modelos da OpenAI.</p>\
+          <div class="consent-buttons">\
+            <button class="btn-decline">Não aceito</button>\
+            <button class="btn-accept">Aceito</button>\
+          </div>';
+        consentView.querySelector('.btn-decline').addEventListener('click', function () {
+          self._showConsent = false; self._open = false; self._render();
+        });
+        consentView.querySelector('.btn-accept').addEventListener('click', function () {
+          try { localStorage.setItem('ia_consent', 'true'); } catch (e) {}
+          self._consentGiven = true; self._showConsent = false;
+          self._createNewThread();
+        });
+      }
     }
 
     /* ── History screen ── */
-    _renderHistory(panel) {
+    _renderHistory(historyView) {
       var self = this;
-      var el = document.createElement('div');
-      el.className = 'history';
+      historyView.innerHTML = '';
 
       var titleRow = document.createElement('div');
       titleRow.className = 'hist-title-row';
       titleRow.innerHTML = ICONS.history + '<h3>Histórico de Conversas</h3>';
-      el.appendChild(titleRow);
+      historyView.appendChild(titleRow);
 
       if (this._history.length === 0 && !this._loadingHistory) {
         var empty = document.createElement('div');
         empty.className = 'hist-empty';
         empty.textContent = 'Nenhum histórico encontrado.';
-        el.appendChild(empty);
+        historyView.appendChild(empty);
       }
 
       this._history.forEach(function (t) {
@@ -449,129 +532,226 @@
         item.addEventListener('click', function () {
           self._selectHistoryThread(t.thread_id, t.agent_name);
         });
-        el.appendChild(item);
+        historyView.appendChild(item);
       });
 
       if (this._loadingHistory) {
         var ld = document.createElement('div');
         ld.className = 'hist-loading';
         ld.innerHTML = '<div class="spinner-sm"></div>';
-        el.appendChild(ld);
+        historyView.appendChild(ld);
       }
 
-      // Infinite scroll
-      el.addEventListener('scroll', function () {
-        if (el.scrollHeight - el.scrollTop <= el.clientHeight + 50) {
-          if (!self._loadingHistory && self._historyHasMore) {
-            self._historyPage++;
-            self._fetchHistory(self._historyPage);
+      if (!historyView.dataset.hasScrollListener) {
+        historyView.dataset.hasScrollListener = 'true';
+        historyView.addEventListener('scroll', function () {
+          if (historyView.scrollHeight - historyView.scrollTop <= historyView.clientHeight + 50) {
+            if (!self._loadingHistory && self._historyHasMore) {
+              self._historyPage++;
+              self._fetchHistory(self._historyPage);
+            }
           }
-        }
-      });
-
-      panel.appendChild(el);
+        });
+      }
     }
 
     /* ── Chat screen ── */
-    _renderChat(panel) {
+    _renderChat(chatView, forceScroll) {
       var self = this;
+      var body = chatView.querySelector('.body');
 
-      // Body
-      var body = document.createElement('div');
-      body.className = 'body';
+      // Empty state
+      var emptyState = body.querySelector('.empty-state');
+      var existingRows = body.querySelectorAll('.msg-row:not(.streaming-row)');
 
       if (this._messages.length === 0 && !this._isTyping) {
-        var es = document.createElement('div');
-        es.className = 'empty-state';
-        es.innerHTML = '\
-          <div class="empty-icon">' + ICONS.robot + '</div>\
-          <h3>Assistente IA</h3>\
-          <p>Como posso ajudar você hoje?</p>';
-        body.appendChild(es);
+        if (!emptyState) {
+          emptyState = document.createElement('div');
+          emptyState.className = 'empty-state';
+          emptyState.innerHTML = '\
+            <div class="empty-icon">' + ICONS.robot + '</div>\
+            <h3>Assistente IA</h3>\
+            <p>Como posso ajudar você hoje?</p>';
+          body.appendChild(emptyState);
+        }
+        existingRows.forEach(function (r) { r.remove(); });
+      } else {
+        if (emptyState) emptyState.remove();
+
+        // Reconciliation
+        for (var i = 0; i < this._messages.length; i++) {
+          var msg = this._messages[i];
+          var row = existingRows[i];
+
+          if (!row) {
+            row = self._buildMsgEl(msg, i);
+            var streamingRow = body.querySelector('.streaming-row');
+            var typingEl = body.querySelector('.typing');
+            var anchor = streamingRow || typingEl;
+            if (anchor) {
+              body.insertBefore(row, anchor);
+            } else {
+              body.appendChild(row);
+            }
+          } else {
+            var isUserRow = row.classList.contains('user');
+            if (isUserRow !== msg.isUser) {
+              var newRow = self._buildMsgEl(msg, i);
+              row.replaceWith(newRow);
+            } else {
+              var bubble = row.querySelector('.bubble');
+              if (bubble) {
+                var content = bubble.querySelector('.bubble-content');
+                if (content) {
+                  var expectedHTML = msg.isUser ? self._esc(msg.text) : parseMd(msg.text);
+                  if (content.innerHTML !== expectedHTML) {
+                    content.innerHTML = expectedHTML;
+                  }
+                }
+
+                var upBtn = bubble.querySelector('.msg-action-up');
+                if (upBtn) {
+                  upBtn.innerHTML = msg.feedback_thumb === 1 ? ICONS.thumbUp : ICONS.thumbUpOut;
+                  if (msg.feedback_thumb === 1) upBtn.classList.add('active-up');
+                  else upBtn.classList.remove('active-up');
+                }
+                var downBtn = bubble.querySelector('.msg-action-down');
+                if (downBtn) {
+                  downBtn.innerHTML = msg.feedback_thumb === -1 ? ICONS.thumbDown : ICONS.thumbDownOut;
+                  if (msg.feedback_thumb === -1) downBtn.classList.add('active-down');
+                  else downBtn.classList.remove('active-down');
+                }
+              }
+            }
+          }
+        }
+
+        for (var j = this._messages.length; j < existingRows.length; j++) {
+          existingRows[j].remove();
+        }
       }
 
-      // Messages
-      this._messages.forEach(function (msg, i) {
-        body.appendChild(self._buildMsgEl(msg, i));
-      });
-
-      // Streaming preview
+      // Streaming preview row
+      var streamingRow = body.querySelector('.streaming-row');
       if (this._isTyping && this._streamingText) {
-        var row = document.createElement('div');
-        row.className = 'msg-row bot';
-        row.innerHTML = '<div class="avatar">' + ICONS.robot + '</div>';
-        var bub = document.createElement('div');
-        bub.className = 'bubble';
-        bub.innerHTML = parseMd(self._streamingText);
-        var meta = document.createElement('div');
-        meta.className = 'msg-meta';
-        meta.innerHTML = '<span class="msg-time">' + fmtDate(new Date()) + '</span>';
-        bub.appendChild(meta);
-        row.appendChild(bub);
-        body.appendChild(row);
+        if (!streamingRow) {
+          streamingRow = document.createElement('div');
+          streamingRow.className = 'msg-row bot streaming-row';
+          streamingRow.innerHTML = '<div class="avatar">' + ICONS.robot + '</div>';
+          var bub = document.createElement('div');
+          bub.className = 'bubble';
+          var content = document.createElement('div');
+          content.className = 'bubble-content';
+          content.innerHTML = parseMd(self._streamingText);
+          bub.appendChild(content);
+          var meta = document.createElement('div');
+          meta.className = 'msg-meta';
+          meta.innerHTML = '<span class="msg-time">' + fmtDate(new Date()) + '</span>';
+          bub.appendChild(meta);
+          streamingRow.appendChild(bub);
+
+          var typingEl = body.querySelector('.typing');
+          if (typingEl) {
+            body.insertBefore(streamingRow, typingEl);
+          } else {
+            body.appendChild(streamingRow);
+          }
+        } else {
+          var content = streamingRow.querySelector('.bubble-content');
+          if (content) {
+            content.innerHTML = parseMd(self._streamingText);
+          }
+        }
+      } else {
+        if (streamingRow) streamingRow.remove();
       }
 
       // Typing indicator
+      var typingEl = body.querySelector('.typing');
       if (this._isTyping) {
-        var typ = document.createElement('div');
-        typ.className = 'typing';
-        if (!this._streamingText) {
-          typ.innerHTML = '<div class="avatar">' + ICONS.robot + '</div>';
+        if (!typingEl) {
+          typingEl = document.createElement('div');
+          typingEl.className = 'typing';
+          body.appendChild(typingEl);
         }
-        var dots = document.createElement('div');
-        dots.className = 'dots';
+
+        var avatar = typingEl.querySelector('.avatar');
+        if (!this._streamingText) {
+          if (!avatar) {
+            avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.innerHTML = ICONS.robot;
+            typingEl.insertBefore(avatar, typingEl.firstChild);
+          }
+        } else {
+          if (avatar) avatar.remove();
+        }
+
+        var dots = typingEl.querySelector('.dots');
+        if (!dots) {
+          dots = document.createElement('div');
+          dots.className = 'dots';
+          typingEl.appendChild(dots);
+        }
+
         dots.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
         if (this._statusText) {
           dots.innerHTML += '<span class="status-text">' + this._esc(this._statusText) + '</span>';
         }
-        typ.appendChild(dots);
-        body.appendChild(typ);
+      } else {
+        if (typingEl) typingEl.remove();
       }
 
-      // Bottom anchor
-      var anchor = document.createElement('div');
-      body.appendChild(anchor);
-      panel.appendChild(body);
-
       // Auto-scroll
-      setTimeout(function () { anchor.scrollIntoView({ behavior: 'smooth' }); }, 50);
+      this._scrollToBottom(forceScroll);
 
       // Input area
-      var inputArea = document.createElement('div');
-      inputArea.className = 'input-area';
-      var ta = document.createElement('textarea');
-      ta.placeholder = 'Mensagem...';
-      ta.rows = 1;
+      var inputArea = chatView.querySelector('.input-area');
+      var ta = inputArea.querySelector('textarea');
+      var sendBtn = inputArea.querySelector('.send-btn');
+
+      if (!ta) {
+        ta = document.createElement('textarea');
+        ta.placeholder = 'Mensagem...';
+        ta.rows = 1;
+        ta.addEventListener('input', function () {
+          self._input = ta.value;
+          ta.style.height = 'auto';
+          ta.style.height = Math.min(ta.scrollHeight, 72) + 'px';
+        });
+        ta.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            self._handleSend();
+          }
+        });
+        inputArea.appendChild(ta);
+      }
+
+      if (!sendBtn) {
+        sendBtn = document.createElement('button');
+        sendBtn.className = 'send-btn';
+        sendBtn.addEventListener('click', function () { self._handleSend(); });
+        inputArea.appendChild(sendBtn);
+      }
+
       ta.value = this._input;
       ta.disabled = this._isTyping;
-      ta.addEventListener('input', function () {
-        self._input = ta.value;
-        ta.style.height = 'auto';
-        ta.style.height = Math.min(ta.scrollHeight, 72) + 'px';
-      });
-      ta.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          self._handleSend();
-        }
-      });
-      inputArea.appendChild(ta);
-
-      var sendBtn = document.createElement('button');
-      sendBtn.className = 'send-btn';
       sendBtn.disabled = this._isTyping;
       sendBtn.innerHTML = this._isTyping ? '<div class="spinner-sm"></div>' : ICONS.send;
-      sendBtn.addEventListener('click', function () { self._handleSend(); });
-      inputArea.appendChild(sendBtn);
-      panel.appendChild(inputArea);
 
-      // Focus input
-      setTimeout(function () { if (!self._isTyping) ta.focus(); }, 100);
+      if (!this._isTyping) {
+        var activeEl = this._shadow.activeElement;
+        if (activeEl !== ta) {
+          setTimeout(function () { ta.focus(); }, 100);
+        }
+      }
 
-      // Rating bar (if messages > 1)
+      // Rating bar
+      var rbar = chatView.querySelector('.rating-bar');
       if (this._messages.length > 1) {
-        var rbar = document.createElement('div');
-        rbar.className = 'rating-bar';
+        rbar.classList.remove('hidden');
+        rbar.innerHTML = '';
         var lbl = document.createElement('span');
         lbl.className = 'label';
         lbl.textContent = this._feedbackSent ? 'Obrigado!' : 'Avalie:';
@@ -586,14 +766,9 @@
             rbar.appendChild(sb);
           })(s);
         }
-        panel.appendChild(rbar);
+      } else {
+        rbar.classList.add('hidden');
       }
-
-      // Footer
-      var footer = document.createElement('div');
-      footer.className = 'footer';
-      footer.innerHTML = '<span class="footer-text">O Assistente de IA pode cometer erros.</span>';
-      panel.appendChild(footer);
     }
 
     /* ── Build single message element ── */
@@ -611,45 +786,45 @@
 
       var bub = document.createElement('div');
       bub.className = 'bubble' + (msg.isUser ? ' user' : '') + (msg.isAuditor ? ' auditor' : '');
+      
+      var content = document.createElement('div');
+      content.className = 'bubble-content';
       if (msg.isUser) {
-        bub.textContent = msg.text;
+        content.textContent = msg.text;
       } else {
-        bub.innerHTML = parseMd(msg.text);
+        content.innerHTML = parseMd(msg.text);
       }
+      bub.appendChild(content);
 
-      // Meta row
       var meta = document.createElement('div');
       meta.className = 'msg-meta';
       meta.innerHTML = '<span class="msg-time">' + fmtDate(msg.timestamp || new Date()) + '</span>';
 
-      // Action buttons for bot messages with id
       if (!msg.isUser && msg.id) {
         var actions = document.createElement('div');
         actions.className = 'msg-actions';
 
-        // Copy
         var cpBtn = document.createElement('button');
         cpBtn.innerHTML = ICONS.copy;
         cpBtn.title = 'Copiar';
+        cpBtn.className = 'msg-action-copy';
         cpBtn.addEventListener('click', function () {
           try { navigator.clipboard.writeText(msg.text); } catch (e) {}
         });
         actions.appendChild(cpBtn);
 
-        // Thumb up
         var tuBtn = document.createElement('button');
         tuBtn.innerHTML = msg.feedback_thumb === 1 ? ICONS.thumbUp : ICONS.thumbUpOut;
-        tuBtn.className = msg.feedback_thumb === 1 ? 'active-up' : '';
+        tuBtn.className = msg.feedback_thumb === 1 ? 'active-up msg-action-up' : 'msg-action-up';
         tuBtn.title = 'Gostei';
         tuBtn.addEventListener('click', function () {
           self._msgFeedback(msg.id, 1);
         });
         actions.appendChild(tuBtn);
 
-        // Thumb down
         var tdBtn = document.createElement('button');
         tdBtn.innerHTML = msg.feedback_thumb === -1 ? ICONS.thumbDown : ICONS.thumbDownOut;
-        tdBtn.className = msg.feedback_thumb === -1 ? 'active-down' : '';
+        tdBtn.className = msg.feedback_thumb === -1 ? 'active-down msg-action-down' : 'msg-action-down';
         tdBtn.title = 'Não Gostei';
         tdBtn.addEventListener('click', function () {
           self._feedbackDialogChatId = msg.id;
@@ -665,6 +840,17 @@
       bub.appendChild(meta);
       row.appendChild(bub);
       return row;
+    }
+
+    /* ── Scroll management ── */
+    _scrollToBottom(force) {
+      var body = this._shadow.querySelector('.chat-view .body');
+      if (!body) return;
+      var threshold = 150;
+      var isNearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < threshold;
+      if (force || isNearBottom) {
+        body.scrollTop = body.scrollHeight;
+      }
     }
 
     /* ── Feedback dialog ── */
@@ -748,7 +934,7 @@
           return; // render called inside
         }
       }
-      this._render();
+      this._render(true);
     }
 
     /* ── Reset ── */
@@ -787,9 +973,9 @@
             timestamp: new Date()
           }];
           self._connectUserEvents();
-          self._render();
+          self._render(true);
         })
-        .catch(function (e) { console.error('[ChatIA Widget] Erro ao criar thread:', e); self._render(); });
+        .catch(function (e) { console.error('[ChatIA Widget] Erro ao criar thread:', e); self._render(false); });
     }
 
     /* ── SSE: user events (auditor messages) ── */
@@ -810,7 +996,7 @@
             auditor_nickname: data.auditor_nickname || data.auditor_name || null,
             timestamp: data.created_at ? new Date(data.created_at) : new Date()
           });
-          self._render();
+          self._render(false);
         } catch (ex) {}
       });
       es.onerror = function () { console.warn('[ChatIA Widget] SSE desconectado'); };
@@ -833,7 +1019,7 @@
       this._isTyping = true;
       this._statusText = '';
       this._streamingText = '';
-      this._render();
+      this._render(true);
 
       var tid = this._threadId;
       if (!tid && this._threadError < 2) {
@@ -851,11 +1037,11 @@
           function onToken(token) {
             accumulated += token;
             self._streamingText = accumulated;
-            self._render();
+            self._render(false);
           },
           function onStatus(detail) {
             self._statusText = detail;
-            self._render();
+            self._render(false);
           },
           function onDone(result) {
             finished = true;
@@ -870,7 +1056,7 @@
                 timestamp: new Date()
               });
             }
-            self._render();
+            self._render(false);
           },
           function onFallback(content) {
             finished = true;
@@ -878,7 +1064,7 @@
             self._statusText = '';
             self._streamingText = '';
             self._messages.push({ text: content, isUser: false, timestamp: new Date() });
-            self._render();
+            self._render(false);
           },
           function onError(detail) {
             if (!finished) {
@@ -891,7 +1077,7 @@
                 isUser: false,
                 timestamp: new Date()
               });
-              self._render();
+              self._render(false);
             }
           }
         );
@@ -907,7 +1093,7 @@
         } else {
           // Fallback non-streaming
           this._statusText = 'Tentando conexão alternativa...';
-          this._render();
+          this._render(false);
           var reply = await this._fetchFallback(text, tid);
           this._isTyping = false;
           this._statusText = '';
@@ -917,7 +1103,7 @@
             this._messages.push({ text: 'Desculpe, não consegui processar isso. Tente novamente.', isUser: false, timestamp: new Date() });
           }
         }
-        this._render();
+        this._render(false);
       }
     }
 
@@ -1020,10 +1206,10 @@
     }
 
     _fetchHistory(page) {
-      if (!this.userEmail) { this._render(); return; }
+      if (!this.userEmail) { this._render(false); return; }
       var self = this;
       this._loadingHistory = true;
-      this._render();
+      this._render(false);
 
       fetch(this.apiUrl + '/history?email=' + encodeURIComponent(this.userEmail) + '&page=' + page + '&limit=30', {
         headers: this._headers(false)
@@ -1035,9 +1221,9 @@
           else self._history = self._history.concat(threads);
           self._historyHasMore = threads.length > 0;
           self._loadingHistory = false;
-          self._render();
+          self._render(false);
         })
-        .catch(function () { self._loadingHistory = false; self._render(); });
+        .catch(function () { self._loadingHistory = false; self._render(false); });
     }
 
     _selectHistoryThread(tId, agentName) {
@@ -1072,7 +1258,7 @@
           self._showHistory = false;
           self._closeUserEvents();
           self._connectUserEvents();
-          self._render();
+          self._render(true);
         })
         .catch(function (e) { console.error(e); });
     }
@@ -1091,7 +1277,7 @@
               self._messages = [];
               self._threadId = '';
             }
-            self._render();
+            self._render(false);
           }
         })
         .catch(function (e) { console.error(e); });
@@ -1115,7 +1301,7 @@
           }
           return m;
         });
-        self._render();
+        self._render(false);
       }).catch(function (e) { console.error(e); });
     }
 
@@ -1130,8 +1316,8 @@
         body: JSON.stringify({ rating: rating })
       }).then(function (r) {
         if (r.ok) self._feedbackSent = true;
-        self._render();
-      }).catch(function () { self._render(); });
+        self._render(false);
+      }).catch(function () { self._render(false); });
     }
 
     /* ── Clean text ── */
