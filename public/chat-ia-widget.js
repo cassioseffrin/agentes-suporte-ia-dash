@@ -101,15 +101,17 @@
       .fab.bottom-right { bottom: 24px; right: 24px; }\
       .fab.bottom-left  { bottom: 24px; left: 24px; }\
       \
-      /* Panel */\
       .panel { position: fixed; z-index: 10001; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,.45); animation: fadeInUp .25s ease-out; transition: all .3s cubic-bezier(.4,0,.2,1); background: #1a1d27; color: #e2e8f0; }\
       .panel.bottom-right { bottom: 84px; right: 24px; }\
       .panel.bottom-left  { bottom: 84px; left: 24px; }\
+      .panel.no-fab.bottom-right { bottom: 10px; right: 10px; }\
+      .panel.no-fab.bottom-left  { bottom: 10px; left: 10px; }\
       .panel.normal { width: 380px; height: 560px; }\
       .panel.expanded { width: calc(100vw - 32px); height: calc(100vh - 32px); bottom: 16px !important; right: 16px !important; left: auto !important; border-radius: 8px; }\
       .chat-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }\
       @media (max-width: 600px) {\
         .panel.normal { width: calc(100vw - 24px); height: 70vh; right: 12px !important; left: auto !important; bottom: 90px; }\
+        .panel.no-fab.normal { bottom: 10px !important; right: 10px !important; width: calc(100vw - 20px); }\
         .fab.bottom-right, .fab.bottom-left { bottom: 16px; right: 12px; left: auto; width: 42px; height: 42px; }\
       }\
       \
@@ -374,7 +376,7 @@
         s.appendChild(panel);
         this._panelEl = panel;
       }
-      panel.className = 'panel ' + this.posClass + ' ' + (this._expanded ? 'expanded' : 'normal');
+      panel.className = 'panel ' + this.posClass + ' ' + (this._expanded ? 'expanded' : 'normal') + (this.hideFab ? ' no-fab' : '');
 
       // ── Header ──
       var header = panel.querySelector('.header');
