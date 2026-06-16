@@ -107,6 +107,7 @@
       .panel.bottom-left  { bottom: 84px; left: 24px; }\
       .panel.normal { width: 380px; height: 560px; }\
       .panel.expanded { width: calc(100vw - 32px); height: calc(100vh - 32px); bottom: 16px !important; right: 16px !important; left: auto !important; border-radius: 8px; }\
+      .chat-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }\
       @media (max-width: 600px) {\
         .panel.normal { width: calc(100vw - 24px); height: 70vh; right: 12px !important; left: auto !important; bottom: 90px; }\
         .fab.bottom-right, .fab.bottom-left { bottom: 16px; right: 12px; left: auto; width: 42px; height: 42px; }\
