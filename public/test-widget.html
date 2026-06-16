@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teste - Chat IA Widget</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    h1 { color: #1a1d27; }
+    p { color: #666; line-height: 1.6; }
+    pre {
+      background: #1a1d27;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Teste do Chat IA Widget</h1>
+    <p>O botão flutuante (✨) deve aparecer no canto inferior direito.<br>
+       Clique para abrir o chat.</p>
+
+    <h2>Código utilizado:</h2>
+    <pre>&lt;script src="http://localhost:3000/chat-ia-widget.js"&gt;&lt;/script&gt;
+&lt;chat-ia-widget
+  agent-id="a1189726-1fe9-4e7e-a3d9-dfc226aa1b90"
+  agent-name="VIMBO"
+  agent-title="Sistema Vimbo"
+  user-email="admin@arpasistemas.com.br"
+  user-name="Conta de Testes - admin"
+  user-cnpj="03600477000104"
+  api-url="http://localhost:8000"
+&gt;&lt;/chat-ia-widget&gt;</pre>
+  </div>
+
+  <!-- Widget -->
+  <script src="http://localhost:3000/chat-ia-widget.js"></script>
+  <chat-ia-widget
+    agent-id="a1189726-1fe9-4e7e-a3d9-dfc226aa1b90"
+    agent-name="VIMBO"
+    agent-title="Sistema Vimbo"
+    user-email="admin@arpasistemas.com.br"
+    user-name="Conta de Testes - admin"
+    user-cnpj="03600477000104"
+    api-url="http://localhost:8000"
+  ></chat-ia-widget>
+</body>
+</html>
