@@ -20,6 +20,7 @@ import {
   Circle as CircleIcon,
   Article as FaqIcon,
   Close as CloseIcon,
+  ContentCopy as CopyIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -70,6 +71,7 @@ interface Agent {
   modification: string | null;
   faq_content: string | null;
   notebooklm_profile: string;
+  hide: boolean;
 }
 
 type FormValues = Omit<Agent, "id" | "creation" | "modification">;
@@ -640,7 +642,7 @@ function AgentCard({
           {agent.title}
         </div>
         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          {agent.name} · #{agent.sort_order}
+          {agent.name} · #{agent.sort_order}{agent.hide ? " · Oculto" : ""}
         </div>
       </div>
       <Tooltip title={agent.active ? "Ativo" : "Inativo"}>
@@ -721,6 +723,7 @@ export default function AgentesPage() {
       sort_order: agent.sort_order,
       active: agent.active,
       notebooklm_profile: agent.notebooklm_profile ?? "default",
+      hide: agent.hide ?? false,
     });
   };
 
@@ -910,8 +913,36 @@ export default function AgentesPage() {
                     <div style={{ fontWeight: 700, fontSize: 16 }}>
                       {selected.title}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                      ID: {selected.id}
+                    <div style={{ 
+                      fontSize: 12, 
+                      color: "var(--text-muted)", 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: 6,
+                      marginTop: 2
+                    }}>
+                      <span>UUID: {selected.id}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selected.id);
+                        }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "var(--text-muted)",
+                          padding: 2,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          transition: "color 0.2s",
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
+                        title="Copiar UUID"
+                      >
+                        <CopyIcon sx={{ fontSize: 13 }} />
+                      </button>
                     </div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 11, color: "var(--text-muted)" }}>
@@ -990,8 +1021,8 @@ export default function AgentesPage() {
                     />
                   </div>
 
-                  {/* Row 2: email + sort_order + active */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 120px auto", gap: 16, alignItems: "center" }}>
+                   {/* Row 2: email + sort_order + active + hide */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 120px auto auto", gap: 16, alignItems: "center" }}>
                     <TextField
                       label="Email"
                       type="email"
@@ -1018,6 +1049,26 @@ export default function AgentesPage() {
                           label={
                             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
                               Ativo
+                            </span>
+                          }
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="hide"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={field.value}
+                              onChange={field.onChange}
+                              color="primary"
+                            />
+                          }
+                          label={
+                            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                              Oculto
                             </span>
                           }
                         />
