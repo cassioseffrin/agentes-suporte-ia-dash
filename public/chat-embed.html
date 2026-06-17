@@ -36,14 +36,17 @@
     ║    &bubble-bot-color=rgb(30,41,59)                                 ║
     ║    &bubble-user-bg=rgb(59,141,225)                                 ║
     ║    &bubble-user-color=rgb(255,255,255)                             ║
+    ║    &allow-minimize-and-close=false                                 ║
     ║                                                                    ║
     ║  VIA DELPHI JAVASCRIPT (após carregamento):                        ║
     ║    var w = document.getElementById('chat-widget');                  ║
     ║    w.setAttribute('user-email', 'novo@email.com');                 ║
     ║    w.setAttribute('user-name', 'Novo Nome');                       ║
     ║    w.setAttribute('user-cnpj', '12345678000100');                  ║
+    ║    w.setAttribute('allow-minimize-and-close', 'false');            ║
     ║    w.openChat();   // Abre o chat                                  ║
     ║    w.closeChat();  // Fecha o chat                                 ║
+    ║                                                                    ║
     ╚══════════════════════════════════════════════════════════════════════╝
   -->
 
@@ -58,7 +61,8 @@
         'user-email', 'user-name', 'user-cnpj',
         'api-url', 'api-key',
         'accent-color', 'bg-color', 'body-bg-color', 'text-color',
-        'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color'
+        'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color',
+        'allow-minimize-and-close'
       ];
 
       // 2. Carregar o script do widget (mesmo domínio)

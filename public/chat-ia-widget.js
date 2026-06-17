@@ -176,6 +176,7 @@
       .header-title { font-size: 14px; font-weight: 700; color: #fff; }\
       .header-sub { font-size: 11px; color: rgba(255,255,255,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
       .hbtn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s, background .2s; }\
+      .header.hide-buttons .hbtn { display: none !important; }\
       .hbtn:hover { opacity: 1; background: rgba(255,255,255,.15); }\
       \
       /* Body */\
@@ -338,7 +339,8 @@
     static get observedAttributes() {
       return ['agent-id', 'agent-name', 'agent-title', 'user-email', 'user-name', 'user-cnpj',
         'api-url', 'api-key', 'accent-color', 'position', 'hide-fab',
-        'bg-color', 'body-bg-color', 'text-color', 'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color'];
+        'bg-color', 'body-bg-color', 'text-color', 'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color',
+        'allow-minimize-and-close'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -387,6 +389,7 @@
     get bubbleUserColor() { return this.getAttribute('bubble-user-color') || '#fff'; }
     get posClass() { return this.getAttribute('position') === 'bottom-left' ? 'bottom-left' : 'bottom-right'; }
     get hideFab() { return this.hasAttribute('hide-fab'); }
+    get allowMinimizeAndClose() { return this.getAttribute('allow-minimize-and-close') !== 'false'; }
 
 
     connectedCallback() {
@@ -458,6 +461,7 @@
         header.className = 'header';
         panel.appendChild(header);
       }
+      header.classList.toggle('hide-buttons', !this.allowMinimizeAndClose);
 
       var headerInfo = header.querySelector('.header-info');
       if (!headerInfo) {
