@@ -3,53 +3,53 @@
 
   if (customElements.get('chat-ia-widget')) return;
 
-  /* ───────────────────── Lightweight Markdown Parser ───────────────────── */
+
   function parseMd(text) {
     if (!text) return '';
     let html = text
-      // Escape HTML
+
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      // Code blocks (``` ... ```)
+
       .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
         return '<pre><code>' + code.trim() + '</code></pre>';
       })
-      // Inline code
+
       .replace(/`([^`]+)`/g, '<code>$1</code>')
-      // Bold
+
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/__(.+?)__/g, '<strong>$1</strong>')
-      // Italic
+
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/_(.+?)_/g, '<em>$1</em>')
-      // Headings
+
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-      // Horizontal rules
+
       .replace(/^---$/gm, '<hr>')
-      // Blockquotes
+
       .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-      // Links
+
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-      // Unordered lists
+
       .replace(/^[\*\-] (.+)$/gm, '<li>$1</li>')
-      // Ordered lists
+
       .replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
-    // Wrap consecutive <li> in <ul>
+
     html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
-    // Merge consecutive blockquotes
+
     html = html.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
-    // Paragraphs: convert double newlines
+
     html = html.replace(/\n\n/g, '</p><p>');
-    // Single newlines to <br> (but not inside pre/code)
+
     html = html.replace(/\n/g, '<br>');
-    // Wrap in paragraph if not already wrapped
+
     if (!html.startsWith('<')) html = '<p>' + html + '</p>';
     return html;
   }
 
-  /* ──────────────────── Date formatting (pt-BR) ──────────────────── */
+
   function fmtDate(d) {
     if (!d) return '';
     var dt = d instanceof Date ? d : new Date(d);
@@ -60,7 +60,7 @@
       pad(dt.getMilliseconds(), 3);
   }
 
-  /* ──────────────────────── SVG Icons ──────────────────────── */
+
   var ICONS = {
     sparkle: '<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
@@ -81,17 +81,17 @@
     agent: '<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M21 12.22C21 6.73 16.74 3 12 3c-4.69 0-9 3.65-9 9.28-.6.34-1 .98-1 1.72v2c0 1.1.9 2 2 2h1v-6.1c0-3.87 3.13-7 7-7s7 3.13 7 7V19h-8v2h8c1.1 0 2-.9 2-2v-1.22c.59-.31 1-.92 1-1.64v-2.3c0-.7-.41-1.31-1-1.62z"/><circle cx="9" cy="13" r="1"/><circle cx="15" cy="13" r="1"/><path d="M18 11.03A6.04 6.04 0 0 0 12.05 6C9.02 6 5.76 8.51 6.02 12.45c2.47-2.04 4.46-3.09 5.84-3.42 1.54-.37 3.22.12 6.14 1.99z"/></svg>'
   };
 
-  /* ───────────────────── Color Parsing Helper ───────────────────── */
+
   function parseToRGB(str, defaultHex, defaultRgb) {
     if (!str) return { hex: defaultHex, rgb: defaultRgb };
     str = str.trim();
 
-    // 1. Raw comma-separated RGB values: "189,65,64" or "189, 65, 64"
+
     if (/^\d+\s*,\s*\d+\s*,\s*\d+$/.test(str)) {
       return { hex: 'rgb(' + str + ')', rgb: str };
     }
 
-    // 2. Standard CSS rgb(...) or rgba(...) format
+
     var rgbMatch = str.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d\.]+)?\)$/i);
     if (rgbMatch) {
       return {
@@ -100,7 +100,7 @@
       };
     }
 
-    // 3. Hex code: #bd4140, bd4140, #b40, b40
+
     var hex = str;
     if (!hex.startsWith('#') && /^[0-9a-fA-F]{3,8}$/.test(hex)) {
       hex = '#' + hex;
@@ -120,11 +120,11 @@
       }
     }
 
-    // Fallback to default
+
     return { hex: defaultHex, rgb: defaultRgb };
   }
 
-  /* ──────────────────────── CSS Template ──────────────────────── */
+
   function buildCSS(colors) {
     var ac = colors.accent.hex;
     var acRgb = colors.accent.rgb;
@@ -300,14 +300,14 @@
     ';
   }
 
-  /* ─────────────────────── Web Component ─────────────────────── */
+
   class ChatIAWidget extends HTMLElement {
 
     constructor() {
       super();
       this._shadow = this.attachShadow({ mode: 'open' });
 
-      // State
+
       this._open = false;
       this._expanded = false;
       this._messages = [];
@@ -332,11 +332,11 @@
       this._userEventsSource = null;
     }
 
-    /* ── Observed attributes ── */
+
     static get observedAttributes() {
       return ['agent-id', 'agent-name', 'agent-title', 'user-email', 'user-name', 'user-cnpj',
-              'api-url', 'api-key', 'accent-color', 'position', 'hide-fab',
-              'bg-color', 'body-bg-color', 'text-color', 'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color'];
+        'api-url', 'api-key', 'accent-color', 'position', 'hide-fab',
+        'bg-color', 'body-bg-color', 'text-color', 'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color'];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -344,7 +344,7 @@
 
       if (this.isConnected) {
         if (['user-email', 'user-cnpj', 'agent-id', 'agent-name'].indexOf(name) !== -1) {
-          // Reset thread details for the new user or context
+
           this._threadId = '';
           this._messages = [];
           this._history = [];
@@ -366,27 +366,27 @@
       }
     }
 
-    /* ── Getters ── */
-    get agentId()         { return this.getAttribute('agent-id') || ''; }
-    get agentName()       { return this.getAttribute('agent-name') || ''; }
-    get agentTitle()      { return this.getAttribute('agent-title') || this.agentName || 'Assistente IA'; }
-    get userEmail()       { return this.getAttribute('user-email') || ''; }
-    get userName()        { return this.getAttribute('user-name') || ''; }
-    get userCnpj()        { return this.getAttribute('user-cnpj') || ''; }
-    get apiUrl()          { return (this.getAttribute('api-url') || 'https://assistant.arpasistemas.com.br').replace(/\/$/, ''); }
-    get apiKey()          { return this.getAttribute('api-key') || ''; }
-    get accentColor()     { return this.getAttribute('accent-color') || '#bd4140'; }
-    get bgColor()         { return this.getAttribute('bg-color') || '#1a1d27'; }
-    get bodyBgColor()     { return this.getAttribute('body-bg-color') || '#21253a'; }
-    get textColor()       { return this.getAttribute('text-color') || '#e2e8f0'; }
-    get bubbleBotBg()     { return this.getAttribute('bubble-bot-bg') || '#2a2f47'; }
-    get bubbleBotColor()  { return this.getAttribute('bubble-bot-color') || '#e2e8f0'; }
-    get bubbleUserBg()    { return this.getAttribute('bubble-user-bg') || ''; }
-    get bubbleUserColor() { return this.getAttribute('bubble-user-color') || '#fff'; }
-    get posClass()        { return this.getAttribute('position') === 'bottom-left' ? 'bottom-left' : 'bottom-right'; }
-    get hideFab()         { return this.hasAttribute('hide-fab'); }
 
-    /* ── Lifecycle ── */
+    get agentId() { return this.getAttribute('agent-id') || ''; }
+    get agentName() { return this.getAttribute('agent-name') || ''; }
+    get agentTitle() { return this.getAttribute('agent-title') || this.agentName || 'Assistente IA'; }
+    get userEmail() { return this.getAttribute('user-email') || ''; }
+    get userName() { return this.getAttribute('user-name') || ''; }
+    get userCnpj() { return this.getAttribute('user-cnpj') || ''; }
+    get apiUrl() { return (this.getAttribute('api-url') || 'https://assistant.arpasistemas.com.br').replace(/\/$/, ''); }
+    get apiKey() { return this.getAttribute('api-key') || ''; }
+    get accentColor() { return this.getAttribute('accent-color') || '#bd4140'; }
+    get bgColor() { return this.getAttribute('bg-color') || '#1a1d27'; }
+    get bodyBgColor() { return this.getAttribute('body-bg-color') || '#21253a'; }
+    get textColor() { return this.getAttribute('text-color') || '#e2e8f0'; }
+    get bubbleBotBg() { return this.getAttribute('bubble-bot-bg') || '#2a2f47'; }
+    get bubbleBotColor() { return this.getAttribute('bubble-bot-color') || '#e2e8f0'; }
+    get bubbleUserBg() { return this.getAttribute('bubble-user-bg') || ''; }
+    get bubbleUserColor() { return this.getAttribute('bubble-user-color') || '#fff'; }
+    get posClass() { return this.getAttribute('position') === 'bottom-left' ? 'bottom-left' : 'bottom-right'; }
+    get hideFab() { return this.hasAttribute('hide-fab'); }
+
+
     connectedCallback() {
       this._render(true);
     }
@@ -395,13 +395,13 @@
       this._closeUserEvents();
     }
 
-    /* ───────────────────────── RENDER ───────────────────────── */
+
     _render(forceScroll) {
       if (forceScroll === undefined) forceScroll = false;
       var self = this;
       var s = this._shadow;
 
-      // Ensure style tag exists
+
       var style = s.querySelector('style');
       if (!style) {
         style = document.createElement('style');
@@ -419,7 +419,7 @@
       };
       style.textContent = buildCSS(colors);
 
-      // ── FAB ──
+
       var fab = s.querySelector('.fab');
       if (!fab) {
         fab = document.createElement('button');
@@ -440,7 +440,7 @@
         return;
       }
 
-      // ── Panel ──
+
       var panel = s.querySelector('.panel');
       if (!panel) {
         panel = document.createElement('div');
@@ -449,7 +449,7 @@
       }
       panel.className = 'panel ' + this.posClass + ' ' + (this._expanded ? 'expanded' : 'normal') + (this.hideFab ? ' no-fab' : '');
 
-      // ── Header ──
+
       var header = panel.querySelector('.header');
       if (!header) {
         header = document.createElement('div');
@@ -503,7 +503,7 @@
         }
       }
 
-      // ── View Containers ──
+
       var consentView = panel.querySelector('.consent');
       if (!consentView) {
         consentView = document.createElement('div');
@@ -543,7 +543,7 @@
         panel.appendChild(chatView);
       }
 
-      // Hide / Show views based on state
+
       if (this._showConsent) {
         consentView.classList.remove('hidden');
         historyView.classList.add('hidden');
@@ -561,7 +561,7 @@
         this._renderChat(chatView, forceScroll);
       }
 
-      // Feedback dialog overlay
+
       var overlay = panel.querySelector('.dialog-overlay');
       if (overlay) overlay.remove();
 
@@ -570,7 +570,7 @@
       }
     }
 
-    /* ── Helper: header button ── */
+
     _hBtn(iconHtml, title, handler) {
       var btn = document.createElement('button');
       btn.className = 'hbtn';
@@ -580,7 +580,7 @@
       return btn;
     }
 
-    /* ── Consent screen ── */
+
     _renderConsent(consentView) {
       var self = this;
       if (!consentView.innerHTML.trim()) {
@@ -596,14 +596,14 @@
           self._showConsent = false; self._open = false; self._render();
         });
         consentView.querySelector('.btn-accept').addEventListener('click', function () {
-          try { localStorage.setItem('ia_consent', 'true'); } catch (e) {}
+          try { localStorage.setItem('ia_consent', 'true'); } catch (e) { }
           self._consentGiven = true; self._showConsent = false;
           self._createNewThread();
         });
       }
     }
 
-    /* ── History screen ── */
+
     _renderHistory(historyView) {
       var self = this;
       historyView.innerHTML = '';
@@ -664,12 +664,12 @@
       }
     }
 
-    /* ── Chat screen ── */
+
     _renderChat(chatView, forceScroll) {
       var self = this;
       var body = chatView.querySelector('.body');
 
-      // Empty state
+
       var emptyState = body.querySelector('.empty-state');
       var existingRows = body.querySelectorAll('.msg-row:not(.streaming-row)');
 
@@ -687,7 +687,7 @@
       } else {
         if (emptyState) emptyState.remove();
 
-        // Reconciliation
+
         for (var i = 0; i < this._messages.length; i++) {
           var msg = this._messages[i];
           var row = existingRows[i];
@@ -740,7 +740,7 @@
         }
       }
 
-      // Streaming preview row
+
       var streamingRow = body.querySelector('.streaming-row');
       if (this._isTyping && this._streamingText) {
         if (!streamingRow) {
@@ -775,7 +775,7 @@
         if (streamingRow) streamingRow.remove();
       }
 
-      // Typing indicator
+
       var typingEl = body.querySelector('.typing');
       if (this._isTyping) {
         if (!typingEl) {
@@ -811,10 +811,10 @@
         if (typingEl) typingEl.remove();
       }
 
-      // Auto-scroll
+
       this._scrollToBottom(forceScroll);
 
-      // Input area
+
       var inputArea = chatView.querySelector('.input-area');
       var ta = inputArea.querySelector('textarea');
       var sendBtn = inputArea.querySelector('.send-btn');
@@ -856,7 +856,7 @@
         }
       }
 
-      // Rating bar
+
       var rbar = chatView.querySelector('.rating-bar');
       if (this._messages.length > 1) {
         rbar.classList.remove('hidden');
@@ -880,7 +880,7 @@
       }
     }
 
-    /* ── Build single message element ── */
+
     _buildMsgEl(msg, idx) {
       var self = this;
       var row = document.createElement('div');
@@ -895,7 +895,7 @@
 
       var bub = document.createElement('div');
       bub.className = 'bubble' + (msg.isUser ? ' user' : '') + (msg.isAuditor ? ' auditor' : '');
-      
+
       var content = document.createElement('div');
       content.className = 'bubble-content';
       if (msg.isUser) {
@@ -918,7 +918,7 @@
         cpBtn.title = 'Copiar';
         cpBtn.className = 'msg-action-copy';
         cpBtn.addEventListener('click', function () {
-          try { navigator.clipboard.writeText(msg.text); } catch (e) {}
+          try { navigator.clipboard.writeText(msg.text); } catch (e) { }
         });
         actions.appendChild(cpBtn);
 
@@ -951,7 +951,7 @@
       return row;
     }
 
-    /* ── Scroll management ── */
+
     _scrollToBottom(force) {
       var body = this._shadow.querySelector('.chat-view .body');
       if (!body) return;
@@ -962,7 +962,7 @@
       }
     }
 
-    /* ── Feedback dialog ── */
+
     _renderFeedbackDialog(panel) {
       var self = this;
       var overlay = document.createElement('div');
@@ -1008,10 +1008,10 @@
       panel.appendChild(overlay);
     }
 
-    /* ── Escape HTML ── */
+
     _esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    /* ───────────────────────── API METHODS ───────────────────────── */
+
 
     _headers(json) {
       var h = {};
@@ -1029,24 +1029,24 @@
       this._render();
     }
 
-    /* ── Open chat ── */
+
     _handleOpen() {
       this._open = true;
       var consent = false;
-      try { consent = localStorage.getItem('ia_consent') === 'true'; } catch (e) {}
+      try { consent = localStorage.getItem('ia_consent') === 'true'; } catch (e) { }
       if (!consent) {
         this._showConsent = true;
       } else {
         this._consentGiven = true;
         if (!this._threadId) {
           this._createNewThread();
-          return; // render called inside
+          return;
         }
       }
       this._render(true);
     }
 
-    /* ── Reset ── */
+
     _handleReset() {
       this._messages = [];
       this._threadId = '';
@@ -1061,7 +1061,7 @@
       this._createNewThread();
     }
 
-    /* ── Create thread ── */
+
     _createNewThread() {
       var self = this;
       var q = new URLSearchParams();
@@ -1087,7 +1087,7 @@
         .catch(function (e) { console.error('[ChatIA Widget] Erro ao criar thread:', e); self._render(false); });
     }
 
-    /* ── SSE: user events (auditor messages) ── */
+
     _connectUserEvents() {
       this._closeUserEvents();
       if (!this._threadId) return;
@@ -1106,7 +1106,7 @@
             timestamp: data.created_at ? new Date(data.created_at) : new Date()
           });
           self._render(false);
-        } catch (ex) {}
+        } catch (ex) { }
       });
       es.onerror = function () { console.warn('[ChatIA Widget] SSE desconectado'); };
     }
@@ -1118,7 +1118,7 @@
       }
     }
 
-    /* ── Send message ── */
+
     async _handleSend() {
       var text = this._input.trim();
       if (!text || this._isTyping) return;
@@ -1190,9 +1190,9 @@
             }
           }
         );
-      } catch (e) {}
+      } catch (e) { }
 
-      // Safety net
+
       if (!finished) {
         this._isTyping = false;
         this._statusText = '';
@@ -1200,7 +1200,7 @@
           this._streamingText = '';
           this._messages.push({ text: this._cleanText(accumulated), isUser: false, timestamp: new Date() });
         } else {
-          // Fallback non-streaming
+
           this._statusText = 'Tentando conexão alternativa...';
           this._render(false);
           var reply = await this._fetchFallback(text, tid);
@@ -1216,7 +1216,7 @@
       }
     }
 
-    /* ── Sync thread creation ── */
+
     _createNewThreadSync() {
       var self = this;
       return new Promise(function (resolve) {
@@ -1233,7 +1233,7 @@
       });
     }
 
-    /* ── Streaming fetch ── */
+
     async _fetchStream(message, threadId, onToken, onStatus, onDone, onFallback, onError) {
       var controller = new AbortController();
       var timeout = setTimeout(function () { controller.abort(); }, 4 * 60 * 1000);
@@ -1276,7 +1276,7 @@
                 case 'fallback': onFallback(d.content || '', d.reason || ''); break;
                 case 'error': onError(d.detail || 'Erro desconhecido.'); break;
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       } catch (err) {
@@ -1290,7 +1290,7 @@
       }
     }
 
-    /* ── Non-streaming fallback ── */
+
     async _fetchFallback(message, threadId) {
       try {
         var res = await fetch(this.apiUrl + '/chat', {
@@ -1302,11 +1302,11 @@
           var data = await res.json();
           return { content: (data.content && data.content[0]) || '', chat_id: data.chat_id || null };
         }
-      } catch (e) {}
+      } catch (e) { }
       return null;
     }
 
-    /* ── History ── */
+
     _openHistory() {
       this._showHistory = true;
       this._historyPage = 1;
@@ -1392,7 +1392,7 @@
         .catch(function (e) { console.error(e); });
     }
 
-    /* ── Message feedback ── */
+
     _msgFeedback(chatId, thumb, text) {
       var self = this;
       var body = { thumb: thumb };
@@ -1414,7 +1414,7 @@
       }).catch(function (e) { console.error(e); });
     }
 
-    /* ── Conversation rating ── */
+
     _sendRating(rating) {
       if (!this._threadId || this._feedbackSent) return;
       this._feedbackRating = rating;
@@ -1429,7 +1429,7 @@
       }).catch(function () { self._render(false); });
     }
 
-    /* ── Clean text ── */
+
     _cleanText(text) {
       var t = text;
       [/,\s*:\n/g, /,\s*:\s/g, /,\s*:/g, /-\s*:/g].forEach(function (p) { t = t.replace(p, ''); });
