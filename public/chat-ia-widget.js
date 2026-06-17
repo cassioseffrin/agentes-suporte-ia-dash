@@ -176,7 +176,7 @@
       .header-title { font-size: 14px; font-weight: 700; color: #fff; }\
       .header-sub { font-size: 11px; color: rgba(255,255,255,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
       .hbtn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s, background .2s; }\
-      .header.hide-buttons .hbtn { display: none !important; }\
+      .header.hide-buttons #btn-expand, .header.hide-buttons #btn-close { display: none !important; }\
       .hbtn:hover { opacity: 1; background: rgba(255,255,255,.15); }\
       \
       /* Body */\
@@ -488,6 +488,7 @@
         });
 
         btnExp.setAttribute('id', 'btn-expand');
+        btnClose.setAttribute('id', 'btn-close');
         header.appendChild(btnHistory);
         header.appendChild(btnNew);
         header.appendChild(btnExp);
