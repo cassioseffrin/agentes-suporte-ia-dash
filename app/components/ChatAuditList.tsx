@@ -69,6 +69,8 @@ interface ThreadItem {
   feedback_rating: number | null;
   has_auditor?: boolean;
   auditor_nickname?: string | null;
+  thumb_up_count?: number;
+  thumb_down_count?: number;
 }
 
 interface ChatMessage {
@@ -1492,6 +1494,42 @@ function ChatAuditListContent() {
                       fontWeight: 600,
                       bgcolor: "rgba(245, 158, 11, 0.15)",
                       color: "#fcd34d",
+                    }}
+                  />
+                )}
+                {t.thumb_up_count !== undefined && t.thumb_up_count > 0 && (
+                  <Chip
+                    icon={
+                      <ThumbUpIcon
+                        sx={{ color: "#10b981 !important", fontSize: 13 }}
+                      />
+                    }
+                    label={t.thumb_up_count}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      bgcolor: "rgba(16, 185, 129, 0.15)",
+                      color: "#10b981",
+                    }}
+                  />
+                )}
+                {t.thumb_down_count !== undefined && t.thumb_down_count > 0 && (
+                  <Chip
+                    icon={
+                      <ThumbDownIcon
+                        sx={{ color: "#ef4444 !important", fontSize: 13 }}
+                      />
+                    }
+                    label={t.thumb_down_count}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      bgcolor: "rgba(239, 68, 68, 0.15)",
+                      color: "#ef4444",
                     }}
                   />
                 )}
