@@ -148,12 +148,15 @@ export default function ChatAuditList() {
 function ChatAuditListContent() {
   const { auditor } = useAuditor();
   const { lastThreadUpdate } = useNotification();
+  const searchParams = useSearchParams();
+  const threadIdFromUrl = searchParams.get("thread");
+
   const [threads, setThreads] = useState<ThreadItem[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState(threadIdFromUrl || "");
+  const [searchInput, setSearchInput] = useState(threadIdFromUrl || "");
   const [auditorOnly, setAuditorOnly] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -180,9 +183,7 @@ function ChatAuditListContent() {
   const [faqModalOpen, setFaqModalOpen] = useState(false);
   const [faqPairs, setFaqPairs] = useState<{ question: string; answer: string }[]>([]);
 
-  const searchParams = useSearchParams();
-  const threadIdFromUrl = searchParams.get("thread");
-  const [autoSelectFirst, setAutoSelectFirst] = useState(false);
+  const [autoSelectFirst, setAutoSelectFirst] = useState(!!threadIdFromUrl);
 
   const fetchThreads = useCallback(
     async (p: number, q: string, auditor_only: boolean) => {
@@ -238,10 +239,13 @@ function ChatAuditListContent() {
   // Auto-select first result when using thread ID from URL
   useEffect(() => {
     if (autoSelectFirst && threads.length > 0) {
-      handleSelectThread(threads[0]);
-      setAutoSelectFirst(false);
+      const matchingThread = threads.find((t) => t.thread_id === threadIdFromUrl);
+      if (matchingThread) {
+        handleSelectThread(matchingThread);
+        setAutoSelectFirst(false);
+      }
     }
-  }, [autoSelectFirst, threads]);
+  }, [autoSelectFirst, threads, threadIdFromUrl]);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
