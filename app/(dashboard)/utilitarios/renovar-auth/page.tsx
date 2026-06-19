@@ -53,6 +53,7 @@ export default function RenovarAuthPage() {
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
   const [os, setOs] = useState<"mac" | "windows">("windows");
+  const [cliVersion, setCliVersion] = useState<string | null>(null);
 
   // New Profile inline creation
   const [isAddingProfile, setIsAddingProfile] = useState(false);
@@ -116,9 +117,24 @@ export default function RenovarAuthPage() {
     }
   }, [selectedProfile]);
 
+  const fetchVersion = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/notebooklm-version`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.version) {
+          setCliVersion(json.version);
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao carregar versão:", e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProfiles();
-  }, []);
+    fetchVersion();
+  }, [fetchProfiles, fetchVersion]);
 
   const handleRenameProfile = async () => {
     if (!selectedProfile) return;
@@ -247,10 +263,28 @@ export default function RenovarAuthPage() {
     <div style={{ animation: "fadeIn 0.3s ease", maxWidth: 900 }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-          Renovar Autenticação
-        </h1>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>
+            Renovar Autenticação
+          </h1>
+          {cliVersion && (
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--accent, #bd4140)",
+                background: "rgba(189, 65, 64, 0.08)",
+                border: "1px solid rgba(189, 65, 64, 0.2)",
+                padding: "3px 8px",
+                borderRadius: 12,
+                fontFamily: "monospace",
+              }}
+            >
+              {cliVersion}
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4, marginBottom: 0 }}>
           Gerencie a autenticação do NotebookLM para cada profile.
           Cada profile corresponde a uma conta Google diferente.
         </p>
