@@ -12,7 +12,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 interface DashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  top_users?: { name: string; email: string; total: number; avg_rating?: number | null; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number }[];
+  top_users?: { name: string; email: string; total: number; avg_rating?: number | null; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number; cnpj?: string; razao_social?: string | null }[];
   agents?: { name: string; total: number }[];
 }
 
@@ -525,7 +525,7 @@ export default function DashboardPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)" }}>
-                {["#", "Nome", "Email", "Total de Chats", "Avaliação"].map((h) => (
+                {["#", "Nome", "CNPJ", "Razão Social", "Email", "Total de Chats", "Avaliação"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -563,6 +563,12 @@ export default function DashboardPage() {
                   </td>
                   <td style={{ padding: "12px 20px", fontSize: 14, fontWeight: 500, textTransform: "capitalize" }}>
                     {u.name.toLowerCase()}
+                  </td>
+                  <td style={{ padding: "12px 20px", fontSize: 12, color: "var(--text-muted)", fontFamily: "'Roboto Mono', monospace" }}>
+                    {u.cnpj || "-"}
+                  </td>
+                  <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }}>
+                    {u.razao_social || "-"}
                   </td>
                   <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }}>
                     {u.email}

@@ -71,6 +71,11 @@ interface ThreadItem {
   auditor_nickname?: string | null;
   thumb_up_count?: number;
   thumb_down_count?: number;
+  company_data?: {
+    cnpj?: string;
+    razao_social?: string;
+    [key: string]: any;
+  } | null;
 }
 
 interface ChatMessage {
@@ -99,6 +104,13 @@ const formatDateTimePtBr = (dateInput?: Date | string | number) => {
   const s = pad(date.getSeconds(), 2);
   const ms = pad(date.getMilliseconds(), 3);
   return `${d}/${m}/${y} ${h}:${min}:${s}.${ms}`;
+};
+
+const formatCnpj = (cnpj?: string) => {
+  if (!cnpj) return "";
+  const clean = cnpj.replace(/\D/g, "");
+  if (clean.length !== 14) return cnpj;
+  return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 };
 
 // Helper: render auditor avatar (custom SVG or fallback icon)
@@ -580,6 +592,11 @@ function ChatAuditListContent() {
                 <SmartToyIcon sx={{ fontSize: 13, mr: 0.5, verticalAlign: "middle" }} />
                 {selectedThread.agent_title}
               </Typography>
+              {selectedThread.company_data && selectedThread.company_data.cnpj && (
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
+                  🏢 {formatCnpj(selectedThread.company_data.cnpj)}{selectedThread.company_data.razao_social ? ` - ${selectedThread.company_data.razao_social}` : ""}
+                </Typography>
+              )}
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
                 {new Date(selectedThread.created_at).toLocaleString("pt-BR")}
               </Typography>
