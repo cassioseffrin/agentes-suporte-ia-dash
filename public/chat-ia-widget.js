@@ -979,10 +979,14 @@
       var body = this._shadow.querySelector('.chat-view .body');
       if (!body) return;
       var threshold = 150;
-      var isNearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < threshold;
-      if (force || isNearBottom) {
-        body.scrollTop = body.scrollHeight;
-      }
+      var scrollAction = function () {
+        var isNearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < threshold;
+        if (force || isNearBottom) {
+          body.scrollTop = body.scrollHeight;
+        }
+      };
+      scrollAction();
+      setTimeout(scrollAction, 50); // Fallback for delayed layouts
     }
 
 
@@ -1142,6 +1146,7 @@
       var self = this;
       var es = new EventSource(this.apiUrl + '/thread/' + this._threadId + '/user-events');
       this._userEventsSource = es;
+      
       es.addEventListener('auditor_message', function (e) {
         try {
           var data = JSON.parse(e.data);
@@ -1153,9 +1158,31 @@
             auditor_nickname: data.auditor_nickname || data.auditor_name || null,
             timestamp: data.created_at ? new Date(data.created_at) : new Date()
           });
-          self._render(false);
+          self._render(true);
         } catch (ex) { }
       });
+
+      es.addEventListener('agent_message', function (e) {
+        try {
+          var data = JSON.parse(e.data);
+          // Evita duplicar se o chat_id ou o texto da última mensagem bater
+          var exists = self._messages.some(function (m) {
+            return m.id === data.chat_id || (m.text === data.message && !m.isUser);
+          });
+          if (!exists) {
+            self._messages.push({
+              text: self._cleanText(data.message),
+              isUser: false,
+              id: data.chat_id || undefined,
+              timestamp: data.created_at ? new Date(data.created_at) : new Date()
+            });
+            self._isTyping = false;
+            self._statusText = '';
+            self._render(true);
+          }
+        } catch (ex) { }
+      });
+
       es.onerror = function () { console.warn('[ChatIA Widget] SSE desconectado'); };
     }
 
@@ -1415,8 +1442,8 @@
           self._showHistory = false;
           self._closeUserEvents();
           self._connectUserEvents();
-          self._isTyping = false;
-          self._statusText = '';
+          self._isTyping = !!data.generating;
+          self._statusText = data.generating ? 'Gerando resposta com IA...' : '';
           self._render(true);
         })
         .catch(function (e) {
