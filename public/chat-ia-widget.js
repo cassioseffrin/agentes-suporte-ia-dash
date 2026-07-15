@@ -65,8 +65,8 @@
     sparkle: '<svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
     send: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>',
-    history: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>',
-    newChat: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M4 4h16v12H5.17L4 17.17V4m0-2c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2H4zm4 10h8v2H8v-2zm0-3h8v2H8V9zm0-3h8v2H8V6z"/></svg>',
+    history: '<svg width="33" height="31" viewBox="0 0 33 31" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5063 11.0772H23.3554M13.375 16.7229L23.3556 16.7229M10.5064 21.5L19.4646 21.5M24.8547 27.2726C27.3136 25.7263 29.2301 23.5286 30.3618 20.9572C31.4935 18.3859 31.7896 15.5565 31.2127 12.8268C30.6357 10.097 29.2117 7.58964 27.1205 5.62162C25.0294 3.65361 22.3651 2.31337 19.4646 1.7704C16.5641 1.22742 13.5576 1.5061 10.8254 2.57118C8.09319 3.63626 5.75792 5.43992 4.11492 7.75406C1.09687 12.0049 1.59681 16.2692 2.60968 18.9463C3.43858 21.1371 2.17978 23.8378 1.59687 25.8882C1.46773 26.3416 1.46771 26.8191 1.59681 27.2726C1.7259 27.7261 1.97957 28.1396 2.33231 28.4716C2.68505 28.8035 3.12443 29.0423 3.60628 29.1638C4.08813 29.2853 4.59548 29.2852 5.07732 29.1637C7.25594 28.6151 10.2409 27.1751 12.4535 28.2128C16.7246 30.2134 20.7267 29.8684 24.8547 27.2726Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    newChat: '<svg width="33" height="31" viewBox="0 0 33 31" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5636 15.5574H23.4364M17 9.5V21.6149M24.8547 27.2726C27.3136 25.7263 29.2301 23.5286 30.3618 20.9572C31.4935 18.3859 31.7896 15.5565 31.2127 12.8268C30.6357 10.097 29.2117 7.58964 27.1205 5.62162C25.0294 3.65361 22.3651 2.31337 19.4646 1.7704C16.5641 1.22742 13.5576 1.5061 10.8254 2.57118C8.09319 3.63626 5.75792 5.43992 4.11492 7.75406C1.09687 12.0049 1.59681 16.2692 2.60968 18.9463C3.43858 21.1371 2.17978 23.8378 1.59687 25.8882C1.46773 26.3416 1.46771 26.8191 1.59681 27.2726C1.7259 27.7261 1.97957 28.1396 2.33231 28.4716C2.68505 28.8035 3.12443 29.0423 3.60628 29.1638C4.08813 29.2853 4.59548 29.2852 5.07732 29.1637C7.25594 28.6151 10.2409 27.1751 12.4535 28.2128C16.7246 30.2134 20.7267 29.8684 24.8547 27.2726Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     expand: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M21 11V3h-8l3.29 3.29-10 10L3 13v8h8l-3.29-3.29 10-10z"/></svg>',
     collapse: '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M22 3.41L16.71 8.7 20 12h-8V4l3.29 3.29L20.59 2 22 3.41zM3.41 22l5.29-5.29L12 20v-8H4l3.29 3.29L2 20.59 3.41 22z"/></svg>',
     robot: '<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.753 14a2.25 2.25 0 0 1 2.25 2.25v.904A3.75 3.75 0 0 1 18.696 20c-1.565 1.344-3.75 2-6.696 2s-5.131-.656-6.696-2a3.75 3.75 0 0 1-1.307-2.846v-.904A2.25 2.25 0 0 1 6.247 14h11.506zM11.898 2.008L12 2a.75.75 0 0 1 .743.648l.007.102v.5h3.5a2.25 2.25 0 0 1 2.25 2.25v4a2.25 2.25 0 0 1-2.25 2.25h-8.5A2.25 2.25 0 0 1 5.5 9.5v-4a2.25 2.25 0 0 1 2.25-2.25h3.5v-.5a.75.75 0 0 1 .648-.743L12 2l-.102.008zM9.75 6.5a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5zm4.5 0a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5z"/></svg>',
@@ -171,11 +171,18 @@
       }\
       \
       /* Header */\
-      .header { background: linear-gradient(135deg, ' + ac + ' 0%, rgba(' + acRgb + ', 0.8) 100%); padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }\
-      .header-info { flex: 1; min-width: 0; }\
+      .header { position: relative; overflow: hidden; background: linear-gradient(135deg, ' + ac + ' 0%, rgba(' + acRgb + ', 0.8) 100%); padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }\
+      .header-loader { position: absolute; bottom: 0; left: 0; height: 4px; width: 100%; background: linear-gradient(to right, rgba(255,255,255,0.1), #ffffff, rgba(255,255,255,0.1)); transform: translateX(-100%); display: none; z-index: 2; }\
+      .header.processing .header-loader { display: block; animation: headerLoad 1.5s infinite linear; }\
+      @keyframes headerLoad {\
+        0% { transform: translateX(-100%); }\
+        100% { transform: translateX(100%); }\
+      }\
+      .header-info { flex: 1; min-width: 0; position: relative; z-index: 3; }\
       .header-title { font-size: 14px; font-weight: 700; color: #fff; }\
       .header-sub { font-size: 11px; color: rgba(255,255,255,.8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
-      .hbtn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s, background .2s; }\
+      .hbtn { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center; opacity: .85; transition: opacity .2s, background .2s; position: relative; z-index: 3; }\
+      .hbtn svg { width: 23px !important; height: 23px !important; }\
       .header.hide-buttons #btn-expand, .header.hide-buttons #btn-close { display: none !important; }\
       .hbtn:hover { opacity: 1; background: rgba(255,255,255,.15); }\
       \
@@ -462,6 +469,14 @@
         panel.appendChild(header);
       }
       header.classList.toggle('hide-buttons', !this.allowMinimizeAndClose);
+      header.classList.toggle('processing', !!this._isTyping);
+
+      var loader = header.querySelector('.header-loader');
+      if (header && !loader) {
+        loader = document.createElement('div');
+        loader.className = 'header-loader';
+        header.appendChild(loader);
+      }
 
       var headerInfo = header.querySelector('.header-info');
       if (!headerInfo) {
@@ -473,7 +488,8 @@
           <div class="header-info">\
             <div class="header-title">Assistente IA</div>\
             <div class="header-sub">' + this._esc(subText) + '</div>\
-          </div>';
+          </div>\
+          <div class="header-loader"></div>';
 
         var btnHistory = this._hBtn(ICONS.history, 'Histórico de Conversas', function () {
           if (self._showHistory) { self._showHistory = false; self._render(); }
@@ -605,7 +621,7 @@
         consentView.querySelector('.btn-accept').addEventListener('click', function () {
           try { localStorage.setItem('ia_consent', 'true'); } catch (e) { }
           self._consentGiven = true; self._showConsent = false;
-          self._createNewThread();
+          self._loadLastThreadOrNew();
         });
       }
     }
@@ -1046,7 +1062,7 @@
       } else {
         this._consentGiven = true;
         if (!this._threadId) {
-          this._createNewThread();
+          this._loadLastThreadOrNew();
           return;
         }
       }
@@ -1066,6 +1082,31 @@
       this._isTyping = false;
       this._closeUserEvents();
       this._createNewThread();
+    }
+
+
+    _loadLastThreadOrNew() {
+      var self = this;
+      if (!this.userEmail) {
+        this._createNewThread();
+        return;
+      }
+
+      var url = this.apiUrl + '/history?email=' + encodeURIComponent(this.userEmail) + '&page=1&limit=1';
+      fetch(url, { headers: this._headers(false) })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var threads = data.threads || [];
+          if (threads.length > 0) {
+            self._selectHistoryThread(threads[0].thread_id, threads[0].agent_name);
+          } else {
+            self._createNewThread();
+          }
+        })
+        .catch(function (err) {
+          console.error('[ChatIA Widget] Erro ao buscar histórico:', err);
+          self._createNewThread();
+        });
     }
 
 
@@ -1374,9 +1415,16 @@
           self._showHistory = false;
           self._closeUserEvents();
           self._connectUserEvents();
+          self._isTyping = false;
+          self._statusText = '';
           self._render(true);
         })
-        .catch(function (e) { console.error(e); });
+        .catch(function (e) {
+          console.error(e);
+          self._isTyping = false;
+          self._statusText = '';
+          self._createNewThread();
+        });
     }
 
     _deleteThread(tId) {
