@@ -1465,6 +1465,20 @@ function ChatAuditListContent() {
                   <SmartToyIcon sx={{ fontSize: 13 }} />
                   {t.agent_title}
                 </Typography>
+                {t.company_data && t.company_data.cnpj && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "var(--text-secondary, #6b7280)",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.3,
+                    }}
+                  >
+                    🏢 {formatCnpj(t.company_data.cnpj)}{t.company_data.razao_social ? ` - ${t.company_data.razao_social}` : ""}
+                  </Typography>
+                )}
               </Box>
             </Box>
 
