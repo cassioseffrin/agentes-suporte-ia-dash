@@ -634,7 +634,7 @@
 
       var titleRow = document.createElement('div');
       titleRow.className = 'hist-title-row';
-      titleRow.innerHTML = ICONS.history + '<h3>Histórico de Conversas</h3>';
+      titleRow.innerHTML = '<h3>Histórico de Conversas</h3>';
       historyView.appendChild(titleRow);
 
       if (this._history.length === 0 && !this._loadingHistory) {
@@ -1417,8 +1417,22 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
           var threads = data.threads || [];
-          if (page === 1) self._history = threads;
-          else self._history = self._history.concat(threads);
+          if (page === 1) {
+            var activeThread = null;
+            for (var i = 0; i < threads.length; i++) {
+              if (threads[i].generating) {
+                activeThread = threads[i];
+                break;
+              }
+            }
+            if (activeThread) {
+              self._selectHistoryThread(activeThread.thread_id, activeThread.agent_name);
+              return;
+            }
+            self._history = threads;
+          } else {
+            self._history = self._history.concat(threads);
+          }
           self._historyHasMore = threads.length > 0;
           self._loadingHistory = false;
           self._render(false);
