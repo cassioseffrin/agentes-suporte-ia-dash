@@ -278,6 +278,7 @@
       .hist-item:hover .hist-del { opacity: 1; }\
       .hist-item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }\
       .hist-subject { font-size: 13px; font-weight: 600; color: ' + text + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
+      .hist-last-msg { font-size: 11px; color: rgba(' + textRgb + ', 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; margin-bottom: 2px; }\
       .hist-agent { font-size: 11px; color: ' + ac + '; font-weight: 500; }\
       .hist-date { font-size: 11px; color: rgba(' + textRgb + ', 0.5); }\
       .hist-del { background: none; border: pointer; cursor: pointer; color: #ef4444; opacity: 0; transition: opacity .2s; padding: 4px; border-radius: 6px; display: flex; }\
@@ -646,9 +647,20 @@
       this._history.forEach(function (t) {
         var item = document.createElement('div');
         item.className = 'hist-item';
+        var msgSummary = '';
+        if (t.last_message) {
+          var cleanMsg = t.last_message.replace(/\s+/g, ' ').trim();
+          if (cleanMsg.length > 70) {
+            msgSummary = cleanMsg.substring(0, 70) + '...';
+          } else {
+            msgSummary = cleanMsg;
+          }
+        }
+
         item.innerHTML = '\
           <div class="hist-item-info">\
             <div class="hist-subject">' + self._esc(t.subject || 'Sem assunto') + '</div>\
+            ' + (msgSummary ? '<div class="hist-last-msg">' + self._esc(msgSummary) + '</div>' : '') + '\
             <div class="hist-agent">' + self._esc(t.agent_title || t.agent_name || '') + '</div>\
             <div class="hist-date">' + (t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : '') + '</div>\
           </div>';
@@ -1065,8 +1077,12 @@
         this._showConsent = true;
       } else {
         this._consentGiven = true;
-        if (!this._threadId) {
-          this._loadLastThreadOrNew();
+        // Se está aguardando resposta da IA, manter o chat atual
+        if (this._isTyping && this._threadId) {
+          // Não faz nada, mantém a tela do chat atual
+        } else {
+          // Abrir lista de histórico como tela inicial (igual WhatsApp)
+          this._openHistory();
           return;
         }
       }
