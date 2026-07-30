@@ -269,7 +269,9 @@ export default function Sidebar() {
             }}
           >
             <option value="openai">OpenAI (Default)</option>
-            <option value="dora">Dora</option>
+            <option value="dora">Dora (Feminina)</option>
+            <option value="alex">Alex (Masculina)</option>
+            <option value="santa">Santa (Masculina)</option>
           </select>
         </div>
 

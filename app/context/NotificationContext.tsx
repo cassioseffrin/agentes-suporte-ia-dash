@@ -11,7 +11,7 @@ const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 
-export type VoiceOption = "openai" | "dora" | "kokoro";
+export type VoiceOption = "openai" | "dora" | "alex" | "santa" | "kokoro";
 
 interface NotificationContextValue {
   ttsEnabled: boolean;
@@ -75,7 +75,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     const storedVoice = localStorage.getItem("selectedVoice") as VoiceOption | null;
-    if (storedVoice === "openai" || storedVoice === "dora" || storedVoice === "kokoro") {
+    if (storedVoice && ["openai", "dora", "alex", "santa", "kokoro"].includes(storedVoice)) {
       setSelectedVoiceState(storedVoice);
       selectedVoiceRef.current = storedVoice;
     }
