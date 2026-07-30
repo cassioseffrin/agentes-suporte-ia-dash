@@ -11,9 +11,15 @@ const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
 
+export type VoiceOption = "openai" | "kokoro";
+
 interface NotificationContextValue {
   ttsEnabled: boolean;
   setTtsEnabled: (enabled: boolean) => void;
+  selectedVoice: VoiceOption;
+  setSelectedVoice: (voice: VoiceOption) => void;
+  playbackSpeed: number;
+  setPlaybackSpeed: (speed: number) => void;
   ttsInteractionRequired: boolean;
   setTtsInteractionRequired: (required: boolean) => void;
   lastThreadUpdate: { threadId: string; timestamp: number } | null;
@@ -22,6 +28,10 @@ interface NotificationContextValue {
 const NotificationContext = createContext<NotificationContextValue>({
   ttsEnabled: true,
   setTtsEnabled: () => { },
+  selectedVoice: "openai",
+  setSelectedVoice: () => { },
+  playbackSpeed: 1.25,
+  setPlaybackSpeed: () => { },
   ttsInteractionRequired: false,
   setTtsInteractionRequired: () => { },
   lastThreadUpdate: null,
@@ -37,6 +47,8 @@ interface ToastState {
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { auditor } = useAuditor();
   const [ttsEnabled, setTtsEnabledState] = useState<boolean>(true);
+  const [selectedVoice, setSelectedVoiceState] = useState<VoiceOption>("openai");
+  const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.25);
   const [ttsInteractionRequired, setTtsInteractionRequired] = useState<boolean>(false);
   const [lastThreadUpdate, setLastThreadUpdate] = useState<{ threadId: string; timestamp: number } | null>(null);
   const [toast, setToast] = useState<ToastState>({
@@ -47,17 +59,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   });
 
   const ttsEnabledRef = useRef<boolean>(true);
+  const selectedVoiceRef = useRef<VoiceOption>("openai");
+  const playbackSpeedRef = useRef<number>(1.25);
   const ttsQueueRef = useRef<string[]>([]);
   const ttsPlayingRef = useRef<boolean>(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  // Load ttsEnabled from localStorage on mount
+  // Load preferences from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("ttsEnabled");
-    if (stored !== null) {
-      const enabled = stored === "true";
+    const storedEnabled = localStorage.getItem("ttsEnabled");
+    if (storedEnabled !== null) {
+      const enabled = storedEnabled === "true";
       setTtsEnabledState(enabled);
       ttsEnabledRef.current = enabled;
+    }
+
+    const storedVoice = localStorage.getItem("selectedVoice") as VoiceOption | null;
+    if (storedVoice === "openai" || storedVoice === "kokoro") {
+      setSelectedVoiceState(storedVoice);
+      selectedVoiceRef.current = storedVoice;
+    }
+
+    const storedSpeed = localStorage.getItem("playbackSpeed");
+    if (storedSpeed !== null) {
+      const speed = parseFloat(storedSpeed);
+      if (!isNaN(speed) && speed > 0) {
+        setPlaybackSpeedState(speed);
+        playbackSpeedRef.current = speed;
+      }
     }
   }, []);
 
@@ -65,6 +94,18 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setTtsEnabledState(enabled);
     ttsEnabledRef.current = enabled;
     localStorage.setItem("ttsEnabled", enabled ? "true" : "false");
+  };
+
+  const setSelectedVoice = (voice: VoiceOption) => {
+    setSelectedVoiceState(voice);
+    selectedVoiceRef.current = voice;
+    localStorage.setItem("selectedVoice", voice);
+  };
+
+  const setPlaybackSpeed = (speed: number) => {
+    setPlaybackSpeedState(speed);
+    playbackSpeedRef.current = speed;
+    localStorage.setItem("playbackSpeed", speed.toString());
   };
 
   const playNotificationBeep = () => {
@@ -121,18 +162,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       // 1. Play premium WhatsApp-like chime beep
       await playNotificationBeep();
 
-      // 2. Play the spoken info via TTS
+      // 2. Play the spoken info via TTS using selected voice engine
       const res = await axios.post(
         `${BASE_API_URL}/admin/tts`,
-        { text },
+        { text, voice: selectedVoiceRef.current },
         {
           headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
           responseType: "blob",
         }
       );
-      const audioBlob = new Blob([res.data], { type: "audio/mpeg" });
+      const contentType = res.headers["content-type"] || "audio/wav";
+      const audioBlob = new Blob([res.data], { type: contentType });
       audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
+      audio.playbackRate = playbackSpeedRef.current;
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
@@ -334,6 +377,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       value={{
         ttsEnabled,
         setTtsEnabled,
+        selectedVoice,
+        setSelectedVoice,
+        playbackSpeed,
+        setPlaybackSpeed,
         ttsInteractionRequired,
         setTtsInteractionRequired,
         lastThreadUpdate,

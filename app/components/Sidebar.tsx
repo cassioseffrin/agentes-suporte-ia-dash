@@ -61,7 +61,16 @@ export default function Sidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { auditor, logout } = useAuditor();
-  const { ttsEnabled, setTtsEnabled, ttsInteractionRequired, setTtsInteractionRequired } = useNotification();
+  const {
+    ttsEnabled,
+    setTtsEnabled,
+    selectedVoice,
+    setSelectedVoice,
+    playbackSpeed,
+    setPlaybackSpeed,
+    ttsInteractionRequired,
+    setTtsInteractionRequired,
+  } = useNotification();
 
   const handleLogout = () => {
     logout();
@@ -117,46 +126,21 @@ export default function Sidebar() {
           </div>
           <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Dashboard Admin</div>
           {auditor && (
-            <>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--accent, #bd4140)",
-                  marginTop: 2,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  maxWidth: 110,
-                }}
-                title={auditor.name || auditor.login}
-              >
-                {auditor.nickname || auditor.name || auditor.login}
-              </div>
-              <button
-                onClick={handleLogout}
-                title="Sair do sistema"
-                style={{
-                  marginTop: 4,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 3,
-                  color: "var(--text-muted)",
-                  fontSize: 10,
-                  lineHeight: 1,
-                  transition: "color 0.15s ease",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent, #bd4140)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
-              >
-                <PowerOffIcon style={{ fontSize: 13 }} />
-                <span>Sair</span>
-              </button>
-            </>
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: "var(--accent, #bd4140)",
+                marginTop: 2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: 110,
+              }}
+              title={auditor.name || auditor.login}
+            >
+              {auditor.nickname || auditor.name || auditor.login}
+            </div>
           )}
         </div>
         <button
@@ -176,7 +160,7 @@ export default function Sidebar() {
       </div>
 
       {/* Status indicator & TTS Toggle */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "12px 16px", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "12px 16px 8px 16px", gap: 8 }}>
         <div
           style={{
             flex: 1,
@@ -210,7 +194,6 @@ export default function Sidebar() {
                 setTtsInteractionRequired(false);
               }
               setTtsEnabled(!ttsEnabled);
-              // Play a quick dummy sound if turning on, to trigger browser unlock
               if (!ttsEnabled) {
                 const a = new Audio();
                 a.play().catch(() => {});
@@ -231,25 +214,87 @@ export default function Sidebar() {
                 : ttsInteractionRequired
                   ? "#f59e0b"
                   : "#10b981",
-              border: !ttsEnabled
-                ? "1px solid rgba(156,163,175,0.2)"
-                : ttsInteractionRequired
-                  ? "1px solid rgba(245, 158, 11, 0.3)"
-                  : "1px solid rgba(16,185,129,0.3)",
-              animation: ttsEnabled && ttsInteractionRequired ? `${pulseWarning} 2s infinite` : "none",
+              border: `1px solid ${
+                !ttsEnabled
+                  ? "rgba(156,163,175,0.3)"
+                  : ttsInteractionRequired
+                    ? "rgba(245, 158, 11, 0.5)"
+                    : "rgba(16,185,129,0.3)"
+              }`,
+              animation: ttsInteractionRequired ? `${pulseWarning} 2s infinite` : "none",
               transition: "all 0.3s ease",
               "&:hover": {
                 bgcolor: !ttsEnabled
                   ? "rgba(156,163,175,0.25)"
-                  : ttsInteractionRequired
-                    ? "rgba(245, 158, 11, 0.25)"
-                    : "rgba(16,185,129,0.25)",
+                  : "rgba(16,185,129,0.25)",
               },
             }}
           >
-            {ttsEnabled ? <VolumeUpIcon sx={{ fontSize: 18 }} /> : <VolumeOffIcon sx={{ fontSize: 18 }} />}
+            {!ttsEnabled ? (
+              <VolumeOffIcon sx={{ fontSize: 18 }} />
+            ) : (
+              <VolumeUpIcon sx={{ fontSize: 18 }} />
+            )}
           </IconButton>
         </Tooltip>
+      </div>
+
+      {/* Voice & Speed Controls */}
+      <div
+        style={{
+          margin: "0 16px 12px 16px",
+          padding: "10px 12px",
+          borderRadius: "var(--radius-sm, 8px)",
+          background: "rgba(255, 255, 255, 0.03)",
+          border: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>Voz:</span>
+          <select
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value as any)}
+            style={{
+              background: "var(--bg-card, #1e293b)",
+              border: "1px solid var(--border)",
+              color: "var(--text-primary)",
+              fontSize: 11,
+              borderRadius: 6,
+              padding: "2px 6px",
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value="openai">OpenAI (Default)</option>
+            <option value="kokoro">Feminina Kokoro</option>
+          </select>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>Velocidade:</span>
+          <select
+            value={playbackSpeed}
+            onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+            style={{
+              background: "var(--bg-card, #1e293b)",
+              border: "1px solid var(--border)",
+              color: "var(--text-primary)",
+              fontSize: 11,
+              borderRadius: 6,
+              padding: "2px 6px",
+              outline: "none",
+              cursor: "pointer",
+            }}
+          >
+            <option value={1.0}>1.0x (Normal)</option>
+            <option value={1.25}>1.25x (Padrão)</option>
+            <option value={1.5}>1.5x (Acelerado)</option>
+            <option value={2.0}>2.0x (Rápido)</option>
+          </select>
+        </div>
       </div>
 
       {/* Nav */}
