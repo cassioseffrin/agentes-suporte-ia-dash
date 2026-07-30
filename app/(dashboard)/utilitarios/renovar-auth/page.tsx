@@ -1178,7 +1178,7 @@ export default function RenovarAuthPage() {
                       <div style={{ marginLeft: 30 }}>
                         {os === "mac" ? (
                           <code style={terminalStyle}>
-                            cd ~dev/agentes-suporte-ia
+                            cd ~/dev/agentes-suporte-ia
                             <br />
                             opcional: python3 -m venv venv
                             <br />

@@ -50,47 +50,40 @@ sequenceDiagram
     end
 
     rect rgba(100, 70, 0, 0.4)
-        Note over U,OAI: FASE 3 - Envio de Mensagem e Resposta (SSE Streaming)
+        Note over U,NLM: FASE 3 - Envio de Mensagem e Resposta (SSE Streaming Direto)
         U->>Chat: Digita mensagem
         Chat->>Chat: setIsTyping(true) / Start AbortController (timeout 240s)
 
         Chat->>Backend: POST /chat/stream { threadId, message, assistantName } (SSE)
         
         rect rgba(100, 50, 0, 0.3)
-            Note over Backend,OAI: Etapa 3a - Query Rewriting (timeout 60s)
+            Note over Backend,OAI: Etapa 3a - Reescrita da Pergunta (timeout 60s)
             Backend-->>Chat: event: status { stage: "rewriting" }
-            Chat-->>U: Exibe "Reescrevendo consulta..."
-            Backend->>OAI: chat.completions.create (escreve query autocontida)
-            OAI-->>Backend: query reescrita
+            Chat-->>U: Exibe "Preparando sua consulta..."
+            Backend->>OAI: chat.completions.create (reescreve APENAS a pergunta)
+            OAI-->>Backend: query reescrita (autocontida)
+            Note over Backend: ⚠️ OpenAI NÃO reescreve a resposta
         end
 
         rect rgba(0, 50, 100, 0.3)
-            Note over Backend,NLM: Etapa 3b - Busca RAG NotebookLM (timeout 240s)
+            Note over Backend,NLM: Etapa 3b - Busca + Resposta NotebookLM (timeout 240s)
             Backend-->>Chat: event: status { stage: "searching" }
             Chat-->>U: Exibe "Buscando nos manuais..."
             Backend->>NLM: notebooklm ask ...
-            NLM-->>Backend: Contexto dos manuais
-        end
-
-        rect rgba(0, 100, 50, 0.3)
-            Note over Backend,OAI: Etapa 3c - Geração Streaming (timeout 120s)
-            Backend-->>Chat: event: status { stage: "generating" }
-            Chat-->>U: Exibe "Gerando resposta com IA..."
-            Backend->>OAI: chat.completions.create (stream=True)
-            loop Tokens chegando
-                OAI-->>Backend: chunk de texto
+            loop Chunks intermediários (thinking)
+                NLM-->>Backend: chunk de pensamento
+                Backend-->>Chat: event: status { stage: "thinking", detail: "..." }
+                Chat-->>U: Exibe status do processamento
+            end
+            NLM-->>Backend: Resposta final dos manuais
+            loop Parágrafos da resposta (streaming)
                 Backend-->>Chat: event: token { text: "..." }
                 Chat-->>U: Renderiza texto progressivamente
             end
         end
 
-        alt OpenAI falhou mas NotebookLM respondeu
-            Backend-->>Chat: event: fallback { content: "resposta NotebookLM" }
-            Chat-->>U: Exibe resposta original dos manuais
-        end
-
         rect rgba(70, 30, 100, 0.4)
-            Note over Backend,DB: Etapa 3d - Persistência (assíncrona)
+            Note over Backend,DB: Etapa 3c - Persistência (assíncrona)
             Backend-->>Chat: event: status { stage: "saving" }
             Backend->>DB: Salva mensagens e cria Subject (assunto curto)
         end
@@ -118,8 +111,7 @@ sequenceDiagram
         Backend->>Backend: Anexa à session em memória como {role: "system", "[CORREÇÃO DO SUPORTE HUMANO]: ..."}
         Note over Backend,OAI: Nas próximas perguntas do Usuário:
         Backend->>OAI: Query Rewrite é instruído a incorporar a correção humana
-        Backend->>OAI: build_messages injeta bloco [VERDADE ABSOLUTA...]<br/>com prioridade sobre o contexto RAG
-        OAI-->>Backend: Nova geração de IA respeita a correção do auditor!
+        Note over Backend: A resposta continua vindo direto do NotebookLM<br/>(sem reescrita OpenAI = sem alucinações)
     end
 
     rect rgba(100, 0, 0, 0.4)
