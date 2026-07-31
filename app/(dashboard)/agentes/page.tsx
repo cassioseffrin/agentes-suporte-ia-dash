@@ -21,6 +21,9 @@ import {
   Article as FaqIcon,
   Close as CloseIcon,
   ContentCopy as CopyIcon,
+  CloudUpload as UploadIcon,
+  Delete as DeleteIcon,
+  Image as ImageIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -72,6 +75,7 @@ interface Agent {
   faq_content: string | null;
   notebooklm_profile: string;
   hide: boolean;
+  logo_base64?: string | null;
 }
 
 type FormValues = Omit<Agent, "id" | "creation" | "modification">;
@@ -575,6 +579,211 @@ function FaqEditor({
   );
 }
 
+// ─── Agent Logo Uploader Component ─────────────────────────────────────────────
+function AgentLogoUploader({
+  value,
+  onChange,
+}: {
+  value: string | null | undefined;
+  onChange: (base64: string | null) => void;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processFile = (file: File) => {
+    setErrorMsg(null);
+
+    // Validate type (must be PNG)
+    if (file.type !== "image/png" && !file.name.toLowerCase().endsWith(".png")) {
+      setErrorMsg("Apenas arquivos no formato PNG são permitidos.");
+      return;
+    }
+
+    // Validate size (max 50KB = 50 * 1024 bytes)
+    if (file.size > 50 * 1024) {
+      const sizeKb = (file.size / 1024).toFixed(1);
+      setErrorMsg(`Tamanho máximo excedido (${sizeKb} KB). O arquivo deve ter no máximo 50 KB.`);
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        onChange(result);
+      }
+    };
+    reader.onerror = () => {
+      setErrorMsg("Erro ao ler o arquivo de imagem.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
+        Logo do Agente (PNG, máx 50KB)
+      </label>
+
+      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+        {/* Drag & drop dropzone */}
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            flex: 1,
+            border: `2px dashed ${isDragging ? "var(--accent)" : errorMsg ? "#ef4444" : "#2d3352"}`,
+            borderRadius: 8,
+            padding: "14px 18px",
+            background: isDragging ? "rgba(189,65,64,0.1)" : "#1a1d27",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            if (!isDragging) e.currentTarget.style.borderColor = "var(--accent)";
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging && !errorMsg) e.currentTarget.style.borderColor = "#2d3352";
+          }}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/png"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
+
+          <UploadIcon sx={{ fontSize: 26, color: isDragging ? "var(--accent)" : "#94a3b8" }} />
+
+          <div style={{ fontSize: 13, color: "#94a3b8" }}>
+            <span style={{ color: "#f1f5f9", fontWeight: 600 }}>Clique para selecionar</span> ou arraste a imagem PNG aqui
+            <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+              Aceita fundo transparente ou opaco · Limite máximo: 50 KB
+            </div>
+          </div>
+        </div>
+
+        {/* Preview box */}
+        {value ? (
+          <div
+            style={{
+              position: "relative",
+              width: 68,
+              height: 68,
+              borderRadius: 10,
+              border: "1px solid #2d3352",
+              backgroundImage:
+                "linear-gradient(45deg, #1f2438 25%, transparent 25%), linear-gradient(-45deg, #1f2438 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f2438 75%), linear-gradient(-45deg, transparent 75%, #1f2438 75%)",
+              backgroundSize: "12px 12px",
+              backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0px",
+              backgroundColor: "#12151e",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={value}
+              alt="Logo do agente"
+              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", padding: 2 }}
+            />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(null);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+              }}
+              title="Remover logo"
+              style={{
+                position: "absolute",
+                top: 2,
+                right: 2,
+                background: "rgba(15, 17, 23, 0.85)",
+                border: "none",
+                borderRadius: "50%",
+                color: "#ef4444",
+                width: 20,
+                height: 20,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "background 0.2s",
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: 13 }} />
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{
+              width: 68,
+              height: 68,
+              borderRadius: 10,
+              border: "1px dashed #2d3352",
+              background: "#12151e",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              color: "#64748b",
+              flexShrink: 0,
+            }}
+          >
+            <ImageIcon sx={{ fontSize: 20, opacity: 0.5 }} />
+            <span style={{ fontSize: 10 }}>Sem logo</span>
+          </div>
+        )}
+      </div>
+
+      {errorMsg && (
+        <div style={{ fontSize: 12, color: "#ef4444", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+          <ErrorOutline sx={{ fontSize: 14 }} />
+          {errorMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Agent Card ────────────────────────────────────────────────────────────────
 function AgentCard({
   agent,
@@ -623,9 +832,19 @@ function AgentCard({
           justifyContent: "center",
           flexShrink: 0,
           fontSize: 16,
+          overflow: "hidden",
         }}
       >
-        🤖
+        {agent.logo_base64 ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={agent.logo_base64}
+            alt={agent.title}
+            style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}
+          />
+        ) : (
+          "🤖"
+        )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
@@ -678,6 +897,7 @@ export default function AgentesPage() {
     handleSubmit,
     reset,
     getValues,
+    watch,
     formState: { isDirty },
   } = useForm<FormValues>();
 
@@ -730,6 +950,7 @@ export default function AgentesPage() {
       active: agent.active,
       notebooklm_profile: agent.notebooklm_profile ?? "default",
       hide: agent.hide ?? false,
+      logo_base64: agent.logo_base64 ?? "",
     });
   };
 
@@ -934,9 +1155,19 @@ export default function AgentesPage() {
                       justifyContent: "center",
                       fontSize: 18,
                       flexShrink: 0,
+                      overflow: "hidden",
                     }}
                   >
-                    🤖
+                    {watch("logo_base64") || selected.logo_base64 ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={watch("logo_base64") || selected.logo_base64 || ""}
+                        alt={selected.title}
+                        style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }}
+                      />
+                    ) : (
+                      "🤖"
+                    )}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>
@@ -1037,6 +1268,17 @@ export default function AgentesPage() {
                     gap: 20,
                   }}
                 >
+                  {/* Row 0: Agent Logo Upload */}
+                  <Controller
+                    name="logo_base64"
+                    control={control}
+                    render={({ field }) => (
+                      <AgentLogoUploader
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
                   {/* Row 1: title + name */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 16 }}>
                     <TextField
