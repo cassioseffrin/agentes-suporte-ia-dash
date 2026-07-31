@@ -669,11 +669,15 @@ export default function AgentesPage() {
 
   const [profiles, setProfiles] = useState<string[]>(["default"]);
 
+  const [syncPromptStatus, setSyncPromptStatus] = useState<"idle" | "syncing" | "success" | "error">("idle");
+  const [syncPromptError, setSyncPromptError] = useState<string | null>(null);
+
   const {
     control,
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { isDirty },
   } = useForm<FormValues>();
 
@@ -713,6 +717,8 @@ export default function AgentesPage() {
     setSelected(agent);
     setSaveStatus("idle");
     setSaveError(null);
+    setSyncPromptStatus("idle");
+    setSyncPromptError(null);
     setShowFaq(false);
     reset({
       title: agent.title,
@@ -725,6 +731,29 @@ export default function AgentesPage() {
       notebooklm_profile: agent.notebooklm_profile ?? "default",
       hide: agent.hide ?? false,
     });
+  };
+
+  const handleSyncPrompt = async () => {
+    if (!selected) return;
+    setSyncPromptStatus("syncing");
+    setSyncPromptError(null);
+    try {
+      const currentPrompt = getValues("system_prompt");
+      const res = await fetch(`${API}/agents/${selected.id}/sync-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ system_prompt: currentPrompt }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json.status === "error") {
+        throw new Error(json.detail ?? `HTTP ${res.status}`);
+      }
+      setSyncPromptStatus("success");
+      setTimeout(() => setSyncPromptStatus("idle"), 4000);
+    } catch (e: unknown) {
+      setSyncPromptError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSyncPromptStatus("error");
+    }
   };
 
   const onSubmit = async (data: FormValues) => {
@@ -1103,15 +1132,82 @@ export default function AgentesPage() {
                   <div>
                     <div
                       style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "var(--text-muted)",
-                        letterSpacing: "0.06em",
-                        textTransform: "uppercase",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                         marginBottom: 8,
                       }}
                     >
-                      System Prompt
+                      <div
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "var(--text-muted)",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        System Prompt
+                      </div>
+
+                      <Tooltip title="Sincronizar o prompt do agente diretamente para as instruções do NotebookLM">
+                        <button
+                          type="button"
+                          disabled={syncPromptStatus === "syncing"}
+                          onClick={handleSyncPrompt}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "4px 12px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid",
+                            borderColor:
+                              syncPromptStatus === "success"
+                                ? "var(--success, #22c55e)"
+                                : syncPromptStatus === "error"
+                                ? "var(--danger, #ef4444)"
+                                : "#2d3352",
+                            background:
+                              syncPromptStatus === "syncing"
+                                ? "#1e2233"
+                                : syncPromptStatus === "success"
+                                ? "rgba(34,197,94,0.1)"
+                                : syncPromptStatus === "error"
+                                ? "rgba(239,68,68,0.1)"
+                                : "#1e2233",
+                            color:
+                              syncPromptStatus === "syncing"
+                                ? "#7c8db0"
+                                : syncPromptStatus === "success"
+                                ? "var(--success, #22c55e)"
+                                : syncPromptStatus === "error"
+                                ? "var(--danger, #ef4444)"
+                                : "#94a3b8",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            cursor: syncPromptStatus === "syncing" ? "not-allowed" : "pointer",
+                            transition: "all 0.2s ease",
+                            fontFamily: "Inter, sans-serif",
+                          }}
+                        >
+                          {syncPromptStatus === "syncing" ? (
+                            <>
+                              <CircularProgress size={10} sx={{ color: "currentColor" }} /> Sincronizando...
+                            </>
+                          ) : syncPromptStatus === "success" ? (
+                            <>
+                              <CheckCircle sx={{ fontSize: 13 }} /> Prompt Sincronizado!
+                            </>
+                          ) : syncPromptStatus === "error" ? (
+                            <>
+                              <ErrorOutline sx={{ fontSize: 13 }} /> {syncPromptError ?? "Erro"}
+                            </>
+                          ) : (
+                            <>🔁 Sincronizar com NotebookLM</>
+                          )}
+                        </button>
+                      </Tooltip>
                     </div>
                     <TextField
                       label="System Prompt"
