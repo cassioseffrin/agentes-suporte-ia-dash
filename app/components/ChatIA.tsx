@@ -176,6 +176,39 @@ const ChatIA = ({ session }: ChatIAProps) => {
       } catch {}
     });
 
+    // Escuta respostas da IA que chegam via SSE (ex: quando a conexão stream caiu
+    // mas o backend continuou processando e salvou a resposta)
+    es.addEventListener("agent_message", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // Evita duplicar se o chat_id ou o texto da última mensagem bater
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) => m.id === data.chat_id || (m.text === data.message && !m.isUser)
+          );
+          if (exists) return prev;
+          // Inline text cleaning (mesma lógica de cleanText)
+          let cleaned = data.message;
+          [/,\s*:\n/g, /,\s*:\s/g, /,\s*:/g, /-\s*:/g].forEach(
+            (p) => (cleaned = cleaned.replace(p, ""))
+          );
+          cleaned = cleaned.replace(/ +/g, " ").trim();
+          return [
+            ...prev,
+            {
+              text: cleaned,
+              isUser: false,
+              id: data.chat_id || undefined,
+              timestamp: data.created_at ? new Date(data.created_at) : new Date(),
+            },
+          ];
+        });
+        setIsTyping(false);
+        setStatusText("");
+        setStreamingText("");
+      } catch {}
+    });
+
     es.onerror = () => {
       // Reconectar silenciosamente em caso de erro
       console.warn("[user-events] SSE desconectado, tentando reconectar...");
@@ -498,7 +531,10 @@ const ChatIA = ({ session }: ChatIAProps) => {
       if (err?.name === "AbortError") {
         onError("A requisição expirou (timeout de 4 minutos). Tente novamente.");
       } else {
-        onError("Erro na conexão. Tente novamente.");
+        // Para erros de conexão (não timeout), NÃO chamar onError.
+        // Deixar o safety net em handleSend tentar o fallback ou
+        // aguardar a resposta via user-events SSE (agent_message).
+        console.warn("[ChatIA] Conexão SSE interrompida, tentando fallback...", err);
       }
     } finally {
       clearTimeout(timeoutId);

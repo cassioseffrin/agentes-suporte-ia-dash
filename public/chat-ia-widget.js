@@ -1194,6 +1194,7 @@
             });
             self._isTyping = false;
             self._statusText = '';
+            self._streamingText = '';
             self._render(true);
           }
         } catch (ex) { }
@@ -1374,7 +1375,10 @@
         if (err && err.name === 'AbortError') {
           onError('A requisição expirou (timeout de 4 minutos). Tente novamente.');
         } else {
-          onError('Erro na conexão. Tente novamente.');
+          // Para erros de conexão (não timeout), NÃO chamar onError.
+          // Deixar o safety net em _handleSend tentar o fallback ou
+          // aguardar a resposta via user-events SSE (agent_message).
+          console.warn('[ChatIA Widget] Conexão SSE interrompida, tentando fallback...', err);
         }
       } finally {
         clearTimeout(timeout);
