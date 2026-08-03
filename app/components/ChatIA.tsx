@@ -1068,7 +1068,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 alignItems: "stretch",
                 p: 2,
                 gap: 1.25,
-                bgcolor: "#fafafa",
+                bgcolor: "var(--bg-card)",
                 minHeight: 0,
                 overflowY: "auto",
                 "&::-webkit-scrollbar": { width: 4 },
@@ -1089,7 +1089,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               >
                 <Typography
                   variant="subtitle2"
-                  sx={{ fontWeight: 700, color: "#1e1b4b", fontSize: 14 }}
+                  sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}
                 >
                   Escolha o assistente para conversar:
                 </Typography>
@@ -1112,18 +1112,18 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         minHeight: 56,
                         borderRadius: "14px",
                         border: "1px solid",
-                        borderColor: "#e2e8f0",
-                        color: "#0f172a",
-                        bgcolor: "#ffffff",
+                        borderColor: "var(--border, #2d3352)",
+                        color: "var(--text-primary, #f1f5f9)",
+                        bgcolor: "var(--bg-surface, #1a1d27)",
                         display: "flex",
                         alignItems: "center",
                         gap: 1.5,
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                         transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                         "&:hover": {
                           borderColor: "var(--accent, #bd4140)",
-                          bgcolor: "#faf5ff",
-                          boxShadow: "0 4px 12px rgba(189,65,64,0.08)",
+                          bgcolor: "rgba(189,65,64,0.12)",
+                          boxShadow: "0 4px 12px rgba(189,65,64,0.15)",
                           transform: "translateY(-1px)",
                         },
                       }}
@@ -1135,9 +1135,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           height: 36,
                           borderRadius: "10px",
                           background: agent.logo_base64
-                            ? "#f8fafc"
+                            ? "#ffffff"
                             : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
-                          border: "1px solid #f1f5f9",
+                          border: "1px solid rgba(255,255,255,0.1)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -1168,7 +1168,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                             fontWeight: 600,
                             fontSize: 14,
                             lineHeight: 1.35,
-                            color: "#0f172a",
+                            color: "var(--text-primary, #f1f5f9)",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                             whiteSpace: "nowrap",
@@ -1178,7 +1178,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                         </Typography>
                         <Typography
                           variant="caption"
-                          sx={{ color: "#64748b", fontSize: 11.5, mt: 0.25 }}
+                          sx={{ color: "var(--text-secondary, #94a3b8)", fontSize: 11.5, mt: 0.25 }}
                         >
                           Agente: {agent.name}
                         </Typography>
