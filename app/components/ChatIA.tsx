@@ -105,8 +105,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const [threadError, setThreadError] = useState(0);
   const [consentGiven, setConsentGiven] = useState(false);
   const [showConsent, setShowConsent] = useState(false);
-  const [agents, setAgents] = useState<{ id: string; name: string; title: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string; title: string; logo_base64?: string | null }[]>([]);
   const [selectedAgent, setSelectedAgent] = useState("");
+  const activeAgent = agents.find((a) => a.name === selectedAgent);
   const [showAgentSelection, setShowAgentSelection] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -810,12 +811,36 @@ const ChatIA = ({ session }: ChatIAProps) => {
               flexShrink: 0,
             }}
           >
+            {activeAgent?.logo_base64 && (
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: "10px",
+                  bgcolor: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  p: 0.3,
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                }}
+              >
+                <Box
+                  component="img"
+                  src={activeAgent.logo_base64}
+                  alt={activeAgent.title}
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              </Box>
+            )}
             <Box sx={{ flex: 1 }}>
               <Typography
                 variant="subtitle2"
                 sx={{ color: "#fff", fontWeight: 700, lineHeight: 1.2 }}
               >
-                Assistente IA
+                {activeAgent ? activeAgent.title : "Assistente IA"}
               </Typography>
               <Typography
                 variant="caption"
@@ -1041,9 +1066,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "stretch",
-                p: 3,
-                gap: 2,
-                bgcolor: "var(--bg-card)",
+                p: 2,
+                gap: 1.25,
+                bgcolor: "#fafafa",
                 minHeight: 0,
                 overflowY: "auto",
                 "&::-webkit-scrollbar": { width: 4 },
@@ -1058,30 +1083,15 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  mb: 1,
+                  mb: 0.5,
                   flexShrink: 0,
                 }}
               >
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    mb: 1,
-                  }}
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 700, color: "#1e1b4b", fontSize: 14 }}
                 >
-                  <SmartToyIcon sx={{ color: "#fff", fontSize: 24 }} />
-                </Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                  Escolha o Assistente
-                </Typography>
-                <Typography variant="body2" sx={{ color: "#d2d2d2ff", textAlign: "center", fontSize: 13 }}>
-                  Sobre qual assunto ou manual você deseja falar?<br/>
-                  <span style={{ fontSize: "0.85em", opacity: 1 }}>Dica: Você também pode acessar conversas anteriores no ícone de histórico acima.</span>
+                  Escolha o assistente para conversar:
                 </Typography>
               </Box>
 
@@ -1092,29 +1102,84 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   agents.map((agent) => (
                     <Button
                       key={agent.id}
-                      variant="outlined"
                       onClick={() => handleSelectAgent(agent.name)}
                       sx={{
                         textTransform: "none",
                         justifyContent: "flex-start",
                         textAlign: "left",
-                        py: 1,
-                        px: 1.5,
-                        borderRadius: 2,
-                        borderColor: "#e8eaff",
-                        color: "var(--text-primary)",
-                        minHeight: 0,
+                        py: 1.25,
+                        px: 1.75,
+                        minHeight: 56,
+                        borderRadius: "14px",
+                        border: "1px solid",
+                        borderColor: "#e2e8f0",
+                        color: "#0f172a",
+                        bgcolor: "#ffffff",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.5,
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                         "&:hover": {
                           borderColor: "var(--accent, #bd4140)",
-                          bgcolor: "var(--bg-hover)",
+                          bgcolor: "#faf5ff",
+                          boxShadow: "0 4px 12px rgba(189,65,64,0.08)",
+                          transform: "translateY(-1px)",
                         },
                       }}
                     >
-                      <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: 13, lineHeight: 1.3 }}>
+                      {/* Thumbnail Logo estilo Minimal Dashboard */}
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "10px",
+                          background: agent.logo_base64
+                            ? "#f8fafc"
+                            : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                          border: "1px solid #f1f5f9",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          overflow: "hidden",
+                        }}
+                      >
+                        {agent.logo_base64 ? (
+                          <Box
+                            component="img"
+                            src={agent.logo_base64}
+                            alt={agent.title}
+                            sx={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "contain",
+                              p: 0.25,
+                            }}
+                          />
+                        ) : (
+                          <SmartToyIcon sx={{ color: "#fff", fontSize: 20 }} />
+                        )}
+                      </Box>
+                      <Box sx={{ display: "flex", flexDirection: "column", minWidth: 0, flex: 1 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: 14,
+                            lineHeight: 1.35,
+                            color: "#0f172a",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {agent.title}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: "#e8e8e8ff", fontSize: 11 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: "#64748b", fontSize: 11.5, mt: 0.25 }}
+                        >
                           Agente: {agent.name}
                         </Typography>
                       </Box>
@@ -1209,11 +1274,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
                             borderRadius: "50%",
                             background: msg.isAuditor
                               ? "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)"
-                              : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                              : activeAgent?.logo_base64
+                                ? "#ffffff"
+                                : "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)",
+                            border: activeAgent?.logo_base64 && !msg.isAuditor ? "1px solid #e2e8f0" : "none",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            overflow: msg.isAuditor && msg.auditor_icon_svg ? "hidden" : undefined,
+                            overflow: msg.isAuditor && msg.auditor_icon_svg ? "hidden" : activeAgent?.logo_base64 ? "hidden" : undefined,
                           }}
                           {...(msg.isAuditor && msg.auditor_icon_svg
                             ? { dangerouslySetInnerHTML: { __html: msg.auditor_icon_svg } }
@@ -1222,6 +1290,13 @@ const ChatIA = ({ session }: ChatIAProps) => {
                           {!(msg.isAuditor && msg.auditor_icon_svg) && (
                             msg.isAuditor ? (
                               <SupportAgentIcon sx={{ color: "#fff", fontSize: 15 }} />
+                            ) : activeAgent?.logo_base64 ? (
+                              <Box
+                                component="img"
+                                src={activeAgent.logo_base64}
+                                alt="Agente logo"
+                                sx={{ width: "100%", height: "100%", objectFit: "contain", p: 0.25 }}
+                              />
                             ) : (
                               <SmartToyIcon sx={{ color: "#fff", fontSize: 15 }} />
                             )
