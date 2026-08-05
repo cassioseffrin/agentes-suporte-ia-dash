@@ -1181,6 +1181,11 @@
       es.addEventListener('agent_message', function (e) {
         try {
           var data = JSON.parse(e.data);
+          // Sempre limpar estado de digitação quando resposta do agente chega
+          var wasTyping = self._isTyping;
+          self._isTyping = false;
+          self._statusText = '';
+          self._streamingText = '';
           // Evita duplicar se o chat_id ou o texto da última mensagem bater
           var exists = self._messages.some(function (m) {
             return m.id === data.chat_id || (m.text === data.message && !m.isUser);
@@ -1192,9 +1197,8 @@
               id: data.chat_id || undefined,
               timestamp: data.created_at ? new Date(data.created_at) : new Date()
             });
-            self._isTyping = false;
-            self._statusText = '';
-            self._streamingText = '';
+          }
+          if (!exists || wasTyping) {
             self._render(true);
           }
         } catch (ex) { }
@@ -1232,19 +1236,23 @@
       var self = this;
       var accumulated = '';
       var finished = false;
+      var streamConnected = false; // true quando o backend já recebeu a mensagem (HTTP 200 + algum evento)
 
       try {
         await this._fetchStream(text, tid,
           function onToken(token) {
+            streamConnected = true;
             accumulated += token;
             self._streamingText = accumulated;
             self._render(false);
           },
           function onStatus(detail) {
+            streamConnected = true;
             self._statusText = detail;
             self._render(false);
           },
           function onDone(result) {
+            streamConnected = true;
             finished = true;
             self._isTyping = false;
             self._statusText = '';
@@ -1260,6 +1268,7 @@
             self._render(false);
           },
           function onFallback(content) {
+            streamConnected = true;
             finished = true;
             self._isTyping = false;
             self._statusText = '';
@@ -1286,13 +1295,22 @@
 
 
       if (!finished) {
-        this._isTyping = false;
-        this._statusText = '';
-        if (accumulated) {
+        if (streamConnected) {
+          // O backend JÁ recebeu a mensagem (stream conectou com HTTP 200 e eventos chegaram).
+          // A conexão SSE caiu (ex: WebView2 timeout de ~60s), mas o backend continua processando.
+          // NÃO fazer fallback — a resposta chegará via user-events SSE (agent_message).
+          console.log('[ChatIA Widget] Stream desconectou, mas backend já recebeu. Aguardando resposta via user-events SSE...');
+          this._statusText = 'Processando sua pergunta, por favor aguarde...';
           this._streamingText = '';
-          this._messages.push({ text: this._cleanText(accumulated), isUser: false, timestamp: new Date() });
+          if (accumulated) {
+            // Se já recebeu tokens parciais, manter visíveis como streaming
+            this._streamingText = accumulated;
+          }
+          this._render(false);
+          // _isTyping continua true — será desligado pelo handler agent_message em _connectUserEvents
         } else {
-
+          // Stream NUNCA conectou (erro de rede antes do HTTP 200).
+          // Nesse caso, faz o fallback via /chat normalmente.
           this._statusText = 'Tentando conexão alternativa...';
           this._render(false);
           var reply = await this._fetchFallback(text, tid);
@@ -1303,8 +1321,8 @@
           } else {
             this._messages.push({ text: 'Desculpe, não consegui processar isso. Tente novamente.', isUser: false, timestamp: new Date() });
           }
+          this._render(false);
         }
-        this._render(false);
       }
     }
 
