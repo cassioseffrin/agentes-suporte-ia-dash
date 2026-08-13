@@ -856,7 +856,7 @@
 
       if (!ta) {
         ta = document.createElement('textarea');
-        ta.placeholder = 'Mensagem...';
+        ta.placeholder = this._isTyping ? 'Aguarde a resposta...' : 'Mensagem...';
         ta.rows = 1;
         ta.addEventListener('input', function () {
           self._input = ta.value;
@@ -880,6 +880,7 @@
       }
 
       ta.value = this._input;
+      ta.placeholder = this._isTyping ? 'Aguarde a resposta...' : 'Mensagem...';
       ta.disabled = this._isTyping;
       sendBtn.disabled = this._isTyping;
       sendBtn.innerHTML = this._isTyping ? '<div class="spinner-sm"></div>' : ICONS.send;
