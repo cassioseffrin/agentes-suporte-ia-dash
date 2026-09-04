@@ -49,6 +49,36 @@
     return html;
   }
 
+  function parseInlineMd(text) {
+    if (!text) return '';
+    var html = String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Inline code: `code`
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Italic: *text* or _text_
+    html = html.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/_([^_]+)_/g, '<em>$1</em>');
+
+    // Links: [text](url) -> text
+    html = html.replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1');
+
+    // Headers & blockquotes at beginning
+    html = html.replace(/^#+\s*/, '').replace(/^>\s*/, '');
+
+    // Cleanup lingering unmatched markdown tokens
+    html = html.replace(/\*\*/g, '').replace(/__/g, '');
+
+    return html;
+  }
+
 
   function fmtDate(d) {
     if (!d) return '';
@@ -278,7 +308,10 @@
       .hist-item:hover .hist-del { opacity: 1; }\
       .hist-item-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }\
       .hist-subject { font-size: 13px; font-weight: 600; color: ' + text + '; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\
+      .hist-subject strong { font-weight: 700; color: ' + text + '; }\
       .hist-last-msg { font-size: 11px; color: rgba(' + textRgb + ', 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; margin-bottom: 2px; }\
+      .hist-last-msg strong { font-weight: 600; color: ' + text + '; }\
+      .hist-last-msg code { font-family: monospace; font-size: 10px; background: rgba(' + textRgb + ', 0.1); padding: 1px 3px; border-radius: 3px; }\
       .hist-agent { font-size: 11px; color: ' + ac + '; font-weight: 500; }\
       .hist-date { font-size: 11px; color: rgba(' + textRgb + ', 0.5); }\
       .hist-del { background: none; border: pointer; cursor: pointer; color: #ef4444; opacity: 0; transition: opacity .2s; padding: 4px; border-radius: 6px; display: flex; }\
@@ -650,17 +683,18 @@
         var msgSummary = '';
         if (t.last_message) {
           var cleanMsg = t.last_message.replace(/\s+/g, ' ').trim();
-          if (cleanMsg.length > 70) {
-            msgSummary = cleanMsg.substring(0, 70) + '...';
-          } else {
-            msgSummary = cleanMsg;
+          if (cleanMsg.length > 300) {
+            cleanMsg = cleanMsg.substring(0, 300);
           }
+          msgSummary = parseInlineMd(cleanMsg);
         }
+
+        var subjectHtml = parseInlineMd(t.subject || 'Sem assunto');
 
         item.innerHTML = '\
           <div class="hist-item-info">\
-            <div class="hist-subject">' + self._esc(t.subject || 'Sem assunto') + '</div>\
-            ' + (msgSummary ? '<div class="hist-last-msg">' + self._esc(msgSummary) + '</div>' : '') + '\
+            <div class="hist-subject">' + subjectHtml + '</div>\
+            ' + (msgSummary ? '<div class="hist-last-msg">' + msgSummary + '</div>' : '') + '\
             <div class="hist-agent">' + self._esc(t.agent_title || t.agent_name || '') + '</div>\
             <div class="hist-date">' + (t.created_at ? new Date(t.created_at).toLocaleString('pt-BR') : '') + '</div>\
           </div>';
