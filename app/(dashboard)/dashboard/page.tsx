@@ -12,7 +12,19 @@ const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.c
 interface DashboardData {
   categories: string[];
   series: { name: string; data: number[] }[];
-  top_users?: { name: string; email: string; total: number; avg_rating?: number | null; thumb_avg?: number | null; thumb_up?: number; thumb_down?: number; cnpj?: string; razao_social?: string | null }[];
+  top_users?: {
+    name: string;
+    email: string;
+    total: number;
+    avg_rating?: number | null;
+    thumb_avg?: number | null;
+    thumb_up?: number;
+    thumb_down?: number;
+    cnpj?: string;
+    razao_social?: string | null;
+    nome_fantasia?: string | null;
+    user_names?: string | null;
+  }[];
   agents?: { name: string; total: number }[];
 }
 
@@ -128,10 +140,22 @@ export default function DashboardPage() {
       }
 
       if (jsonUsers && jsonUsers.series) {
-        jsonUsers.series = jsonUsers.series.map((s: any) => ({
-          ...s,
-          name: s.name.toLowerCase().replace(/(?:^|\s)\S/g, (a: string) => a.toUpperCase())
-        }));
+        jsonUsers.series = jsonUsers.series.map((s: any) => {
+          let name = s.name;
+          if (typeof name === "string" && name.includes(" - ")) {
+            const parts = name.split(" - ");
+            const cnpj = parts[0];
+            const rest = parts.slice(1).join(" - ");
+            const formattedRest = rest.toLowerCase().replace(/(?:^|\s)\S/g, (a: string) => a.toUpperCase());
+            name = `${cnpj} - ${formattedRest}`;
+          } else if (typeof name === "string" && !/^\d/.test(name)) {
+            name = name.toLowerCase().replace(/(?:^|\s)\S/g, (a: string) => a.toUpperCase());
+          }
+          return {
+            ...s,
+            name,
+          };
+        });
       }
 
       setData(jsonUsers);
@@ -324,7 +348,52 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Chart */}
+      {/* Agent Chart */}
+      <div
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "24px",
+          marginBottom: 24,
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
+          Chats por Agente (diário)
+        </h2>
+
+        {loading ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
+            <span className="spinner" /> Carregando dados...
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 300,
+              color: "var(--danger)",
+              fontSize: 14,
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        ) : !agentData || agentData.series.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
+            Nenhum dado no período selecionado.
+          </div>
+        ) : (
+          <ApexChart
+            type="line"
+            series={agentData.series}
+            options={getChartOptions(agentData.categories ?? [])}
+            height={320}
+          />
+        )}
+      </div>
+
+      {/* CNPJ Chart */}
       <div
         style={{
           background: "var(--bg-card)",
@@ -336,10 +405,10 @@ export default function DashboardPage() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-            Chats por Usuário (diário)
+            Chats por CNPJ (diário)
           </h2>
           <select
-            title="Quantidade de usuários a exibir"
+            title="Quantidade de empresas a exibir"
             value={userLimit}
             onChange={(e) => setUserLimit(Number(e.target.value))}
             style={{
@@ -389,51 +458,6 @@ export default function DashboardPage() {
             type="line"
             series={data.series}
             options={getChartOptions(data.categories ?? [])}
-            height={320}
-          />
-        )}
-      </div>
-
-      {/* Agent Chart */}
-      <div
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "24px",
-          marginBottom: 24,
-        }}
-      >
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
-          Chats por Agente (diário)
-        </h2>
-
-        {loading ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
-            <span className="spinner" /> Carregando dados...
-          </div>
-        ) : error ? (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: 300,
-              color: "var(--danger)",
-              fontSize: 14,
-            }}
-          >
-            ⚠️ {error}
-          </div>
-        ) : !agentData || agentData.series.length === 0 ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhum dado no período selecionado.
-          </div>
-        ) : (
-          <ApexChart
-            type="line"
-            series={agentData.series}
-            options={getChartOptions(agentData.categories ?? [])}
             height={320}
           />
         )}
@@ -496,10 +520,10 @@ export default function DashboardPage() {
         >
           <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-              Ranking de Usuários
+              Ranking por Empresa / CNPJ
             </h2>
             <select
-              title="Quantidade de usuários a exibir"
+              title="Quantidade de empresas a exibir"
               value={userLimit}
               onChange={(e) => setUserLimit(Number(e.target.value))}
               style={{
@@ -525,7 +549,7 @@ export default function DashboardPage() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)" }}>
-                {["#", "Nome", "CNPJ", "Razão Social", "Email", "Total de Chats", "Avaliação"].map((h) => (
+                {["#", "Empresa", "CNPJ", "Razão Social", "Usuários", "Total de Chats", "Avaliação"].map((h) => (
                   <th
                     key={h}
                     style={{
@@ -546,7 +570,7 @@ export default function DashboardPage() {
             <tbody>
               {data.top_users.slice(0, userLimit).map((u, i) => (
                 <tr
-                  key={u.email}
+                  key={u.cnpj || u.email || i}
                   style={{
                     borderTop: "1px solid var(--border)",
                     transition: "background 0.12s ease",
@@ -562,7 +586,7 @@ export default function DashboardPage() {
                     {i + 1}
                   </td>
                   <td style={{ padding: "12px 20px", fontSize: 14, fontWeight: 500, textTransform: "capitalize" }}>
-                    {u.name.toLowerCase()}
+                    {(u.nome_fantasia || u.razao_social || u.name || "-").toLowerCase()}
                   </td>
                   <td style={{ padding: "12px 20px", fontSize: 12, color: "var(--text-muted)", fontFamily: "'Roboto Mono', monospace" }}>
                     {u.cnpj || "-"}
@@ -570,8 +594,8 @@ export default function DashboardPage() {
                   <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }}>
                     {u.razao_social || "-"}
                   </td>
-                  <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }}>
-                    {u.email}
+                  <td style={{ padding: "12px 20px", fontSize: 13, color: "var(--text-secondary)" }} title={u.email}>
+                    {u.user_names || u.email || "-"}
                   </td>
                   <td style={{ padding: "12px 20px" }}>
                     <span

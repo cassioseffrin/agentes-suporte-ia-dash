@@ -171,7 +171,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           responseType: "blob",
         }
       );
-      const contentType = res.headers["content-type"] || "audio/wav";
+      const contentType = String(res.headers["content-type"] || "audio/wav");
       const audioBlob = new Blob([res.data], { type: contentType });
       audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);

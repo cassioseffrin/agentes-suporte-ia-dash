@@ -64,6 +64,8 @@ interface ThreadItem {
   agent_title: string;
   user_name: string;
   user_email: string;
+  cnpj?: string;
+  user_cnpj?: string;
   created_at: string;
   message_count: number;
   feedback_rating: number | null;
@@ -75,7 +77,7 @@ interface ThreadItem {
     cnpj?: string;
     razao_social?: string;
     [key: string]: any;
-  } | null;
+  } | string | null;
 }
 
 interface ChatMessage {
@@ -111,6 +113,34 @@ const formatCnpj = (cnpj?: string) => {
   const clean = cnpj.replace(/\D/g, "");
   if (clean.length !== 14) return cnpj;
   return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+};
+
+const getCompanyDisplay = (item?: {
+  cnpj?: string;
+  user_cnpj?: string;
+  company_data?: any;
+} | null) => {
+  if (!item) return null;
+  let companyData = item.company_data;
+  if (typeof companyData === "string") {
+    try {
+      companyData = JSON.parse(companyData);
+    } catch {
+      companyData = null;
+    }
+  }
+  const cnpj = item.cnpj || item.user_cnpj || (typeof companyData === "object" ? companyData?.cnpj : undefined);
+  const razaoSocial = companyData?.razao_social?.trim();
+
+  if (!cnpj && !razaoSocial) return null;
+
+  if (cnpj) {
+    const formattedCnpj = formatCnpj(cnpj);
+    const razaoText = razaoSocial || "Razão não encontrada";
+    return `🏢 ${formattedCnpj} - ${razaoText}`;
+  }
+
+  return `🏢 ${razaoSocial}`;
 };
 
 // Helper: render auditor avatar (custom SVG or fallback icon)
@@ -592,9 +622,9 @@ function ChatAuditListContent() {
                 <SmartToyIcon sx={{ fontSize: 13, mr: 0.5, verticalAlign: "middle" }} />
                 {selectedThread.agent_title}
               </Typography>
-              {selectedThread.company_data && selectedThread.company_data.cnpj && (
+              {getCompanyDisplay(selectedThread) && (
                 <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
-                  🏢 {formatCnpj(selectedThread.company_data.cnpj)}{selectedThread.company_data.razao_social ? ` - ${selectedThread.company_data.razao_social}` : ""}
+                  {getCompanyDisplay(selectedThread)}
                 </Typography>
               )}
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
@@ -1465,7 +1495,7 @@ function ChatAuditListContent() {
                   <SmartToyIcon sx={{ fontSize: 13 }} />
                   {t.agent_title}
                 </Typography>
-                {t.company_data && t.company_data.cnpj && (
+                {getCompanyDisplay(t) && (
                   <Typography
                     variant="caption"
                     sx={{
@@ -1476,7 +1506,7 @@ function ChatAuditListContent() {
                       gap: 0.3,
                     }}
                   >
-                    🏢 {formatCnpj(t.company_data.cnpj)}{t.company_data.razao_social ? ` - ${t.company_data.razao_social}` : ""}
+                    {getCompanyDisplay(t)}
                   </Typography>
                 )}
               </Box>
