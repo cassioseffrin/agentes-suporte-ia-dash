@@ -14,6 +14,7 @@ import {
   Logout as LogoutIcon,
   PowerSettingsNew as PowerOffIcon,
   RateReview as FeedbackIcon,
+  Science as TestIcon,
 } from "@mui/icons-material";
 import { useState } from "react";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
@@ -31,7 +32,21 @@ const pulseWarning = keyframes`
   100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 `;
 
-const navGroups = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: any;
+  customClass?: string;
+  badge?: string;
+  badgeClass?: string;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
   {
     label: "Dashboard",
     items: [
@@ -42,14 +57,28 @@ const navGroups = [
   {
     label: "Utilitários",
     items: [
-      { label: "Testar Agentes", href: "/testar-agentes", icon: AgentIcon },
+      {
+        label: "Testar Agentes",
+        href: "/testar-agentes",
+        icon: TestIcon,
+        customClass: "test-agents",
+        badge: "Lab",
+        badgeClass: "badge-lab",
+      },
       { label: "Feedbacks", href: "/feedbacks", icon: FeedbackIcon },
     ],
   },
   {
     label: "Configurações",
     items: [
-      { label: "Agentes de Suporte IA", href: "/agentes", icon: AgentIcon },
+      {
+        label: "Agentes de Suporte IA",
+        href: "/agentes",
+        icon: SupportAgentIcon,
+        customClass: "support-agents",
+        badge: "IA",
+        badgeClass: "badge-ia",
+      },
       { label: "Renovar Autenticação", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
     ],
   },
@@ -322,36 +351,17 @@ export default function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "9px 12px",
-                    borderRadius: "var(--radius-sm)",
-                    fontSize: 14,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? "var(--accent)" : "var(--text-secondary)",
-                    background: active ? "var(--accent-light)" : "transparent",
-                    textDecoration: "none",
-                    transition: "all 0.15s ease",
-                    marginBottom: 2,
-                    borderLeft: active ? "3px solid var(--accent)" : "3px solid transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!active) {
-                      (e.currentTarget as HTMLElement).style.background = "var(--bg-hover)";
-                      (e.currentTarget as HTMLElement).style.color = "var(--text-primary)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!active) {
-                      (e.currentTarget as HTMLElement).style.background = "transparent";
-                      (e.currentTarget as HTMLElement).style.color = "var(--text-secondary)";
-                    }
-                  }}
+                  className={`nav-item-link ${active ? "active" : ""}`}
                 >
-                  <Icon sx={{ fontSize: 18 }} />
-                  {item.label}
+                  <div className={`nav-icon-box ${item.customClass || ""}`}>
+                    <Icon sx={{ fontSize: 18 }} />
+                  </div>
+                  <span className="nav-item-text">{item.label}</span>
+                  {item.badge && (
+                    <span className={`nav-item-badge ${item.badgeClass || ""}`}>
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -477,6 +487,182 @@ export default function Sidebar() {
 
       <SidebarContent />
       <style>{`
+        /* Sidebar Nav Link & Layout */
+        .nav-item-link {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 10px;
+          border-radius: var(--radius-sm, 8px);
+          font-size: 13.5px;
+          color: var(--text-secondary, #cbd5e1);
+          background: transparent;
+          text-decoration: none;
+          transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+          margin-bottom: 3px;
+          border-left: 3px solid transparent;
+          user-select: none;
+        }
+
+        .nav-item-link:hover {
+          background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+          color: var(--text-primary, #ffffff);
+          transform: translateX(2px);
+        }
+
+        .nav-item-link:active {
+          transform: scale(0.985);
+        }
+
+        .nav-item-link.active {
+          background: var(--accent-light, rgba(189, 65, 64, 0.15));
+          color: var(--accent, #bd4140);
+          font-weight: 600;
+          border-left: 3px solid var(--accent, #bd4140);
+        }
+
+        .nav-item-text {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        /* Generic Icon Box */
+        .nav-icon-box {
+          width: 28px;
+          height: 28px;
+          border-radius: 7px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          color: inherit;
+          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          flex-shrink: 0;
+        }
+
+        .nav-icon-box svg {
+          transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+        }
+
+        .nav-item-link:hover .nav-icon-box {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.12);
+          transform: scale(1.08);
+        }
+
+        .nav-item-link.active .nav-icon-box {
+          background: linear-gradient(135deg, var(--accent, #bd4140), var(--accent-hover, #a03534));
+          border-color: transparent;
+          color: #ffffff;
+          box-shadow: 0 2px 10px rgba(189, 65, 64, 0.35);
+        }
+
+        /* Interactive Icon: Testar Agentes (Lab / Experimentation) */
+        .nav-icon-box.test-agents {
+          color: #fbbf24;
+          background: rgba(245, 158, 11, 0.06);
+          border-color: rgba(245, 158, 11, 0.18);
+        }
+
+        .nav-item-link:hover .nav-icon-box.test-agents {
+          background: rgba(245, 158, 11, 0.18);
+          border-color: rgba(245, 158, 11, 0.45);
+          color: #f59e0b;
+          box-shadow: 0 0 12px rgba(245, 158, 11, 0.32);
+          transform: scale(1.14);
+        }
+
+        .nav-item-link:hover .nav-icon-box.test-agents svg {
+          transform: rotate(-14deg) scale(1.12);
+          filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+        }
+
+        .nav-item-link.active .nav-icon-box.test-agents {
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          border-color: transparent;
+          color: #ffffff;
+          box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Interactive Icon: Agentes de Suporte IA (Support Agent) */
+        .nav-icon-box.support-agents {
+          color: #f87171;
+          background: rgba(239, 68, 68, 0.06);
+          border-color: rgba(239, 68, 68, 0.18);
+        }
+
+        .nav-item-link:hover .nav-icon-box.support-agents {
+          background: rgba(189, 65, 64, 0.22);
+          border-color: rgba(189, 65, 64, 0.45);
+          color: #ff8585;
+          box-shadow: 0 0 12px rgba(189, 65, 64, 0.35);
+          transform: scale(1.14);
+        }
+
+        .nav-item-link:hover .nav-icon-box.support-agents svg {
+          transform: translateY(-2px) scale(1.12);
+          filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.45));
+        }
+
+        .nav-item-link.active .nav-icon-box.support-agents {
+          background: linear-gradient(135deg, var(--accent, #bd4140), #991b1b);
+          border-color: transparent;
+          color: #ffffff;
+          box-shadow: 0 2px 10px rgba(189, 65, 64, 0.4);
+        }
+
+        /* Interactive Badges */
+        .nav-item-badge {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 6px;
+          border-radius: 6px;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .nav-item-badge.badge-lab {
+          background: rgba(245, 158, 11, 0.12);
+          color: #f59e0b;
+          border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .nav-item-badge.badge-ia {
+          background: rgba(189, 65, 64, 0.14);
+          color: #ff8585;
+          border: 1px solid rgba(189, 65, 64, 0.28);
+        }
+
+        .nav-item-link:hover .nav-item-badge.badge-lab {
+          background: rgba(245, 158, 11, 0.22);
+          border-color: rgba(245, 158, 11, 0.5);
+          box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+        }
+
+        .nav-item-link:hover .nav-item-badge.badge-ia {
+          background: rgba(189, 65, 64, 0.25);
+          border-color: rgba(189, 65, 64, 0.5);
+          box-shadow: 0 0 8px rgba(189, 65, 64, 0.25);
+        }
+
+        .nav-item-link.active .nav-item-badge.badge-lab {
+          background: rgba(245, 158, 11, 0.25);
+          color: #fef3c7;
+          border-color: rgba(245, 158, 11, 0.5);
+        }
+
+        .nav-item-link.active .nav-item-badge.badge-ia {
+          background: rgba(189, 65, 64, 0.3);
+          color: #fee2e2;
+          border-color: rgba(189, 65, 64, 0.6);
+        }
+
         @media (max-width: 768px) {
           .mobile-menu-btn { display: flex !important; }
           .mobile-overlay { display: block !important; }
