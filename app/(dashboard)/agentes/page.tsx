@@ -860,8 +860,16 @@ function AgentCard({
         >
           {agent.title}
         </div>
-        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-          {agent.name} · #{agent.sort_order}{agent.hide ? " · Oculto" : ""}
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--text-muted)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {agent.name} · #{agent.sort_order}{agent.hide ? " · Oculto" : ""}{agent.notebooklm_profile ? ` · 🔑 ${agent.notebooklm_profile}` : ""}
         </div>
       </div>
       <Tooltip title={agent.active ? "Ativo" : "Inativo"}>
@@ -886,7 +894,8 @@ export default function AgentesPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showFaq, setShowFaq] = useState(false);
 
-  const [profiles, setProfiles] = useState<string[]>(["default"]);
+  const [profiles, setProfiles] = useState<string[]>([]);
+  const [filterProfile, setFilterProfile] = useState<string>("all");
 
   const [syncPromptStatus, setSyncPromptStatus] = useState<"idle" | "syncing" | "success" | "error">("idle");
   const [syncPromptError, setSyncPromptError] = useState<string | null>(null);
@@ -920,8 +929,9 @@ export default function AgentesPage() {
       if (res.ok) {
         const json = await res.json();
         const list = (json.profiles ?? []).map((p: any) => p.profile);
-        const uniqueList = Array.from(new Set(["default", ...list]));
-        setProfiles(uniqueList);
+        if (list.length > 0) {
+          setProfiles(list);
+        }
       }
     } catch {
       /* ignored */
@@ -932,6 +942,43 @@ export default function AgentesPage() {
     fetchAgents();
     fetchProfiles();
   }, []);
+
+  // Consolidação de todos os profiles disponíveis (via API e agentes existentes)
+  const availableProfiles = Array.from(
+    new Set([
+      ...profiles,
+      ...agents.map((a) => a.notebooklm_profile).filter(Boolean),
+    ])
+  ).filter(
+    (p) => p !== "default" || agents.some((a) => a.notebooklm_profile === "default")
+  );
+  const displayProfiles = availableProfiles.length > 0 ? availableProfiles : ["default"];
+
+  // Filtro de agentes pelo profile selecionado
+  const filteredAgents =
+    filterProfile === "all"
+      ? agents
+      : agents.filter(
+          (a) => (a.notebooklm_profile || "default") === filterProfile
+        );
+
+  const handleProfileFilterChange = (newProfile: string) => {
+    setFilterProfile(newProfile);
+    const newFiltered =
+      newProfile === "all"
+        ? agents
+        : agents.filter(
+            (a) => (a.notebooklm_profile || "default") === newProfile
+          );
+
+    if (selected && !newFiltered.some((a) => a.id === selected.id)) {
+      if (newFiltered.length > 0) {
+        selectAgent(newFiltered[0]);
+      } else {
+        setSelected(null);
+      }
+    }
+  };
 
   const selectAgent = (agent: Agent) => {
     setSelected(agent);
@@ -1060,51 +1107,154 @@ export default function AgentesPage() {
               border: "1px solid var(--border)",
               borderRadius: "var(--radius)",
               padding: 16,
+              display: "flex",
+              flexDirection: "column",
               maxHeight: "calc(100vh - 160px)",
-              overflowY: "auto",
             }}
           >
+            {/* Filter by Profile */}
+            <div style={{ marginBottom: 14 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                  color: "var(--text-muted)",
+                  marginBottom: 6,
+                  paddingLeft: 2,
+                }}
+              >
+                Conta / Profile
+              </label>
+              <select
+                value={filterProfile}
+                onChange={(e) => handleProfileFilterChange(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "9px 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  outline: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "border-color 0.15s ease",
+                }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+              >
+                <option value="all">
+                  🌐 Todos os Profiles ({displayProfiles.length})
+                </option>
+                {displayProfiles.map((prof) => (
+                  <option key={prof} value={prof}>
+                    🔑 {prof}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div
               style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: "var(--text-muted)",
-                marginBottom: 12,
+                marginBottom: 10,
                 paddingLeft: 4,
+                paddingRight: 4,
               }}
             >
-              {loading ? "Carregando..." : `${agents.length} agentes`}
+              <span>
+                {loading
+                  ? "Carregando..."
+                  : `${filteredAgents.length} ${
+                      filteredAgents.length === 1 ? "agente" : "agentes"
+                    }${filterProfile !== "all" ? ` (${agents.length} total)` : ""}`}
+              </span>
+              {filterProfile !== "all" && (
+                <button
+                  type="button"
+                  onClick={() => handleProfileFilterChange("all")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--accent)",
+                    fontWeight: 600,
+                    fontSize: 11,
+                    padding: 0,
+                  }}
+                  title="Ver todos os agentes"
+                >
+                  Limpar
+                </button>
+              )}
             </div>
 
-            {loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
-                <CircularProgress size={24} sx={{ color: "var(--accent)" }} />
-              </div>
-            ) : agents.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "32px 16px",
-                  color: "var(--text-muted)",
-                  fontSize: 13,
-                }}
-              >
-                Nenhum agente encontrado.
-                <br />
-                Execute "Atualizar Agentes" primeiro.
-              </div>
-            ) : (
-              agents.map((a) => (
-                <AgentCard
-                  key={a.id}
-                  agent={a}
-                  selected={selected?.id === a.id}
-                  onClick={() => selectAgent(a)}
-                />
-              ))
-            )}
+            {/* Scrollable Agent List */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                marginRight: -4,
+                paddingRight: 4,
+              }}
+            >
+              {loading ? (
+                <div style={{ display: "flex", justifyContent: "center", padding: 32 }}>
+                  <CircularProgress size={24} sx={{ color: "var(--accent)" }} />
+                </div>
+              ) : filteredAgents.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "32px 16px",
+                    color: "var(--text-muted)",
+                    fontSize: 13,
+                  }}
+                >
+                  Nenhum agente encontrado para esta conta.
+                  <br />
+                  {filterProfile !== "all" ? (
+                    <button
+                      type="button"
+                      onClick={() => handleProfileFilterChange("all")}
+                      style={{
+                        marginTop: 8,
+                        background: "none",
+                        border: "none",
+                        color: "var(--accent)",
+                        fontSize: 12,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Ver todos os agentes
+                    </button>
+                  ) : (
+                    'Execute "Atualizar Agentes" primeiro.'
+                  )}
+                </div>
+              ) : (
+                filteredAgents.map((a) => (
+                  <AgentCard
+                    key={a.id}
+                    agent={a}
+                    selected={selected?.id === a.id}
+                    onClick={() => selectAgent(a)}
+                  />
+                ))
+              )}
+            </div>
           </div>
 
           {/* Right: edit panel */}
@@ -1355,7 +1505,7 @@ export default function AgentesPage() {
                     SelectProps={{ native: true }}
                     helperText="Selecione o profile de autenticação no NotebookLM"
                   >
-                    {profiles.map((prof) => (
+                    {displayProfiles.map((prof) => (
                       <option key={prof} value={prof}>
                         {prof}
                       </option>
