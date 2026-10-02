@@ -42,7 +42,6 @@ const navGroups = [
   {
     label: "Utilitários",
     items: [
-      { label: "Renovar Autenticação", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
       { label: "Testar Agentes", href: "/testar-agentes", icon: AgentIcon },
       { label: "Feedbacks", href: "/feedbacks", icon: FeedbackIcon },
     ],
@@ -50,6 +49,7 @@ const navGroups = [
   {
     label: "Configurações",
     items: [
+      { label: "Renovar Autenticação", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
       { label: "Agentes de Suporte IA", href: "/agentes", icon: AgentIcon },
     ],
   },
