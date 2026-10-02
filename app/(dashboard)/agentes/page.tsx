@@ -9,6 +9,11 @@ import {
   FormControlLabel,
   Tooltip,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import {
@@ -24,6 +29,7 @@ import {
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
   Image as ImageIcon,
+  Sync as SyncIcon,
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -980,6 +986,57 @@ export default function AgentesPage() {
     }
   };
 
+  // Sincronização de agentes/notebooks com o NotebookLM
+  const [syncStatus, setSyncStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [syncResult, setSyncResult] = useState<Record<string, any> | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const handleSyncAgents = async () => {
+    setSyncStatus("loading");
+    setSyncResult(null);
+    setSyncError(null);
+    try {
+      const targets = filterProfile === "all" ? displayProfiles : [filterProfile];
+
+      let total = 0;
+      let inseridos = 0;
+      let atualizados = 0;
+      let desativados = 0;
+      let erros: any[] = [];
+
+      for (const prof of targets) {
+        const res = await fetch(`${API}/updateNotebooks?profile=${encodeURIComponent(prof)}`);
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.detail || `Falha ao atualizar o profile '${prof}': HTTP ${res.status}`);
+        }
+        total += json.total ?? 0;
+        inseridos += json.inseridos ?? 0;
+        atualizados += json.atualizados ?? 0;
+        desativados += json.desativados ?? 0;
+        if (json.erros) {
+          erros = [...erros, ...json.erros];
+        }
+      }
+
+      setSyncResult({
+        total,
+        inseridos,
+        atualizados,
+        desativados,
+        erros,
+        profile: filterProfile === "all" ? "Todos os Profiles" : filterProfile,
+      });
+      setSyncStatus("success");
+      // Recarrega lista e perfis em tempo real
+      await fetchAgents();
+      await fetchProfiles();
+    } catch (e: unknown) {
+      setSyncError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSyncStatus("error");
+    }
+  };
+
   const selectAgent = (agent: Agent) => {
     setSelected(agent);
     setSaveStatus("idle");
@@ -1112,7 +1169,7 @@ export default function AgentesPage() {
               maxHeight: "calc(100vh - 160px)",
             }}
           >
-            {/* Filter by Profile */}
+            {/* Filter and Sync by Profile */}
             <div style={{ marginBottom: 14 }}>
               <label
                 style={{
@@ -1131,6 +1188,7 @@ export default function AgentesPage() {
               <select
                 value={filterProfile}
                 onChange={(e) => handleProfileFilterChange(e.target.value)}
+                disabled={syncStatus === "loading"}
                 style={{
                   width: "100%",
                   padding: "9px 12px",
@@ -1140,7 +1198,7 @@ export default function AgentesPage() {
                   color: "var(--text-primary)",
                   fontSize: 13,
                   outline: "none",
-                  cursor: "pointer",
+                  cursor: syncStatus === "loading" ? "not-allowed" : "pointer",
                   fontFamily: "inherit",
                   transition: "border-color 0.15s ease",
                 }}
@@ -1156,6 +1214,59 @@ export default function AgentesPage() {
                   </option>
                 ))}
               </select>
+
+              {/* Botão de Sincronizar Agentes */}
+              <button
+                type="button"
+                onClick={handleSyncAgents}
+                disabled={syncStatus === "loading"}
+                title={
+                  filterProfile === "all"
+                    ? "Sincronizar cadernos de todas as contas do NotebookLM com o banco de dados"
+                    : `Sincronizar cadernos da conta ${filterProfile} do NotebookLM com o banco de dados`
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  width: "100%",
+                  marginTop: 8,
+                  padding: "9px 12px",
+                  background:
+                    syncStatus === "loading"
+                      ? "var(--bg-hover)"
+                      : "linear-gradient(135deg, var(--accent), var(--accent-hover, #a03534))",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: syncStatus === "loading" ? "not-allowed" : "pointer",
+                  transition: "all 0.2s ease",
+                  fontFamily: "Inter, sans-serif",
+                  boxShadow: syncStatus === "loading" ? "none" : "0 2px 8px rgba(189, 65, 64, 0.25)",
+                }}
+                onMouseEnter={(e) => {
+                  if (syncStatus !== "loading")
+                    (e.currentTarget as HTMLElement).style.filter = "brightness(1.1)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.filter = "none";
+                }}
+              >
+                <SyncIcon
+                  sx={{
+                    fontSize: 16,
+                    animation: syncStatus === "loading" ? "spin 1s linear infinite" : "none",
+                  }}
+                />
+                {syncStatus === "loading"
+                  ? "Sincronizando..."
+                  : filterProfile === "all"
+                  ? "Sincronizar Todos os Agentes"
+                  : `Sincronizar ${filterProfile}`}
+              </button>
             </div>
 
             <div
@@ -1723,6 +1834,119 @@ export default function AgentesPage() {
           </div>
         </div>
       </div>
+
+      {/* Dialog de Resultado da Sincronização */}
+      <Dialog
+        open={Boolean(syncResult || syncError)}
+        onClose={() => {
+          setSyncResult(null);
+          setSyncError(null);
+        }}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          style: {
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            color: "var(--text-primary)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            pb: 1,
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {syncError ? (
+              <ErrorOutline sx={{ color: "var(--danger)", fontSize: 22 }} />
+            ) : (
+              <CheckCircle sx={{ color: "var(--success)", fontSize: 22 }} />
+            )}
+            <span>{syncError ? "Erro na Sincronização" : "Sincronização Concluída"}</span>
+          </div>
+          <IconButton
+            size="small"
+            onClick={() => {
+              setSyncResult(null);
+              setSyncError(null);
+            }}
+            sx={{ color: "var(--text-muted)" }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ borderColor: "var(--border)" }}>
+          {syncError ? (
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+              {syncError}
+            </p>
+          ) : syncResult ? (
+            <div>
+              <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 0, marginBottom: 14 }}>
+                Sincronização executada com sucesso para <strong>{syncResult.profile}</strong>:
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {[
+                  ["Total Encontrados", syncResult.total],
+                  ["Novos Inseridos", syncResult.inseridos],
+                  ["Existentes Atualizados", syncResult.atualizados],
+                  ["Removidos Desativados", syncResult.desativados],
+                ].map(([label, val]) => (
+                  <div
+                    key={label as string}
+                    style={{
+                      background: "var(--bg-surface)",
+                      borderRadius: "var(--radius-sm)",
+                      padding: "10px 14px",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>
+                      {label as string}
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
+                      {String(val)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {(syncResult.erros as unknown[])?.length > 0 && (
+                <div style={{ marginTop: 12, fontSize: 12, color: "var(--warning)" }}>
+                  ⚠️ {(syncResult.erros as unknown[]).length} alerta(s) durante a sincronização
+                </div>
+              )}
+            </div>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <button
+            type="button"
+            onClick={() => {
+              setSyncResult(null);
+              setSyncError(null);
+            }}
+            style={{
+              padding: "8px 18px",
+              background: "var(--accent, #bd4140)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "var(--radius-sm)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Entendido
+          </button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }
