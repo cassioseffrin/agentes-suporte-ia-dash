@@ -82,6 +82,7 @@ interface Agent {
   notebooklm_profile: string;
   hide: boolean;
   logo_base64?: string | null;
+  laya_criteria?: string | null;
 }
 
 type FormValues = Omit<Agent, "id" | "creation" | "modification">;
@@ -1055,6 +1056,7 @@ export default function AgentesPage() {
       notebooklm_profile: agent.notebooklm_profile ?? "default",
       hide: agent.hide ?? false,
       logo_base64: agent.logo_base64 ?? "",
+      laya_criteria: agent.laya_criteria ?? "",
     });
   };
 
@@ -1629,6 +1631,15 @@ export default function AgentesPage() {
                     multiline
                     rows={2}
                     {...register("overview")}
+                  />
+
+                  {/* Laya Criteria */}
+                  <TextField
+                    label="Critérios Laya Router (Classificação de Tema)"
+                    multiline
+                    rows={2}
+                    placeholder="Critérios que o Laya Router usa para classificar perguntas deste sistema..."
+                    {...register("laya_criteria")}
                   />
 
                   {/* System prompt */}
