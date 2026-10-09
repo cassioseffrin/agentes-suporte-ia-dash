@@ -37,6 +37,8 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import QuizIcon from "@mui/icons-material/Quiz";
+import DoneIcon from "@mui/icons-material/Done";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
 import { useAuditor } from "../context/AuditorContext";
@@ -89,9 +91,34 @@ interface ChatMessage {
   feedback_rating?: number | null;
   isAuditor?: boolean;
   created_at?: string;
+  delivered_at?: string | null;
+  read_at?: string | null;
 }
 
 const PAGE_SIZE = 15;
+
+/** Indicador estilo WhatsApp: ✓ enviada, ✓✓ entregue, ✓✓ azul lida */
+const ReadReceipt = ({ msg }: { msg: ChatMessage }) => {
+  if (msg.read_at) {
+    return (
+      <Tooltip title={`Lida em ${formatDateTimePtBr(msg.read_at)}`}>
+        <DoneAllIcon sx={{ fontSize: 16, ml: 0.5, color: "#53bdeb" }} />
+      </Tooltip>
+    );
+  }
+  if (msg.delivered_at) {
+    return (
+      <Tooltip title={`Entregue em ${formatDateTimePtBr(msg.delivered_at)}`}>
+        <DoneAllIcon sx={{ fontSize: 16, ml: 0.5, color: "#9ca3af" }} />
+      </Tooltip>
+    );
+  }
+  return (
+    <Tooltip title="Enviada">
+      <DoneIcon sx={{ fontSize: 16, ml: 0.5, color: "#9ca3af" }} />
+    </Tooltip>
+  );
+};
 
 const formatDateTimePtBr = (dateInput?: Date | string | number) => {
   if (!dateInput) return "";
@@ -382,6 +409,22 @@ function ChatAuditListContent() {
           },
         ]);
         setFaqStatus((prev) => (prev ? { ...prev, has_auditor: true } : prev));
+      } catch { }
+    });
+
+    es.addEventListener("receipts", (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        type Receipt = { chat_id: number; delivered_at: string | null; read_at: string | null };
+        const byId = new Map<number, Receipt>(
+          (data.receipts || []).map((r: Receipt) => [r.chat_id, r])
+        );
+        setMessages((prev) =>
+          prev.map((m) => {
+            const r = byId.get(m.id);
+            return r ? { ...m, delivered_at: r.delivered_at, read_at: r.read_at } : m;
+          })
+        );
       } catch { }
     });
 
@@ -893,6 +936,7 @@ function ChatAuditListContent() {
                         >
                           {msg.created_at ? formatDateTimePtBr(msg.created_at) : ""}
                         </Typography>
+                        {!isUser && <ReadReceipt msg={msg} />}
                       </Box>
                     </Box>
 

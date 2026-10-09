@@ -86,6 +86,9 @@ interface ChatMessage {
   /** Nickname do auditor que enviou a mensagem */
   auditor_nickname?: string | null;
   timestamp?: Date;
+  /** Recibo já gravado no backend (vindo do histórico) */
+  delivered?: boolean;
+  read?: boolean;
 }
 
 interface ChatIAProps {
@@ -123,6 +126,15 @@ const ChatIA = ({ session }: ChatIAProps) => {
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [feedbackDialogChatId, setFeedbackDialogChatId] = useState<number | null>(null);
   const [feedbackDialogText, setFeedbackDialogText] = useState("");
+
+  // --- Recibos de entrega/leitura (estilo WhatsApp) ---
+  const messagesBoxRef = useRef<HTMLDivElement>(null);
+  const receiptsSentRef = useRef({ delivered: new Set<number>(), read: new Set<number>() });
+  const receiptsPendingRef = useRef({ delivered: new Set<number>(), read: new Set<number>() });
+  const receiptsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const visibleReceiptIdsRef = useRef(new Set<number>());
+  const canReadRef = useRef(false);
+  const threadIdRef = useRef("");
 
   useEffect(() => {
     fetchAgents();
@@ -225,6 +237,82 @@ const ChatIA = ({ session }: ChatIAProps) => {
     scrollToBottom();
   }, [messages, isTyping, streamingText]);
 
+  const flushReceipts = () => {
+    receiptsTimerRef.current = null;
+    const tId = threadIdRef.current;
+    const pending = receiptsPendingRef.current;
+    if (!tId || (pending.delivered.size === 0 && pending.read.size === 0)) return;
+    const body = { delivered: [...pending.delivered], read: [...pending.read] };
+    pending.delivered.clear();
+    pending.read.clear();
+    axios
+      .post(`${BASE_API_URL}/thread/${tId}/receipts`, body, {
+        headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
+      })
+      .catch(() => {
+        // Permite reenviar numa próxima oportunidade
+        body.delivered.forEach((id) => receiptsSentRef.current.delivered.delete(id));
+        body.read.forEach((id) => receiptsSentRef.current.read.delete(id));
+      });
+  };
+
+  const queueReceipt = (kind: "delivered" | "read", id: number) => {
+    if (receiptsSentRef.current[kind].has(id)) return;
+    receiptsSentRef.current[kind].add(id);
+    receiptsPendingRef.current[kind].add(id);
+    if (!receiptsTimerRef.current) receiptsTimerRef.current = setTimeout(flushReceipts, 400);
+  };
+
+  const markVisibleAsRead = () => {
+    if (!canReadRef.current || document.hidden) return;
+    visibleReceiptIdsRef.current.forEach((id) => queueReceipt("read", id));
+  };
+
+  // Troca de conversa: zera o controle local de recibos
+  useEffect(() => {
+    threadIdRef.current = threadId;
+    receiptsSentRef.current = { delivered: new Set(), read: new Set() };
+    visibleReceiptIdsRef.current.clear();
+  }, [threadId]);
+
+  useEffect(() => {
+    canReadRef.current = open && !showHistory && !showConsent && !showAgentSelection;
+    markVisibleAsRead();
+  }, [open, showHistory, showConsent, showAgentSelection]);
+
+  useEffect(() => {
+    document.addEventListener("visibilitychange", markVisibleAsRead);
+    return () => document.removeEventListener("visibilitychange", markVisibleAsRead);
+  }, []);
+
+  // Entregue = mensagem chegou ao chat do usuário; Lido = rodapé do balão ficou visível na tela
+  useEffect(() => {
+    messages.forEach((m) => {
+      if (m.isUser || !m.id) return;
+      if (m.read) receiptsSentRef.current.read.add(m.id);
+      if (m.delivered || m.read) receiptsSentRef.current.delivered.add(m.id);
+      queueReceipt("delivered", m.id);
+    });
+
+    const container = messagesBoxRef.current;
+    if (!container || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = Number((entry.target as HTMLElement).dataset.receiptId);
+          if (entry.isIntersecting) visibleReceiptIdsRef.current.add(id);
+          else visibleReceiptIdsRef.current.delete(id);
+        });
+        markVisibleAsRead();
+      },
+      { root: container, threshold: 0.8 },
+    );
+    container.querySelectorAll<HTMLElement>("[data-receipt-id]").forEach((el) => {
+      if (!receiptsSentRef.current.read.has(Number(el.dataset.receiptId))) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [messages, open, showHistory]);
+
   const createNewThread = async (overrideAgent?: string) => {
     try {
       const email = session?.user.userAuthentication.username || "";
@@ -319,6 +407,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
           feedback_thumb: m.feedback_thumb,
           feedback_text: m.feedback_text,
           timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+          delivered: !!m.delivered_at,
+          read: !!m.read_at,
         }));
         const greeting: ChatMessage = {
           text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
@@ -1191,6 +1281,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           ) : (
             <>
               <Box
+                ref={messagesBoxRef}
                 sx={{
                   flex: 1,
                   overflowY: "auto",
@@ -1383,6 +1474,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       )}
 
                       <Box
+                        data-receipt-id={!msg.isUser && msg.id ? msg.id : undefined}
                         sx={{
                           display: "flex",
                           alignItems: "center",

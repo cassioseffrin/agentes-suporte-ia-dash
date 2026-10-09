@@ -15,6 +15,7 @@ import {
   PowerSettingsNew as PowerOffIcon,
   RateReview as FeedbackIcon,
   Science as TestIcon,
+  MenuBook as DocsIcon,
 } from "@mui/icons-material";
 import { useState } from "react";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
@@ -66,6 +67,7 @@ const navGroups: NavGroup[] = [
         badgeClass: "badge-lab",
       },
       { label: "Feedbacks", href: "/feedbacks", icon: FeedbackIcon },
+      { label: "Documentação Widget", href: "/documentacao-widget", icon: DocsIcon },
     ],
   },
   {

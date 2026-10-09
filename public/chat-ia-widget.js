@@ -374,6 +374,14 @@
       this._feedbackDialogChatId = null;
       this._feedbackDialogText = '';
       this._userEventsSource = null;
+      // Recibos de entrega/leitura (estilo WhatsApp)
+      this._receiptsThread = '';
+      this._receiptsSent = { delivered: new Set(), read: new Set() };
+      this._receiptsPending = { delivered: new Set(), read: new Set() };
+      this._receiptsTimer = null;
+      this._receiptObserver = null;
+      this._visibleReceipts = new Set();
+      this._onVisibilityChange = this._markVisibleAsRead.bind(this);
     }
 
 
@@ -434,10 +442,13 @@
 
 
     connectedCallback() {
+      document.addEventListener('visibilitychange', this._onVisibilityChange);
       this._render(true);
     }
 
     disconnectedCallback() {
+      document.removeEventListener('visibilitychange', this._onVisibilityChange);
+      if (this._receiptObserver) { this._receiptObserver.disconnect(); this._receiptObserver = null; }
       this._closeUserEvents();
     }
 
@@ -809,6 +820,8 @@
         }
       }
 
+      this._trackReceipts(body);
+
 
       var streamingRow = body.querySelector('.streaming-row');
       if (this._isTyping && this._streamingText) {
@@ -978,6 +991,7 @@
       var meta = document.createElement('div');
       meta.className = 'msg-meta';
       meta.innerHTML = '<span class="msg-time">' + fmtDate(msg.timestamp || new Date()) + '</span>';
+      if (!msg.isUser && msg.id) meta.setAttribute('data-receipt-id', msg.id);
 
       if (!msg.isUser && msg.id) {
         var actions = document.createElement('div');
@@ -1019,6 +1033,77 @@
       bub.appendChild(meta);
       row.appendChild(bub);
       return row;
+    }
+
+
+    // Entregue = mensagem chegou ao chat do usuário; Lido = rodapé do balão ficou visível na tela
+    _trackReceipts(body) {
+      var self = this;
+      if (this._receiptsThread !== this._threadId) {
+        this._receiptsThread = this._threadId;
+        this._receiptsSent = { delivered: new Set(), read: new Set() };
+        this._visibleReceipts.clear();
+      }
+      this._messages.forEach(function (m) {
+        if (m.isUser || !m.id) return;
+        if (m.read) self._receiptsSent.read.add(m.id);
+        if (m.delivered || m.read) self._receiptsSent.delivered.add(m.id);
+        self._queueReceipt('delivered', m.id);
+      });
+
+      if (typeof IntersectionObserver === 'undefined') return;
+      if (!this._receiptObserver) {
+        this._receiptObserver = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            var id = Number(entry.target.getAttribute('data-receipt-id'));
+            if (entry.isIntersecting && entry.target.isConnected) self._visibleReceipts.add(id);
+            else self._visibleReceipts.delete(id);
+          });
+          self._markVisibleAsRead();
+        }, { threshold: 0.8 });
+      }
+      body.querySelectorAll('[data-receipt-id]').forEach(function (el) {
+        if (el.getAttribute('data-receipt-observed')) return;
+        if (self._receiptsSent.read.has(Number(el.getAttribute('data-receipt-id')))) return;
+        el.setAttribute('data-receipt-observed', '1');
+        self._receiptObserver.observe(el);
+      });
+      this._markVisibleAsRead();
+    }
+
+    _markVisibleAsRead() {
+      if (!this._open || this._showHistory || this._showConsent || document.hidden) return;
+      var self = this;
+      this._visibleReceipts.forEach(function (id) { self._queueReceipt('read', id); });
+    }
+
+    _queueReceipt(kind, id) {
+      if (this._receiptsSent[kind].has(id)) return;
+      this._receiptsSent[kind].add(id);
+      this._receiptsPending[kind].add(id);
+      if (!this._receiptsTimer) this._receiptsTimer = setTimeout(this._flushReceipts.bind(this), 400);
+    }
+
+    _flushReceipts() {
+      this._receiptsTimer = null;
+      var tId = this._receiptsThread;
+      var pending = this._receiptsPending;
+      if (!tId || (pending.delivered.size === 0 && pending.read.size === 0)) return;
+      var body = { delivered: Array.from(pending.delivered), read: Array.from(pending.read) };
+      pending.delivered.clear();
+      pending.read.clear();
+      var sent = this._receiptsSent;
+      fetch(this.apiUrl + '/thread/' + tId + '/receipts', {
+        method: 'POST',
+        headers: this._headers(true),
+        body: JSON.stringify(body)
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+      }).catch(function () {
+        // Permite reenviar numa próxima oportunidade
+        body.delivered.forEach(function (id) { sent.delivered.delete(id); });
+        body.read.forEach(function (id) { sent.read.delete(id); });
+      });
     }
 
 
@@ -1510,7 +1595,9 @@
               isAuditor: m.role === 'auditor',
               feedback_thumb: m.feedback_thumb,
               feedback_text: m.feedback_text,
-              timestamp: m.created_at ? new Date(m.created_at) : new Date()
+              timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+              delivered: !!m.delivered_at,
+              read: !!m.read_at
             };
           });
           var greeting = {
