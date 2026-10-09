@@ -774,6 +774,7 @@
 
           if (!row) {
             row = self._buildMsgEl(msg, i);
+            row._msg = msg;
             var streamingRow = body.querySelector('.streaming-row');
             var typingEl = body.querySelector('.typing');
             var anchor = streamingRow || typingEl;
@@ -784,8 +785,11 @@
             }
           } else {
             var isUserRow = row.classList.contains('user');
-            if (isUserRow !== msg.isUser) {
+            // Linha de outra mensagem (ex.: troca de conversa pelo histórico): recria para não
+            // herdar data-receipt-id, timestamp e handlers de feedback da mensagem antiga
+            if (isUserRow !== msg.isUser || row._msg !== msg) {
               var newRow = self._buildMsgEl(msg, i);
+              newRow._msg = msg;
               row.replaceWith(newRow);
             } else {
               var bubble = row.querySelector('.bubble');
