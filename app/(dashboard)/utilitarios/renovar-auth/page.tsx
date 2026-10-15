@@ -1172,37 +1172,18 @@ export default function RenovarAuthPage() {
                       >
                         <span style={stepNumberStyle}>1</span> Preparar Ambiente (Venv)
                       </div>
-                      <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                        Se for a primeira vez ou se não tiver o ambiente configurado:
-                      </p>
-                      <div style={{ marginLeft: 30 }}>
+                      <div style={{ marginLeft: 30, marginTop: 8 }}>
                         {os === "mac" ? (
                           <code style={terminalStyle}>
-                            cd ~/dev/agentes-suporte-ia
+                            cd ~/dev/agentes-suporte-ia && source venv/bin/activate
                             <br />
-                            opcional: python3 -m venv venv
-                            <br />
-                            source venv/bin/activate
-                            <br />
-                            opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
-                            <br />
-                            opcional (1 vez): playwright install chromium
-                            <br />
-                            notebooklm login
+                            # 1ª vez: pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
                           </code>
                         ) : (
                           <code style={terminalStyle}>
-                            cd dev\agentes-suporte-ia
+                            cd %USERPROFILE%\dev\agentes-suporte-ia && venv\Scripts\activate
                             <br />
-                            python -m venv venv
-                            <br />
-                            venv\Scripts\activate
-                            <br />
-                            opcional (1 vez): pip install &quot;notebooklm-py[browser]&quot;
-                            <br />
-                            opcional (1 vez): playwright install chromium
-                            <br />
-                            notebooklm login
+                            # 1ª vez: pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
                           </code>
                         )}
                       </div>
@@ -1219,41 +1200,36 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>2</span> Iniciar Autenticação (com profile)
+                        <span style={stepNumberStyle}>2</span> Login (profile{" "}
+                        <code style={codeStyle}>{selectedProfile}</code>)
                       </div>
-                      <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                        Com o terminal aberto e o <strong>venv ativo</strong>, execute para o
-                        profile <code style={codeStyle}>{selectedProfile}</code>:
-                      </p>
-
-                      {/* Sub-instrução para múltiplos perfis */}
-                      <div style={{ marginLeft: 30, marginBottom: 12, padding: "8px 12px", background: "rgba(234, 179, 8, 0.05)", borderLeft: "3px solid var(--accent)", borderRadius: "0 6px 6px 0" }}>
-                        <span style={{ fontWeight: 600, color: "var(--text-primary)", display: "block", marginBottom: 4, fontSize: 12 }}>
-                          ⚠️ IMPORTANTE (Se for alternar de conta Google):
-                        </span>
-                        <span style={{ display: "block", fontSize: 12, opacity: 0.8, marginBottom: 8, lineHeight: 1.5 }}>
-                          Para evitar que o Google invalide as sessões ativas em produção (o que derruba outros agentes ao clicar em &quot;Sair&quot; no navegador), limpe a pasta temporária do navegador antes de logar:
-                        </span>
-                        <code style={{ ...terminalStyle, padding: "8px 12px", display: "inline-block", width: "100%", boxSizing: "border-box" }}>
-                          {os === "mac"
-                            ? "rm -rf ~/.notebooklm/browser_profile"
-                            : "rmdir /s /q %USERPROFILE%\\.notebooklm\\browser_profile"}
-                        </code>
-                      </div>
-
-                      <div style={{ marginLeft: 30 }}>
+                      <div style={{ marginLeft: 30, marginTop: 8 }}>
                         <code style={terminalStyle}>
-                          # Certifique-se de estar com o venv ativo (
-                          {os === "mac"
-                            ? "source venv/bin/activate"
-                            : "venv\\Scripts\\activate"}
-                          )
+                          # se a sessão estiver corrompida ou for trocar de conta:
+                          <br />
+                          notebooklm -p {selectedProfile} auth logout
                           <br />
                           {os === "mac"
-                            ? `notebooklm --storage ~/.notebooklm/profiles/${selectedProfile}/storage_state.json login`
-                            : `notebooklm --storage %USERPROFILE%\\.notebooklm\\profiles\\${selectedProfile}\\storage_state.json login`}
+                            ? `notebooklm -p ${selectedProfile} login --fresh --browser chrome`
+                            : `notebooklm -p ${selectedProfile} login --fresh`}
                         </code>
                       </div>
+                      <ul style={{ margin: "8px 0 0 30px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4, fontSize: 12, opacity: 0.85 }}>
+                        <li>
+                          • <code style={codeStyle}>--fresh</code> limpa o navegador em cache — evita o
+                          falso &quot;Already logged in&quot; e permite trocar de conta Google sem clicar em
+                          &quot;Sair&quot; (o que derruba as sessões em produção).
+                        </li>
+                        <li>
+                          • Faça o login e aguarde abrir a lista de notebooks. A sessão é salva
+                          sozinha (não precisa de ENTER).
+                        </li>
+                        <li>
+                          {os === "mac"
+                            ? "• Usa o Google Chrome instalado (o Chromium embutido é instável no macOS 15+)."
+                            : "• Se o Chromium fechar ou travar, use --browser chrome ou --browser msedge."}
+                        </li>
+                      </ul>
                     </div>
 
                     {/* Step 3 */}
@@ -1267,31 +1243,30 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>3</span> Fluxo no Navegador
+                        <span style={stepNumberStyle}>3</span> Validar
                       </div>
-                      <ul
-                        style={{
-                          margin: "4px 0 0 30px",
-                          padding: 0,
-                          listStyle: "none",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 4,
-                        }}
-                      >
-                        <li>
-                          • Complete o login do Google no navegador que será aberto
-                          automaticamente.
-                        </li>
-                        <li>
-                          • Aguarde carregar a página inicial do NotebookLM (onde aparecem
-                          seus notebooks).
-                        </li>
-                        <li>
-                          • Volte ao Terminal e pressione{" "}
-                          <kbd style={kbdStyle}>ENTER</kbd> para salvar a sessão.
-                        </li>
-                      </ul>
+                      <div style={{ marginLeft: 30, marginTop: 8 }}>
+                        <code style={terminalStyle}>
+                          notebooklm -p {selectedProfile} auth check --test
+                        </code>
+                      </div>
+                      <p style={{ margin: "8px 0 4px 30px", fontSize: 12, opacity: 0.85, lineHeight: 1.5 }}>
+                        Se acusar falta de <code style={codeStyle}>SID</code> /{" "}
+                        <code style={codeStyle}>__Secure-1PSIDTS</code> (ou o navegador fechou antes do
+                        login), entre em notebooklm.google.com no navegador normal e importe os cookies:
+                      </p>
+                      <div style={{ marginLeft: 30 }}>
+                        <code style={terminalStyle}>
+                          {os === "mac"
+                            ? `notebooklm -p ${selectedProfile} login --browser-cookies chrome`
+                            : `notebooklm -p ${selectedProfile} login --browser-cookies firefox`}
+                        </code>
+                      </div>
+                      <p style={{ margin: "4px 0 0 30px", fontSize: 12, fontStyle: "italic", opacity: 0.8 }}>
+                        {os === "mac"
+                          ? "O macOS pedirá acesso ao Keychain (Chrome Safe Storage): clique em \"Sempre Permitir\"."
+                          : "No Windows use Firefox: o Chrome/Edge 127+ criptografa cookies (App-Bound Encryption) e a leitura sai incompleta."}
+                      </p>
                     </div>
 
                     {/* Step 4 */}
