@@ -14,6 +14,7 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  InputAdornment,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import {
@@ -1540,8 +1541,8 @@ export default function AgentesPage() {
                       />
                     )}
                   />
-                  {/* Row 1: title + name */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 16 }}>
+                  {/* Row 1: title + name + agent id */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 340px", gap: 16 }}>
                     <TextField
                       label="Título"
                       {...register("title", { required: true })}
@@ -1549,6 +1550,31 @@ export default function AgentesPage() {
                     <TextField
                       label="Nome (chave)"
                       {...register("name")}
+                      inputProps={{ style: { fontFamily: "monospace", fontSize: 13 } }}
+                    />
+                    <TextField
+                      label="Agent ID (UUID)"
+                      value={selected.id}
+                      InputProps={{
+                        readOnly: true,
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <Tooltip title="Copiar Agent ID">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  if (selected?.id) {
+                                    navigator.clipboard.writeText(selected.id);
+                                  }
+                                }}
+                                edge="end"
+                              >
+                                <CopyIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </InputAdornment>
+                        ),
+                      }}
                       inputProps={{ style: { fontFamily: "monospace", fontSize: 13 } }}
                     />
                   </div>
