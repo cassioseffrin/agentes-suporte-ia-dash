@@ -1261,6 +1261,7 @@
       if (this.userName) q.append('name', this.userName);
       if (this.userCnpj) q.append('cnpj', this.userCnpj);
       if (this.agentName) q.append('agentName', this.agentName);
+      if (this.agentId) q.append('agentId', this.agentId);
       var qs = q.toString();
       var url = this.apiUrl + '/createNewThread' + (qs ? '?' + qs : '');
 
@@ -1459,6 +1460,7 @@
         if (self.userName) q.append('name', self.userName);
         if (self.userCnpj) q.append('cnpj', self.userCnpj);
         if (self.agentName) q.append('agentName', self.agentName);
+        if (self.agentId) q.append('agentId', self.agentId);
         var qs = q.toString();
         fetch(self.apiUrl + '/createNewThread' + (qs ? '?' + qs : ''), { headers: self._headers(false) })
           .then(function (r) { return r.json(); })
@@ -1477,7 +1479,12 @@
           method: 'POST',
           signal: controller.signal,
           headers: this._headers(true),
-          body: JSON.stringify({ threadId: threadId, message: message, assistantName: this.agentName })
+          body: JSON.stringify({
+            threadId: threadId,
+            message: message,
+            assistantName: this.agentName,
+            agentId: this.agentId
+          })
         });
         if (!res.ok || !res.body) { onError('Erro na conexão com o servidor.'); return; }
 
@@ -1533,7 +1540,12 @@
         var res = await fetch(this.apiUrl + '/chat', {
           method: 'POST',
           headers: this._headers(true),
-          body: JSON.stringify({ threadId: threadId, message: message, assistantName: this.agentName })
+          body: JSON.stringify({
+            threadId: threadId,
+            message: message,
+            assistantName: this.agentName,
+            agentId: this.agentId
+          })
         });
         if (res.ok) {
           var data = await res.json();
@@ -1557,7 +1569,11 @@
       this._loadingHistory = true;
       this._render(false);
 
-      fetch(this.apiUrl + '/history?email=' + encodeURIComponent(this.userEmail) + '&page=' + page + '&limit=30', {
+      var histUrl = this.apiUrl + '/history?email=' + encodeURIComponent(this.userEmail) + '&page=' + page + '&limit=30';
+      if (this.agentId) histUrl += '&agentId=' + encodeURIComponent(this.agentId);
+      else if (this.agentName) histUrl += '&agentName=' + encodeURIComponent(this.agentName);
+
+      fetch(histUrl, {
         headers: this._headers(false)
       })
         .then(function (r) { return r.json(); })
