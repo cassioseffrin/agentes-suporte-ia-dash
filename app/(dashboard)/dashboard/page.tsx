@@ -37,6 +37,9 @@ interface FeedbackDashboardData {
 interface DashboardTotals {
   total_chats: number;
   total_users: number;
+  total_responses?: number;
+  total_unanswered?: number;
+  total_conversations?: number;
 }
 
 function StatCard({
@@ -94,6 +97,7 @@ function StatCard({
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [agentData, setAgentData] = useState<DashboardData | null>(null);
+  const [conversationData, setConversationData] = useState<DashboardData | null>(null);
   const [feedbackData, setFeedbackData] = useState<FeedbackDashboardData | null>(null);
   const [totals, setTotals] = useState<DashboardTotals | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,17 +111,19 @@ export default function DashboardPage() {
     }
     setError(null);
     try {
-      const [resUsers, resAgents, resFeedbacks, resTotals] = await Promise.all([
+      const [resUsers, resAgents, resConversations, resFeedbacks, resTotals] = await Promise.all([
         fetch(`${API}/dashboard/chats-per-user?days=${d}&limit=${lim}`),
-        fetch(`${API}/dashboard/chats-per-agent?days=${d}`),
+        fetch(`${API}/dashboard/responses-per-agent?days=${d}`),
+        fetch(`${API}/dashboard/conversations-per-agent?days=${d}`),
         fetch(`${API}/dashboard/feedback-per-agent?days=${d}`),
         fetch(`${API}/dashboard/totals?days=${d}`)
       ]);
-      if (!resUsers.ok || !resAgents.ok || !resFeedbacks.ok || !resTotals.ok) throw new Error(`HTTP Error`);
+      if (!resUsers.ok || !resAgents.ok || !resConversations.ok || !resFeedbacks.ok || !resTotals.ok) throw new Error(`HTTP Error`);
       
-      const [jsonUsers, jsonAgents, jsonFeedbacks, jsonTotals] = await Promise.all([
+      const [jsonUsers, jsonAgents, jsonConversations, jsonFeedbacks, jsonTotals] = await Promise.all([
         resUsers.json(),
         resAgents.json(),
+        resConversations.json(),
         resFeedbacks.json(),
         resTotals.json()
       ]);
@@ -137,6 +143,10 @@ export default function DashboardPage() {
       
       if (jsonAgents && jsonAgents.categories) {
         jsonAgents.categories = jsonAgents.categories.map(formatDateBR);
+      }
+
+      if (jsonConversations && jsonConversations.categories) {
+        jsonConversations.categories = jsonConversations.categories.map(formatDateBR);
       }
 
       if (jsonUsers && jsonUsers.series) {
@@ -160,6 +170,7 @@ export default function DashboardPage() {
 
       setData(jsonUsers);
       setAgentData(jsonAgents);
+      setConversationData(jsonConversations);
       setFeedbackData(jsonFeedbacks);
       setTotals(jsonTotals);
     } catch (e: unknown) {
@@ -180,8 +191,11 @@ export default function DashboardPage() {
     load(days, userLimit, !!isSseUpdate);
   }, [days, userLimit, lastThreadUpdate]);
 
-  const totalChats = totals?.total_chats ?? 0;
+  const totalResponses = totals?.total_responses ?? 0;
+  const totalConversations = totals?.total_conversations ?? 0;
+  const totalUnanswered = totals?.total_unanswered ?? 0;
   const totalUsers = totals?.total_users ?? 0;
+  const unansweredPct = totalResponses > 0 ? Math.round((totalUnanswered / totalResponses) * 100) : 0;
 
   const getChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
     chart: {
@@ -330,10 +344,21 @@ export default function DashboardPage() {
         }}
       >
         <StatCard
-          label="Total de Chats"
-          value={loading ? " " : totalChats}
+          label="Respostas da IA"
+          value={loading ? " " : totalResponses}
           sub={`últimos ${days} dias`}
           accent="var(--accent)"
+        />
+        <StatCard
+          label="Conversas"
+          value={loading ? " " : totalConversations}
+          sub="agrupadas por assunto"
+        />
+        <StatCard
+          label="Sem resposta nos manuais"
+          value={loading ? " " : totalUnanswered}
+          sub={`${unansweredPct}% das respostas`}
+          accent="var(--danger)"
         />
         <StatCard
           label="Usuários Ativos"
@@ -358,9 +383,12 @@ export default function DashboardPage() {
           marginBottom: 24,
         }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
-          Chats por Agente (diário)
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
+          Respostas por Agente (diário)
         </h2>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
+          Cada resposta da IA conta, mesmo que várias sejam na mesma conversa.
+        </p>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
@@ -388,6 +416,54 @@ export default function DashboardPage() {
             type="line"
             series={agentData.series}
             options={getChartOptions(agentData.categories ?? [])}
+            height={320}
+          />
+        )}
+      </div>
+
+      {/* Conversations Chart */}
+      <div
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "24px",
+          marginBottom: 24,
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
+          Conversas por Agente (diário)
+        </h2>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
+          Cada conversa conta uma vez por dia em que o usuário enviou mensagem, independente de quantas perguntas fez.
+        </p>
+
+        {loading ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
+            <span className="spinner" /> Carregando dados...
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 300,
+              color: "var(--danger)",
+              fontSize: 14,
+            }}
+          >
+            ⚠️ {error}
+          </div>
+        ) : !conversationData || conversationData.series.length === 0 ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
+            Nenhum dado no período selecionado.
+          </div>
+        ) : (
+          <ApexChart
+            type="line"
+            series={conversationData.series}
+            options={getChartOptions(conversationData.categories ?? [])}
             height={320}
           />
         )}
