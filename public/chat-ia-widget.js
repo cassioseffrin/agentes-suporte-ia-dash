@@ -386,7 +386,7 @@
 
 
     static get observedAttributes() {
-      return ['agent-id', 'agent-name', 'agent-title', 'user-email', 'user-name', 'user-cnpj',
+      return ['agent-name', 'agent-title', 'user-email', 'user-name', 'user-cnpj',
         'api-url', 'api-key', 'accent-color', 'position', 'hide-fab',
         'bg-color', 'body-bg-color', 'text-color', 'bubble-bot-bg', 'bubble-bot-color', 'bubble-user-bg', 'bubble-user-color',
         'allow-minimize-and-close'];
@@ -396,7 +396,7 @@
       if (oldValue === newValue) return;
 
       if (this.isConnected) {
-        if (['user-email', 'user-cnpj', 'agent-id', 'agent-name'].indexOf(name) !== -1) {
+        if (['user-email', 'user-cnpj', 'agent-name'].indexOf(name) !== -1) {
 
           this._threadId = '';
           this._messages = [];
@@ -420,7 +420,6 @@
     }
 
 
-    get agentId() { return this.getAttribute('agent-id') || ''; }
     get agentName() { return this.getAttribute('agent-name') || ''; }
     get agentTitle() { return this.getAttribute('agent-title') || this.agentName || 'Assistente IA'; }
     get userEmail() { return this.getAttribute('user-email') || ''; }
@@ -1261,7 +1260,6 @@
       if (this.userName) q.append('name', this.userName);
       if (this.userCnpj) q.append('cnpj', this.userCnpj);
       if (this.agentName) q.append('agentName', this.agentName);
-      if (this.agentId) q.append('agentId', this.agentId);
       var qs = q.toString();
       var url = this.apiUrl + '/createNewThread' + (qs ? '?' + qs : '');
 
@@ -1460,7 +1458,6 @@
         if (self.userName) q.append('name', self.userName);
         if (self.userCnpj) q.append('cnpj', self.userCnpj);
         if (self.agentName) q.append('agentName', self.agentName);
-        if (self.agentId) q.append('agentId', self.agentId);
         var qs = q.toString();
         fetch(self.apiUrl + '/createNewThread' + (qs ? '?' + qs : ''), { headers: self._headers(false) })
           .then(function (r) { return r.json(); })
@@ -1482,8 +1479,7 @@
           body: JSON.stringify({
             threadId: threadId,
             message: message,
-            assistantName: this.agentName,
-            agentId: this.agentId
+            assistantName: this.agentName
           })
         });
         if (!res.ok || !res.body) { onError('Erro na conexão com o servidor.'); return; }
@@ -1543,8 +1539,7 @@
           body: JSON.stringify({
             threadId: threadId,
             message: message,
-            assistantName: this.agentName,
-            agentId: this.agentId
+            assistantName: this.agentName
           })
         });
         if (res.ok) {
@@ -1570,8 +1565,7 @@
       this._render(false);
 
       var histUrl = this.apiUrl + '/history?email=' + encodeURIComponent(this.userEmail) + '&page=' + page + '&limit=30';
-      if (this.agentId) histUrl += '&agentId=' + encodeURIComponent(this.agentId);
-      else if (this.agentName) histUrl += '&agentName=' + encodeURIComponent(this.agentName);
+      if (this.agentName) histUrl += '&agentName=' + encodeURIComponent(this.agentName);
 
       fetch(histUrl, {
         headers: this._headers(false)

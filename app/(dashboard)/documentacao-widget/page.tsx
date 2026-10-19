@@ -15,8 +15,7 @@ const attrGroups: { title: string; attrs: Attr[] }[] = [
   {
     title: "Agente",
     attrs: [
-      { name: "agent-id", def: "—", desc: "UUID do agente (tabela agent).", required: true },
-      { name: "agent-name", def: "—", desc: "Nome interno do agente (ex.: VIMBO, CONTROL). Enviado como assistantName ao backend.", required: true },
+      { name: "agent-name", def: "—", desc: "Nome interno do agente (ex.: VIMBO, CONTROL), único na tabela agent. O backend localiza o agente (notebook) sempre por este nome.", required: true },
       { name: "agent-title", def: "agent-name ou \"Assistente IA\"", desc: "Título exibido no cabeçalho do chat." },
     ],
   },
@@ -131,7 +130,6 @@ export default function DocumentacaoWidgetPage() {
 
   const snippet = `<script src="${origin}/chat-ia-widget.js"></script>
 <chat-ia-widget
-  agent-id="<uuid-do-agente>"
   agent-name="VIMBO"
   agent-title="Sistema Vimbo"
   user-email="usuario@cliente.com.br"
@@ -152,8 +150,7 @@ w.setAttribute('user-email', 'outro@cliente.com.br');
 w.setAttribute('user-cnpj', '12345678000100');`;
 
   const embedUrl = `${origin}/chat-embed.html
-  ?agent-id=<uuid-do-agente>
-  &agent-name=CONTROL
+  ?agent-name=CONTROL
   &agent-title=Sistema CONTROL
   &user-email=usuario@cliente.com.br
   &user-name=Nome do Usuário
@@ -220,7 +217,7 @@ w.setAttribute('user-cnpj', '12345678000100');`;
         </div>
         <p style={{ ...p, marginTop: 12, marginBottom: 0 }}>
           <span style={{ color: "var(--accent)" }}>*</span> obrigatório. Todos os atributos são reativos: alterar{" "}
-          <span style={mono}>user-email</span>, <span style={mono}>user-cnpj</span>, <span style={mono}>agent-id</span> ou{" "}
+          <span style={mono}>user-email</span>, <span style={mono}>user-cnpj</span> ou{" "}
           <span style={mono}>agent-name</span> reinicia a conversa; os demais apenas redesenham.
         </p>
       </Section>
