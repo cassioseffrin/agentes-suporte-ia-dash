@@ -1315,9 +1315,7 @@
           self._statusText = '';
           self._streamingText = '';
           // Evita duplicar se o chat_id ou o texto da última mensagem bater
-          var exists = self._messages.some(function (m) {
-            return m.id === data.chat_id || (m.text === data.message && !m.isUser);
-          });
+          var exists = self._hasBotMessage(data.chat_id, data.message);
           if (!exists) {
             self._messages.push({
               text: self._cleanText(data.message),
@@ -1385,7 +1383,7 @@
             self._isTyping = false;
             self._statusText = '';
             self._streamingText = '';
-            if (result.content) {
+            if (result.content && !self._hasBotMessage(result.chat_id, result.content)) {
               self._messages.push({
                 text: self._cleanText(result.content),
                 isUser: false,
@@ -1445,7 +1443,7 @@
           this._isTyping = false;
           this._statusText = '';
           if (reply && reply.content) {
-            this._messages.push({ text: this._cleanText(reply.content), isUser: false, id: reply.chat_id || undefined, timestamp: new Date() });
+            if (!this._hasBotMessage(reply.chat_id, reply.content)) this._messages.push({ text: this._cleanText(reply.content), isUser: false, id: reply.chat_id || undefined, timestamp: new Date() });
           } else {
             this._messages.push({ text: 'Desculpe, não consegui processar isso. Tente novamente.', isUser: false, timestamp: new Date() });
           }
@@ -1704,6 +1702,17 @@
         if (r.ok) self._feedbackSent = true;
         self._render(false);
       }).catch(function () { self._render(false); });
+    }
+
+
+    // A mesma resposta chega pelo stream (done) e pelo SSE user-events (agent_message),
+    // em ordem que varia: quem chegar depois não insere de novo.
+    _hasBotMessage(chatId, text) {
+      var clean = this._cleanText(text || '');
+      return this._messages.some(function (m) {
+        if (m.isUser) return false;
+        return chatId ? m.id === chatId : m.text === clean;
+      });
     }
 
 
