@@ -3,7 +3,8 @@
 
   // Variante do chat-ia-widget que também consulta dados reais da empresa no Vimbo.
   // O backend decide (tool calling) se a pergunta vai para o RAG ou para a API de dados,
-  // usando o token do usuário logado (atributo user-token, enviado no header X-User-Token).
+  // usando o token do usuário logado (atributo user-token, enviado no corpo como userToken:
+  // o JWT passa de 8 KB e o nginx recusa headers desse tamanho).
   if (customElements.get('chat-ia-dados-widget')) return;
 
 
@@ -1186,13 +1187,6 @@
       return h;
     }
 
-    // Headers do envio de mensagem: inclui o token do usuário do Vimbo para a rota de dados
-    _chatHeaders() {
-      var h = this._headers(true);
-      if (this.userToken) h['X-User-Token'] = this.userToken;
-      return h;
-    }
-
     openChat() {
       this._handleOpen();
     }
@@ -1486,11 +1480,12 @@
         var res = await fetch(this.apiUrl + '/chat/stream', {
           method: 'POST',
           signal: controller.signal,
-          headers: this._chatHeaders(),
+          headers: this._headers(true),
           body: JSON.stringify({
             threadId: threadId,
             message: message,
-            assistantName: this.agentName
+            assistantName: this.agentName,
+            userToken: this.userToken || undefined
           })
         });
         if (!res.ok || !res.body) { onError('Erro na conexão com o servidor.'); return; }
@@ -1546,11 +1541,12 @@
       try {
         var res = await fetch(this.apiUrl + '/chat', {
           method: 'POST',
-          headers: this._chatHeaders(),
+          headers: this._headers(true),
           body: JSON.stringify({
             threadId: threadId,
             message: message,
-            assistantName: this.agentName
+            assistantName: this.agentName,
+            userToken: this.userToken || undefined
           })
         });
         if (res.ok) {
