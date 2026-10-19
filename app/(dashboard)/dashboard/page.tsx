@@ -42,6 +42,34 @@ interface DashboardTotals {
   total_conversations?: number;
 }
 
+function BarsSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap", userSelect: "none" }}>
+      Barras
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        style={{
+          width: 36,
+          height: 20,
+          borderRadius: 10,
+          border: "none",
+          padding: 2,
+          cursor: "pointer",
+          background: checked ? "var(--accent)" : "var(--border)",
+          transition: "background 0.15s ease",
+          display: "flex",
+          justifyContent: checked ? "flex-end" : "flex-start",
+        }}
+      >
+        <span style={{ width: 16, height: 16, borderRadius: "50%", background: "#fff" }} />
+      </button>
+    </label>
+  );
+}
+
 function StatCard({
   label,
   value,
@@ -104,6 +132,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
   const [userLimit, setUserLimit] = useState(20);
+  const [agentBars, setAgentBars] = useState(false);
+  const [conversationBars, setConversationBars] = useState(false);
 
   const load = async (d: number, lim: number, silent = false) => {
     if (!silent) {
@@ -242,6 +272,31 @@ export default function DashboardPage() {
       "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
     ],
   });
+
+  const getStackedBarOptions = (categories: string[]): ApexCharts.ApexOptions => {
+    const base = getChartOptions(categories);
+    return {
+      ...base,
+      chart: { ...base.chart, type: "bar", stacked: true, zoom: { enabled: false } },
+      stroke: { show: false },
+      markers: { size: 0 },
+      dataLabels: { enabled: false },
+      plotOptions: {
+        bar: {
+          columnWidth: "55%",
+          borderRadius: 4,
+          borderRadiusApplication: "end",
+          borderRadiusWhenStacked: "last",
+          dataLabels: {
+            total: {
+              enabled: true,
+              style: { color: "#e2e8f0", fontSize: "11px", fontWeight: 600 },
+            },
+          },
+        },
+      },
+    };
+  };
 
   const getBarChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
     chart: {
@@ -383,12 +438,17 @@ export default function DashboardPage() {
           marginBottom: 24,
         }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
-          Respostas por Agente (diário)
-        </h2>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
-          Cada resposta da IA conta, mesmo que várias sejam na mesma conversa.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
+              Respostas por Agente (diário)
+            </h2>
+            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              Cada resposta da IA conta, mesmo que várias sejam na mesma conversa.
+            </p>
+          </div>
+          <BarsSwitch checked={agentBars} onChange={setAgentBars} />
+        </div>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
@@ -413,9 +473,10 @@ export default function DashboardPage() {
           </div>
         ) : (
           <ApexChart
-            type="line"
+            key={agentBars ? "bar" : "line"}
+            type={agentBars ? "bar" : "line"}
             series={agentData.series}
-            options={getChartOptions(agentData.categories ?? [])}
+            options={agentBars ? getStackedBarOptions(agentData.categories ?? []) : getChartOptions(agentData.categories ?? [])}
             height={320}
           />
         )}
@@ -431,12 +492,17 @@ export default function DashboardPage() {
           marginBottom: 24,
         }}
       >
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
-          Conversas por Agente (diário)
-        </h2>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
-          Cada conversa conta uma vez por dia em que o usuário enviou mensagem, independente de quantas perguntas fez.
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
+              Conversas por Agente (diário)
+            </h2>
+            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              Cada conversa conta uma vez por dia em que o usuário enviou mensagem, independente de quantas perguntas fez.
+            </p>
+          </div>
+          <BarsSwitch checked={conversationBars} onChange={setConversationBars} />
+        </div>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
@@ -461,9 +527,10 @@ export default function DashboardPage() {
           </div>
         ) : (
           <ApexChart
-            type="line"
+            key={conversationBars ? "bar" : "line"}
+            type={conversationBars ? "bar" : "line"}
             series={conversationData.series}
-            options={getChartOptions(conversationData.categories ?? [])}
+            options={conversationBars ? getStackedBarOptions(conversationData.categories ?? []) : getChartOptions(conversationData.categories ?? [])}
             height={320}
           />
         )}
