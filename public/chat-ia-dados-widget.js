@@ -8,11 +8,37 @@
   if (customElements.get('chat-ia-dados-widget')) return;
 
 
+  // Tabelas markdown (| a | b | + linha |---|) viram <table> numa linha só,
+  // para o \n -> <br> do parseMd não quebrar a tabela.
+  function mdTables(html) {
+    var lines = html.split('\n');
+    var out = [];
+    var isRow = function (l) { return /^\s*\|.*\|\s*$/.test(l || ''); };
+    var isSep = function (l) { return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(l || ''); };
+    var cells = function (l) { return l.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (c) { return c.trim(); }); };
+    for (var i = 0; i < lines.length; i++) {
+      if (isRow(lines[i]) && isSep(lines[i + 1])) {
+        var t = '<div class="table-wrap"><table><thead><tr>' +
+          cells(lines[i]).map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+        i += 2;
+        while (i < lines.length && isRow(lines[i])) {
+          t += '<tr>' + cells(lines[i]).map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>';
+          i++;
+        }
+        i--;
+        out.push(t + '</tbody></table></div>');
+      } else {
+        out.push(lines[i]);
+      }
+    }
+    return out.join('\n');
+  }
+
+
   function parseMd(text) {
     if (!text) return '';
-    let html = text
-
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    let html = mdTables(text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'))
 
       .replace(/```(\w*)\n([\s\S]*?)```/g, function (_, lang, code) {
         return '<pre><code>' + code.trim() + '</code></pre>';
@@ -41,7 +67,13 @@
       .replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
 
 
-    html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+    // Itens consecutivos (mesmo separados por linha em branco) formam uma lista, sem <br> entre eles
+    html = html.replace(/((?:<li>.*<\/li>\n*)+)/g, function (m) {
+      var trail = /\n\n$/.test(m) ? '\n\n' : (/\n$/.test(m) ? '\n' : '');
+      return '<ul>' + m.replace(/\n+/g, '') + '</ul>' + trail;
+    });
+    // Sem <br> logo antes/depois de tabelas e listas
+    html = html.replace(/\n+(<div class="table-wrap">|<ul>)/g, '$1').replace(/(<\/div>|<\/ul>)\n(?!\n)/g, '$1');
 
     html = html.replace(/<\/blockquote>\n<blockquote>/g, '<br>');
 
@@ -249,6 +281,11 @@
       .bubble h1 { font-size: 16px; } .bubble h2 { font-size: 15px; } .bubble h3 { font-size: 14px; }\
       .bubble a { color: ' + ac + '; text-decoration: underline; }\
       .bubble.user a { color: ' + bubbleUserColor + '; text-decoration: underline; }\
+      .bubble .table-wrap { overflow-x: auto; margin: 6px 0; }\
+      .bubble table { border-collapse: collapse; font-size: 13px; width: 100%; }\
+      .bubble th, .bubble td { border: 1px solid rgba(' + textRgb + ', 0.12); padding: 4px 8px; text-align: left; white-space: nowrap; }\
+      .bubble th { background: rgba(' + acRgb + ', 0.1); font-weight: 700; }\
+      .bubble tbody tr:nth-child(even) td { background: rgba(' + textRgb + ', 0.03); }\
       .bubble hr { border: none; border-top: 1px solid rgba(' + textRgb + ', 0.1); margin: 8px 0; }\
       \
       .msg-meta { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(' + textRgb + ', 0.08); }\
