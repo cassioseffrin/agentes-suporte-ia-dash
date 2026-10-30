@@ -132,8 +132,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
   const [userLimit, setUserLimit] = useState(20);
-  const [agentBars, setAgentBars] = useState(false);
-  const [conversationBars, setConversationBars] = useState(false);
+  const [agentBars, setAgentBars] = useState(true);
+  const [conversationBars, setConversationBars] = useState(true);
 
   const load = async (d: number, lim: number, silent = false) => {
     if (!silent) {
