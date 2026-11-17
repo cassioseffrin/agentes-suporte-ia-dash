@@ -840,6 +840,9 @@ function AgentCard({
           flexShrink: 0,
           fontSize: 16,
           overflow: "hidden",
+          filter: agent.active ? "none" : "grayscale(1)",
+          opacity: agent.active ? 1 : 0.45,
+          transition: "filter 0.2s, opacity 0.2s",
         }}
       >
         {agent.logo_base64 ? (
@@ -1418,6 +1421,9 @@ export default function AgentesPage() {
                       fontSize: 18,
                       flexShrink: 0,
                       overflow: "hidden",
+                      filter: watch("active") ? "none" : "grayscale(1)",
+                      opacity: watch("active") ? 1 : 0.45,
+                      transition: "filter 0.2s, opacity 0.2s",
                     }}
                   >
                     {watch("logo_base64") || selected.logo_base64 ? (
