@@ -158,6 +158,7 @@ export default function RenovarAuthPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${API_KEY}`,
         },
         body: JSON.stringify({
           old_profile: oldP,
@@ -217,6 +218,7 @@ export default function RenovarAuthPage() {
     try {
       const res = await fetch(`${API}/uploadAuthState?profile=${encodeURIComponent(selectedProfile)}`, {
         method: "POST",
+        headers: { Authorization: `Bearer ${API_KEY}` },
         body: formData,
       });
       const json = await res.json();

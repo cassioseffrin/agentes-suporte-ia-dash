@@ -34,6 +34,9 @@ import {
 } from "@mui/icons-material";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
+const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
+// Endpoints que alteram agentes/notebooks exigem a API key no backend
+const AUTH_HEADERS = { Authorization: `Bearer ${BACKEND_API_KEY}` };
 
 // Dark MUI theme matching dashboard palette
 const darkTheme = createTheme({
@@ -231,7 +234,7 @@ function FaqEditor({
     try {
       const res = await fetch(`${API}/agents/${agentId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
         body: JSON.stringify({ faq_content: content }),
       });
       if (!res.ok) {
@@ -252,7 +255,7 @@ function FaqEditor({
     setSyncStatus("syncing");
     setSyncError(null);
     try {
-      const res = await fetch(`${API}/agents/${agentId}/sync-faq`, { method: "POST" });
+      const res = await fetch(`${API}/agents/${agentId}/sync-faq`, { method: "POST", headers: AUTH_HEADERS });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || json.status === "error") {
         throw new Error(
@@ -1009,7 +1012,7 @@ export default function AgentesPage() {
       let erros: any[] = [];
 
       for (const prof of targets) {
-        const res = await fetch(`${API}/updateNotebooks?profile=${encodeURIComponent(prof)}`);
+        const res = await fetch(`${API}/updateNotebooks?profile=${encodeURIComponent(prof)}`, { headers: AUTH_HEADERS });
         const json = await res.json();
         if (!res.ok) {
           throw new Error(json.detail || `Falha ao atualizar o profile '${prof}': HTTP ${res.status}`);
@@ -1070,7 +1073,7 @@ export default function AgentesPage() {
       const currentPrompt = getValues("system_prompt");
       const res = await fetch(`${API}/agents/${selected.id}/sync-prompt`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
         body: JSON.stringify({ system_prompt: currentPrompt }),
       });
       const json = await res.json().catch(() => ({}));
@@ -1092,7 +1095,7 @@ export default function AgentesPage() {
     try {
       const res = await fetch(`${API}/agents/${selected.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...AUTH_HEADERS },
         body: JSON.stringify({ ...data, sort_order: Number(data.sort_order) }),
       });
       const json = await res.json();
