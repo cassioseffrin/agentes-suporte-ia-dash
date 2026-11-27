@@ -4,9 +4,11 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CircularProgress } from "@mui/material";
+import { useI18n } from "../../../i18n/I18nContext";
 
 export default function AtualizarAgentesPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     router.replace("/agentes");
@@ -26,8 +28,8 @@ export default function AtualizarAgentesPage() {
     >
       <CircularProgress size={32} sx={{ color: "var(--accent, #bd4140)" }} />
       <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-        A função de sincronizar agentes foi integrada diretamente na tela de{" "}
-        <strong style={{ color: "var(--text-primary)" }}>Agentes</strong>.
+        {t("testAgents.redirectText")}{" "}
+        <strong style={{ color: "var(--text-primary)" }}>{t("testAgents.redirectAgents")}</strong>.
       </p>
       <Link
         href="/agentes"
@@ -37,7 +39,7 @@ export default function AtualizarAgentesPage() {
           textDecoration: "underline",
         }}
       >
-        Ir para Agentes
+        {t("testAgents.redirectLink")}
       </Link>
     </div>
   );

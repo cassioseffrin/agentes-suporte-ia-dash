@@ -17,6 +17,7 @@ import {
   SentimentDissatisfied as SadIcon,
   FilterList as FilterIcon,
 } from "@mui/icons-material";
+import { useI18n } from "../../i18n/I18nContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
@@ -46,22 +47,24 @@ interface FeedbacksResponse {
 
 type ThumbFilter = "all" | "positive" | "negative";
 
-function timeAgo(iso: string | null): string {
+type I18n = ReturnType<typeof useI18n>;
+
+function timeAgo(iso: string | null, t: I18n["t"]): string {
   if (!iso) return "—";
   const d = new Date(iso);
   const diffMs = Date.now() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffH = Math.floor(diffMin / 60);
   const diffD = Math.floor(diffH / 24);
-  if (diffD > 0) return `${diffD}d atrás`;
-  if (diffH > 0) return `${diffH}h atrás`;
-  if (diffMin > 0) return `${diffMin}min atrás`;
-  return "agora";
+  if (diffD > 0) return t("common.timeAgo.days", { n: diffD });
+  if (diffH > 0) return t("common.timeAgo.hours", { n: diffH });
+  if (diffMin > 0) return t("common.timeAgo.minutes", { n: diffMin });
+  return t("common.timeAgo.now");
 }
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, formatDateTime: I18n["formatDateTime"]): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR", {
+  return formatDateTime(iso, {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
@@ -88,6 +91,7 @@ function StarRating({ rating }: { rating: number | null }) {
 }
 
 export default function FeedbacksPage() {
+  const { t, formatDateTime } = useI18n();
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [total, setTotal] = useState(0);
   const [pages, setPages] = useState(1);
@@ -152,10 +156,10 @@ export default function FeedbacksPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-          Feedbacks das Conversas
+          {t("feedbacks.title")}
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-          Mensagens avaliadas pelos usuários com comentários de texto.
+          {t("feedbacks.subtitle")}
         </p>
       </div>
 
@@ -163,21 +167,21 @@ export default function FeedbacksPage() {
       <div style={{ display: "flex", gap: 14, marginBottom: 24, flexWrap: "wrap" }}>
         {[
           {
-            label: "Total de feedbacks",
+            label: t("feedbacks.statTotal"),
             value: total,
             icon: <ForumIcon sx={{ fontSize: 20, color: "var(--accent)" }} />,
             bg: "rgba(189,65,64,0.07)",
             border: "rgba(189,65,64,0.2)",
           },
           {
-            label: "Positivos (nesta página)",
+            label: t("feedbacks.statPositive"),
             value: positiveCount,
             icon: <HappyIcon sx={{ fontSize: 20, color: "#10b981" }} />,
             bg: "rgba(16,185,129,0.07)",
             border: "rgba(16,185,129,0.2)",
           },
           {
-            label: "Negativos (nesta página)",
+            label: t("feedbacks.statNegative"),
             value: negativeCount,
             icon: <SadIcon sx={{ fontSize: 20, color: "#ef4444" }} />,
             bg: "rgba(239,68,68,0.07)",
@@ -235,7 +239,7 @@ export default function FeedbacksPage() {
           <input
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Buscar por feedback, mensagem, usuário..."
+            placeholder={t("feedbacks.searchPlaceholder")}
             style={{
               background: "none",
               border: "none",
@@ -260,9 +264,9 @@ export default function FeedbacksPage() {
         >
           {(
             [
-              { key: "all", label: "Todos", Icon: AllThumbsIcon },
-              { key: "positive", label: "Positivos", Icon: ThumbUpIcon },
-              { key: "negative", label: "Negativos", Icon: ThumbDownIcon },
+              { key: "all", label: t("feedbacks.filterAll"), Icon: AllThumbsIcon },
+              { key: "positive", label: t("feedbacks.filterPositive"), Icon: ThumbUpIcon },
+              { key: "negative", label: t("feedbacks.filterNegative"), Icon: ThumbDownIcon },
             ] as const
           ).map(({ key, label, Icon }) => (
             <button
@@ -293,7 +297,7 @@ export default function FeedbacksPage() {
         <button
           onClick={() => fetchFeedbacks(page, search, thumbFilter)}
           disabled={loading}
-          title="Atualizar"
+          title={t("common.refresh")}
           style={{
             background: "var(--bg-surface)",
             border: "1px solid var(--border)",
@@ -341,11 +345,11 @@ export default function FeedbacksPage() {
             }}
           >
             <ForumIcon sx={{ fontSize: 40, marginBottom: 12, opacity: 0.3 }} />
-            <div style={{ fontSize: 15, fontWeight: 600 }}>Nenhum feedback encontrado</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{t("feedbacks.emptyTitle")}</div>
             <div style={{ fontSize: 13, marginTop: 4 }}>
               {search || thumbFilter !== "all"
-                ? "Tente limpar os filtros de busca."
-                : "Quando usuários enviarem feedbacks com texto, eles aparecerão aqui."}
+                ? t("feedbacks.emptyFiltered")
+                : t("feedbacks.emptyDefault")}
             </div>
           </div>
         ) : (
@@ -438,7 +442,7 @@ export default function FeedbacksPage() {
                           <span style={{ color: "var(--accent)", fontWeight: 700, marginLeft: 2 }}>"</span>
                         </>
                       ) : (
-                        "Feedback enviado sem comentário de texto"
+                        t("feedbacks.noComment")
                       )}
                     </div>
 
@@ -462,7 +466,7 @@ export default function FeedbacksPage() {
                         {fb.agent_title || fb.agent_name}
                       </span>
                       {fb.feedback_rating && <StarRating rating={fb.feedback_rating} />}
-                      <span style={{ marginLeft: "auto" }}>{timeAgo(fb.created_at)}</span>
+                      <span style={{ marginLeft: "auto" }}>{timeAgo(fb.created_at, t)}</span>
                     </div>
                   </div>
                 </div>
@@ -492,7 +496,7 @@ export default function FeedbacksPage() {
                           marginBottom: 6,
                         }}
                       >
-                        Resposta da IA avaliada
+                        {t("feedbacks.ratedAnswer")}
                       </div>
                       <div
                         style={{
@@ -520,11 +524,11 @@ export default function FeedbacksPage() {
                         fontSize: 12,
                       }}
                     >
-                      <MetaChip label="Usuário" value={fb.user_name || fb.user_email} />
-                      <MetaChip label="E-mail" value={fb.user_email} />
-                      <MetaChip label="Agente" value={fb.agent_title || fb.agent_name} />
-                      <MetaChip label="Assunto" value={fb.thread_subject} />
-                      <MetaChip label="Data" value={formatDate(fb.created_at)} />
+                      <MetaChip label={t("feedbacks.metaUser")} value={fb.user_name || fb.user_email} />
+                      <MetaChip label={t("feedbacks.metaEmail")} value={fb.user_email} />
+                      <MetaChip label={t("feedbacks.metaAgent")} value={fb.agent_title || fb.agent_name} />
+                      <MetaChip label={t("feedbacks.metaSubject")} value={fb.thread_subject} />
+                      <MetaChip label={t("feedbacks.metaDate")} value={formatDate(fb.created_at, formatDateTime)} />
                     </div>
 
                     {/* Link to thread */}
@@ -547,7 +551,7 @@ export default function FeedbacksPage() {
                         }}
                       >
                         <OpenIcon sx={{ fontSize: 14 }} />
-                        Ver conversa completa
+                        {t("feedbacks.viewConversation")}
                       </Link>
                     </div>
                   </div>
@@ -621,7 +625,7 @@ export default function FeedbacksPage() {
             marginTop: 16,
           }}
         >
-          {total} feedback{total !== 1 ? "s" : ""} encontrado{total !== 1 ? "s" : ""}
+          {t(total === 1 ? "feedbacks.countOne" : "feedbacks.countOther", { n: total })}
         </div>
       )}
     </div>

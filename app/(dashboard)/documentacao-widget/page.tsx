@@ -6,72 +6,74 @@ import {
   Check as CheckIcon,
   OpenInNew as OpenIcon,
 } from "@mui/icons-material";
+import { useI18n, type TranslationKey } from "../../i18n/I18nContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 
-type Attr = { name: string; def: string; desc: string; required?: boolean };
+type Attr = { name: string; def: string; defKey?: TranslationKey; desc: TranslationKey; required?: boolean };
 
-const attrGroups: { title: string; attrs: Attr[] }[] = [
+const attrGroups: { title: TranslationKey; attrs: Attr[] }[] = [
   {
-    title: "Agente",
+    title: "widgetDocs.groups.agent",
     attrs: [
-      { name: "agent-name", def: "—", desc: "Nome interno do agente (ex.: VIMBO, CONTROL), único na tabela agent. O backend localiza o agente (notebook) sempre por este nome.", required: true },
-      { name: "agent-title", def: "agent-name ou \"Assistente IA\"", desc: "Título exibido no cabeçalho do chat." },
+      { name: "agent-name", def: "—", desc: "widgetDocs.attrs.agentName", required: true },
+      { name: "agent-title", def: "", defKey: "widgetDocs.defaults.agentTitle", desc: "widgetDocs.attrs.agentTitle" },
     ],
   },
   {
-    title: "Usuário",
+    title: "widgetDocs.groups.user",
     attrs: [
-      { name: "user-email", def: "usuario.generico@…", desc: "E-mail do usuário. Usado para carregar o histórico de conversas. Sem ele, o histórico não aparece." },
-      { name: "user-name", def: "Usuario Generico", desc: "Nome do usuário (exibido para o auditor)." },
-      { name: "user-cnpj", def: "03.600.477/0001-04", desc: "CNPJ do cliente (usado nos relatórios do dashboard)." },
+      { name: "user-email", def: "usuario.generico@…", desc: "widgetDocs.attrs.userEmail" },
+      { name: "user-name", def: "", defKey: "widgetDocs.defaults.genericUser", desc: "widgetDocs.attrs.userName" },
+      { name: "user-cnpj", def: "03.600.477/0001-04", desc: "widgetDocs.attrs.userCnpj" },
     ],
   },
   {
-    title: "Conexão",
+    title: "widgetDocs.groups.connection",
     attrs: [
-      { name: "api-url", def: "https://assistant.arpasistemas.com.br", desc: "URL base do backend." },
-      { name: "api-key", def: "—", desc: "BACKEND_API_KEY. Enviada como Authorization: Bearer. Necessária para /chat, /history, feedback etc.", required: true },
+      { name: "api-url", def: "https://assistant.arpasistemas.com.br", desc: "widgetDocs.attrs.apiUrl" },
+      { name: "api-key", def: "—", desc: "widgetDocs.attrs.apiKey", required: true },
     ],
   },
   {
-    title: "Comportamento",
+    title: "widgetDocs.groups.behavior",
     attrs: [
-      { name: "position", def: "bottom-right", desc: "Posição do botão flutuante: bottom-right ou bottom-left." },
-      { name: "hide-fab", def: "ausente", desc: "Atributo booleano. Se presente, esconde o botão flutuante; abra via openChat()." },
-      { name: "allow-minimize-and-close", def: "true", desc: "\"false\" esconde os botões de minimizar/fechar (útil em embed)." },
+      { name: "position", def: "bottom-right", desc: "widgetDocs.attrs.position" },
+      { name: "hide-fab", def: "", defKey: "widgetDocs.defaults.absent", desc: "widgetDocs.attrs.hideFab" },
+      { name: "allow-minimize-and-close", def: "true", desc: "widgetDocs.attrs.allowMinimize" },
     ],
   },
   {
-    title: "Cores (hex, rgb() ou nome CSS)",
+    title: "widgetDocs.groups.colors",
     attrs: [
-      { name: "accent-color", def: "#bd4140", desc: "Cor de destaque (FAB, botões, cabeçalho)." },
-      { name: "bg-color", def: "#1a1d27", desc: "Fundo do painel." },
-      { name: "body-bg-color", def: "#21253a", desc: "Fundo da área de mensagens." },
-      { name: "text-color", def: "#e2e8f0", desc: "Cor do texto geral." },
-      { name: "bubble-bot-bg", def: "#2a2f47", desc: "Fundo do balão do assistente." },
-      { name: "bubble-bot-color", def: "#e2e8f0", desc: "Texto do balão do assistente." },
-      { name: "bubble-user-bg", def: "accent-color", desc: "Fundo do balão do usuário." },
-      { name: "bubble-user-color", def: "#fff", desc: "Texto do balão do usuário." },
+      { name: "accent-color", def: "#bd4140", desc: "widgetDocs.attrs.accentColor" },
+      { name: "bg-color", def: "#1a1d27", desc: "widgetDocs.attrs.bgColor" },
+      { name: "body-bg-color", def: "#21253a", desc: "widgetDocs.attrs.bodyBgColor" },
+      { name: "text-color", def: "#e2e8f0", desc: "widgetDocs.attrs.textColor" },
+      { name: "bubble-bot-bg", def: "#2a2f47", desc: "widgetDocs.attrs.bubbleBotBg" },
+      { name: "bubble-bot-color", def: "#e2e8f0", desc: "widgetDocs.attrs.bubbleBotColor" },
+      { name: "bubble-user-bg", def: "accent-color", desc: "widgetDocs.attrs.bubbleUserBg" },
+      { name: "bubble-user-color", def: "#fff", desc: "widgetDocs.attrs.bubbleUserColor" },
     ],
   },
 ];
 
-const endpoints: [string, string, string][] = [
-  ["GET", "/history?email=&page=&limit=", "Lista conversas anteriores do usuário"],
-  ["GET", "/createNewThread?email=&name=&cnpj=&agentName=", "Cria uma nova conversa (threadId)"],
-  ["POST", "/chat/stream", "Envia mensagem e recebe resposta via SSE (status, token, done)"],
-  ["POST", "/chat", "Fallback sem streaming"],
-  ["GET", "/thread/{id}/messages", "Mensagens de uma conversa do histórico"],
-  ["GET", "/thread/{id}/user-events", "SSE: mensagens enviadas pelo auditor humano"],
-  ["POST", "/thread/{id}/receipts", "Recibos de entrega/leitura"],
-  ["PUT", "/chat/{id}/feedback", "Feedback (👍/👎) por mensagem"],
-  ["PUT", "/thread/{id}/feedback", "Nota de 1 a 5 da conversa"],
-  ["DELETE", "/thread/{id}", "Exclui conversa do histórico"],
+const endpoints: [string, string, TranslationKey][] = [
+  ["GET", "/history?email=&page=&limit=", "widgetDocs.endpoints.history"],
+  ["GET", "/createNewThread?email=&name=&cnpj=&agentName=", "widgetDocs.endpoints.createThread"],
+  ["POST", "/chat/stream", "widgetDocs.endpoints.chatStream"],
+  ["POST", "/chat", "widgetDocs.endpoints.chat"],
+  ["GET", "/thread/{id}/messages", "widgetDocs.endpoints.messages"],
+  ["GET", "/thread/{id}/user-events", "widgetDocs.endpoints.userEvents"],
+  ["POST", "/thread/{id}/receipts", "widgetDocs.endpoints.receipts"],
+  ["PUT", "/chat/{id}/feedback", "widgetDocs.endpoints.chatFeedback"],
+  ["PUT", "/thread/{id}/feedback", "widgetDocs.endpoints.threadFeedback"],
+  ["DELETE", "/thread/{id}", "widgetDocs.endpoints.deleteThread"],
 ];
 
 function CodeBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useI18n();
   return (
     <div style={{ position: "relative" }}>
       <button
@@ -80,7 +82,7 @@ function CodeBlock({ code }: { code: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         }}
-        title="Copiar"
+        title={t("widgetDocs.copy")}
         style={{
           position: "absolute", top: 8, right: 8,
           background: "var(--bg-hover)", border: "1px solid var(--border)", borderRadius: 6,
@@ -123,6 +125,7 @@ const td: React.CSSProperties = { padding: "8px 10px", fontSize: 13, color: "var
 const mono: React.CSSProperties = { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 12.5, color: "var(--text-primary)" };
 
 export default function DocumentacaoWidgetPage() {
+  const { t, tr } = useI18n();
   // O layout do dashboard só renderiza no cliente (após checar login), então window existe aqui
   const [origin] = useState(() =>
     typeof window !== "undefined" ? window.location.origin : "https://dashia.arpasistemas.com.br"
@@ -133,7 +136,7 @@ export default function DocumentacaoWidgetPage() {
   agent-name="VIMBO"
   agent-title="Sistema Vimbo"
   user-email="usuario@cliente.com.br"
-  user-name="Nome do Usuário"
+  user-name="${t("widgetDocs.sampleUserName")}"
   user-cnpj="00000000000000"
   api-url="${API_URL}"
   api-key="<BACKEND_API_KEY>"
@@ -141,11 +144,11 @@ export default function DocumentacaoWidgetPage() {
 
   const jsApi = `const w = document.querySelector('chat-ia-widget');
 
-w.openChat();   // abre o painel
-w.closeChat();  // fecha o painel
+w.openChat();   // ${t("widgetDocs.jsOpen")}
+w.closeChat();  // ${t("widgetDocs.jsClose")}
 
-// Trocar usuário/agente em tempo de execução:
-// a conversa atual é descartada e o histórico recarregado.
+// ${t("widgetDocs.jsSwitch1")}
+// ${t("widgetDocs.jsSwitch2")}
 w.setAttribute('user-email', 'outro@cliente.com.br');
 w.setAttribute('user-cnpj', '12345678000100');`;
 
@@ -153,7 +156,7 @@ w.setAttribute('user-cnpj', '12345678000100');`;
   ?agent-name=CONTROL
   &agent-title=Sistema CONTROL
   &user-email=usuario@cliente.com.br
-  &user-name=Nome do Usuário
+  &user-name=${t("widgetDocs.sampleUserName")}
   &user-cnpj=00000000000000
   &api-url=${API_URL}
   &api-key=<BACKEND_API_KEY>
@@ -162,10 +165,9 @@ w.setAttribute('user-cnpj', '12345678000100');`;
   return (
     <div style={{ maxWidth: 960 }}>
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Widget de Chat IA</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>{t("widgetDocs.title")}</h1>
         <p style={{ ...p, marginTop: 6 }}>
-          Web component <span style={mono}>&lt;chat-ia-widget&gt;</span> para incorporar o assistente em qualquer
-          página (portal, ERP web, Delphi WebView). Sem dependências e isolado via Shadow DOM.
+          {tr("widgetDocs.intro", { tag: <span style={mono}>&lt;chat-ia-widget&gt;</span> })}
         </p>
         <a
           href={`${API_URL}/docs`}
@@ -173,42 +175,41 @@ w.setAttribute('user-cnpj', '12345678000100');`;
           rel="noopener"
           style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--accent)" }}
         >
-          Documentação da API (Swagger) <OpenIcon sx={{ fontSize: 14 }} />
+          {t("widgetDocs.apiDocs")} <OpenIcon sx={{ fontSize: 14 }} />
         </a>
       </div>
 
-      <Section title="1. Instalação">
-        <p style={p}>Inclua o script uma vez e adicione a tag. O botão flutuante aparece no canto da tela.</p>
+      <Section title={t("widgetDocs.installTitle")}>
+        <p style={p}>{t("widgetDocs.installText")}</p>
         <CodeBlock code={snippet} />
         <p style={{ ...p, marginTop: 12, marginBottom: 0 }}>
-          Na primeira abertura o usuário vê um aviso de privacidade; o aceite fica salvo em{" "}
-          <span style={mono}>localStorage[&quot;ia_consent&quot;]</span>.
+          {tr("widgetDocs.consentNote", { key: <span style={mono}>localStorage[&quot;ia_consent&quot;]</span> })}
         </p>
       </Section>
 
-      <Section title="2. Atributos">
+      <Section title={t("widgetDocs.attrsTitle")}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={th}>Atributo</th>
-                <th style={th}>Padrão</th>
-                <th style={th}>Descrição</th>
+                <th style={th}>{t("widgetDocs.colAttribute")}</th>
+                <th style={th}>{t("widgetDocs.colDefault")}</th>
+                <th style={th}>{t("widgetDocs.colDescription")}</th>
               </tr>
             </thead>
             <tbody>
               {attrGroups.map((g) => [
                 <tr key={g.title}>
-                  <td colSpan={3} style={{ ...td, paddingTop: 16, fontWeight: 700, color: "var(--text-primary)" }}>{g.title}</td>
+                  <td colSpan={3} style={{ ...td, paddingTop: 16, fontWeight: 700, color: "var(--text-primary)" }}>{t(g.title)}</td>
                 </tr>,
                 ...g.attrs.map((a) => (
                   <tr key={a.name}>
                     <td style={{ ...td, whiteSpace: "nowrap" }}>
                       <span style={mono}>{a.name}</span>
-                      {a.required && <span style={{ color: "var(--accent)", marginLeft: 4 }} title="Obrigatório">*</span>}
+                      {a.required && <span style={{ color: "var(--accent)", marginLeft: 4 }} title={t("widgetDocs.required")}>*</span>}
                     </td>
-                    <td style={{ ...td, ...mono, color: "var(--text-muted)" }}>{a.def}</td>
-                    <td style={td}>{a.desc}</td>
+                    <td style={{ ...td, ...mono, color: "var(--text-muted)" }}>{a.defKey ? t(a.defKey) : a.def}</td>
+                    <td style={td}>{t(a.desc)}</td>
                   </tr>
                 )),
               ])}
@@ -216,26 +217,27 @@ w.setAttribute('user-cnpj', '12345678000100');`;
           </table>
         </div>
         <p style={{ ...p, marginTop: 12, marginBottom: 0 }}>
-          <span style={{ color: "var(--accent)" }}>*</span> obrigatório. Todos os atributos são reativos: alterar{" "}
-          <span style={mono}>user-email</span>, <span style={mono}>user-cnpj</span> ou{" "}
-          <span style={mono}>agent-name</span> reinicia a conversa; os demais apenas redesenham.
+          {tr("widgetDocs.attrsNote", {
+            star: <span style={{ color: "var(--accent)" }}>*</span>,
+            email: <span style={mono}>user-email</span>,
+            cnpj: <span style={mono}>user-cnpj</span>,
+            agent: <span style={mono}>agent-name</span>,
+          })}
         </p>
       </Section>
 
-      <Section title="3. API JavaScript">
+      <Section title={t("widgetDocs.jsApiTitle")}>
         <CodeBlock code={jsApi} />
       </Section>
 
-      <Section title="4. Modo tela cheia (iframe / WebView)">
+      <Section title={t("widgetDocs.embedTitle")}>
         <p style={p}>
-          Para Delphi WebView ou iframe, use <span style={mono}>chat-embed.html</span>: o chat ocupa 100% da janela,
-          sem botão flutuante, e abre automaticamente. Os mesmos atributos são passados via query string (valores
-          URL-encoded).
+          {tr("widgetDocs.embedText", { file: <span style={mono}>chat-embed.html</span> })}
         </p>
         <CodeBlock code={embedUrl} />
       </Section>
 
-      <Section title="5. Endpoints do backend usados">
+      <Section title={t("widgetDocs.endpointsTitle")}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
@@ -243,15 +245,19 @@ w.setAttribute('user-cnpj', '12345678000100');`;
                 <tr key={method + path}>
                   <td style={{ ...td, ...mono, width: 70, color: "var(--accent)" }}>{method}</td>
                   <td style={{ ...td, ...mono }}>{path}</td>
-                  <td style={td}>{desc}</td>
+                  <td style={td}>{t(desc)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p style={{ ...p, marginTop: 12, marginBottom: 0 }}>
-          Exemplos <span style={mono}>curl</span> de cada endpoint estão no{" "}
-          <a href={`${API_URL}/docs`} target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>Swagger</a>.
+          {tr("widgetDocs.endpointsNote", {
+            curl: <span style={mono}>curl</span>,
+            swagger: (
+              <a href={`${API_URL}/docs`} target="_blank" rel="noopener" style={{ color: "var(--accent)" }}>Swagger</a>
+            ),
+          })}
         </p>
       </Section>
     </div>

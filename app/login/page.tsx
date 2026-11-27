@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Box, Button, TextField, Typography, Container, Paper, CircularProgress, Alert } from "@mui/material";
 import { useRouter } from "next/navigation";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { useI18n } from "../i18n/I18nContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { t } = useI18n();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +29,7 @@ export default function LoginPage() {
       });
 
       if (!res.ok) {
-        throw new Error("Credenciais inválidas");
+        throw new Error(t("login.invalidCredentials"));
       }
 
       const data = await res.json();
@@ -39,10 +41,10 @@ export default function LoginPage() {
         }
         router.push("/dashboard");
       } else {
-        setError(data.detail || "Erro ao fazer login");
+        setError(data.detail || t("login.loginError"));
       }
     } catch (err: any) {
-      setError(err.message || "Erro de conexão");
+      setError(err.message || t("login.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,7 @@ export default function LoginPage() {
             <LockOutlinedIcon sx={{ color: "#fff", fontSize: 28 }} />
           </Box>
           <Typography component="h1" variant="h5" sx={{ mb: 3, fontWeight: "bold" }}>
-            Acesso ao Sistema
+            {t("login.title")}
           </Typography>
 
           {error && (
@@ -104,7 +106,7 @@ export default function LoginPage() {
               required
               fullWidth
               id="login"
-              label="Usuário / Email"
+              label={t("login.userLabel")}
               name="login"
               autoComplete="email"
               autoFocus
@@ -127,7 +129,7 @@ export default function LoginPage() {
               required
               fullWidth
               name="senha"
-              label="Senha"
+              label={t("login.passwordLabel")}
               type="password"
               id="senha"
               autoComplete="current-password"
@@ -163,7 +165,7 @@ export default function LoginPage() {
                 },
               }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : "Entrar"}
+              {loading ? <CircularProgress size={24} color="inherit" /> : t("login.submit")}
             </Button>
           </Box>
         </Paper>

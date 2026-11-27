@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { format, parseISO } from "date-fns";
+import { useI18n } from "../../i18n/I18nContext";
 import { useNotification } from "../../context/NotificationContext";
 
 const ApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -43,9 +44,10 @@ interface DashboardTotals {
 }
 
 function BarsSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  const { t } = useI18n();
   return (
     <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, color: "var(--text-secondary)", whiteSpace: "nowrap", userSelect: "none" }}>
-      Barras
+      {t("dashboard.bars")}
       <button
         type="button"
         role="switch"
@@ -123,6 +125,7 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const { t } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
   const [agentData, setAgentData] = useState<DashboardData | null>(null);
   const [conversationData, setConversationData] = useState<DashboardData | null>(null);
@@ -158,27 +161,6 @@ export default function DashboardPage() {
         resTotals.json()
       ]);
 
-      const formatDateBR = (dateStr: string) => {
-        if (!dateStr || typeof dateStr !== "string") return dateStr;
-        try {
-          return format(parseISO(dateStr), 'dd/MM/yyyy');
-        } catch {
-          return dateStr;
-        }
-      };
-
-      if (jsonUsers && jsonUsers.categories) {
-        jsonUsers.categories = jsonUsers.categories.map(formatDateBR);
-      }
-      
-      if (jsonAgents && jsonAgents.categories) {
-        jsonAgents.categories = jsonAgents.categories.map(formatDateBR);
-      }
-
-      if (jsonConversations && jsonConversations.categories) {
-        jsonConversations.categories = jsonConversations.categories.map(formatDateBR);
-      }
-
       if (jsonUsers && jsonUsers.series) {
         jsonUsers.series = jsonUsers.series.map((s: any) => {
           let name = s.name;
@@ -204,7 +186,7 @@ export default function DashboardPage() {
       setFeedbackData(jsonFeedbacks);
       setTotals(jsonTotals);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar dados");
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -227,7 +209,19 @@ export default function DashboardPage() {
   const totalUsers = totals?.total_users ?? 0;
   const unansweredPct = totalResponses > 0 ? Math.round((totalUnanswered / totalResponses) * 100) : 0;
 
-  const getChartOptions = (categories: string[]): ApexCharts.ApexOptions => ({
+  // Datas do eixo X vêm em ISO do backend; formata conforme o idioma selecionado
+  const formatCategoryDate = (dateStr: string) => {
+    if (!dateStr || typeof dateStr !== "string") return dateStr;
+    try {
+      return format(parseISO(dateStr), t("dashboard.datePattern"));
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const getChartOptions = (rawCategories: string[]): ApexCharts.ApexOptions => {
+    const categories = rawCategories.map(formatCategoryDate);
+    return {
     chart: {
       type: "line",
       background: "transparent",
@@ -271,7 +265,8 @@ export default function DashboardPage() {
       "#bd4140", "#10b981", "#f59e0b", "#ef4444", "#a03534",
       "#06b6d4", "#ec4899", "#84cc16", "#f97316", "#14b8a6",
     ],
-  });
+    };
+  };
 
   const getStackedBarOptions = (categories: string[]): ApexCharts.ApexOptions => {
     const base = getChartOptions(categories);
@@ -342,9 +337,9 @@ export default function DashboardPage() {
       y: {
         formatter: function (val, opts?: any) {
           const item = opts?.dataPointIndex !== undefined ? feedbackData?.feedbacks?.[opts.dataPointIndex] : undefined;
-          const starText = (val === null || val === undefined) ? "Sem avaliações ★" : `${val} ★`;
+          const starText = (val === null || val === undefined) ? `${t("dashboard.noRatings")} ★` : `${val} ★`;
           if (item && item.thumb_avg !== undefined && item.thumb_avg !== null) {
-            return `${starText} (${item.thumb_avg}% 👍 | ${item.thumb_up} up, ${item.thumb_down} down)`;
+            return t("dashboard.ratingTooltip", { stars: starText, pct: item.thumb_avg, up: item.thumb_up ?? 0, down: item.thumb_down ?? 0 });
           }
           return starText;
         }
@@ -357,10 +352,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-          Dashboard
+          {t("dashboard.title")}
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-          Métricas de uso dos agentes de suporte IA
+          {t("dashboard.subtitle")}
         </p>
       </div>
 
@@ -399,29 +394,29 @@ export default function DashboardPage() {
         }}
       >
         <StatCard
-          label="Respostas da IA"
+          label={t("dashboard.statResponses")}
           value={loading ? " " : totalResponses}
-          sub={`últimos ${days} dias`}
+          sub={t("dashboard.statResponsesSub", { days })}
           accent="var(--accent)"
         />
         <StatCard
-          label="Conversas"
+          label={t("dashboard.statConversations")}
           value={loading ? " " : totalConversations}
-          sub="agrupadas por assunto"
+          sub={t("dashboard.statConversationsSub")}
         />
         <StatCard
-          label="Sem resposta nos manuais"
+          label={t("dashboard.statUnanswered")}
           value={loading ? " " : totalUnanswered}
-          sub={`${unansweredPct}% das respostas`}
+          sub={t("dashboard.statUnansweredSub", { pct: unansweredPct })}
           accent="var(--danger)"
         />
         <StatCard
-          label="Usuários Ativos"
+          label={t("dashboard.statUsers")}
           value={loading ? " " : totalUsers}
-          sub="no período"
+          sub={t("dashboard.statUsersSub")}
         />
         <StatCard
-          label="Período"
+          label={t("dashboard.statPeriod")}
           value={`${days}d`}
           sub="selecionado"
           accent="var(--warning)"
@@ -441,10 +436,10 @@ export default function DashboardPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
-              Respostas por Agente (diário)
+              {t("dashboard.responsesTitle")}
             </h2>
             <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Cada resposta da IA conta, mesmo que várias sejam na mesma conversa.
+              {t("dashboard.responsesHint")}
             </p>
           </div>
           <BarsSwitch checked={agentBars} onChange={setAgentBars} />
@@ -452,7 +447,7 @@ export default function DashboardPage() {
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
-            <span className="spinner" /> Carregando dados...
+            <span className="spinner" /> {t("dashboard.loading")}
           </div>
         ) : error ? (
           <div
@@ -469,7 +464,7 @@ export default function DashboardPage() {
           </div>
         ) : !agentData || agentData.series.length === 0 ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhum dado no período selecionado.
+            {t("dashboard.noData")}
           </div>
         ) : (
           <ApexChart
@@ -495,10 +490,10 @@ export default function DashboardPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 20 }}>
           <div>
             <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: "var(--text-primary)" }}>
-              Conversas por Agente (diário)
+              {t("dashboard.conversationsTitle")}
             </h2>
             <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Cada conversa conta uma vez por dia em que o usuário enviou mensagem, independente de quantas perguntas fez.
+              {t("dashboard.conversationsHint")}
             </p>
           </div>
           <BarsSwitch checked={conversationBars} onChange={setConversationBars} />
@@ -506,7 +501,7 @@ export default function DashboardPage() {
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
-            <span className="spinner" /> Carregando dados...
+            <span className="spinner" /> {t("dashboard.loading")}
           </div>
         ) : error ? (
           <div
@@ -523,7 +518,7 @@ export default function DashboardPage() {
           </div>
         ) : !conversationData || conversationData.series.length === 0 ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhum dado no período selecionado.
+            {t("dashboard.noData")}
           </div>
         ) : (
           <ApexChart
@@ -548,10 +543,10 @@ export default function DashboardPage() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-            Chats por CNPJ (diário)
+            {t("dashboard.cnpjTitle")}
           </h2>
           <select
-            title="Quantidade de empresas a exibir"
+            title={t("dashboard.limitTitle")}
             value={userLimit}
             onChange={(e) => setUserLimit(Number(e.target.value))}
             style={{
@@ -571,13 +566,13 @@ export default function DashboardPage() {
             <option value={20}>Top 20</option>
             <option value={50}>Top 50</option>
             <option value={100}>Top 100</option>
-            <option value={999999}>Todos</option>
+            <option value={999999}>{t("dashboard.limitAll")}</option>
           </select>
         </div>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
-            <span className="spinner" /> Carregando dados...
+            <span className="spinner" /> {t("dashboard.loading")}
           </div>
         ) : error ? (
           <div
@@ -594,7 +589,7 @@ export default function DashboardPage() {
           </div>
         ) : !data || data.series.length === 0 ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhum dado no período selecionado.
+            {t("dashboard.noData")}
           </div>
         ) : (
           <ApexChart
@@ -617,12 +612,12 @@ export default function DashboardPage() {
         }}
       >
         <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20, color: "var(--text-primary)" }}>
-          Média de Avaliação por Agente (Estrelas)
+          {t("dashboard.ratingTitle")}
         </h2>
 
         {loading ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, gap: 12, color: "var(--text-secondary)" }}>
-            <span className="spinner" /> Carregando dados...
+            <span className="spinner" /> {t("dashboard.loading")}
           </div>
         ) : error ? (
           <div
@@ -639,7 +634,7 @@ export default function DashboardPage() {
           </div>
         ) : !feedbackData || feedbackData.series.length === 0 || feedbackData.series[0].data.length === 0 ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, color: "var(--text-muted)", fontSize: 14 }}>
-            Nenhum feedback recebido no período selecionado.
+            {t("dashboard.noFeedback")}
           </div>
         ) : (
           <ApexChart
@@ -663,10 +658,10 @@ export default function DashboardPage() {
         >
           <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)" }}>
-              Ranking por Empresa / CNPJ
+              {t("dashboard.rankingTitle")}
             </h2>
             <select
-              title="Quantidade de empresas a exibir"
+              title={t("dashboard.limitTitle")}
               value={userLimit}
               onChange={(e) => setUserLimit(Number(e.target.value))}
               style={{
@@ -686,13 +681,21 @@ export default function DashboardPage() {
               <option value={20}>Top 20</option>
               <option value={50}>Top 50</option>
               <option value={100}>Top 100</option>
-              <option value={999999}>Todos</option>
+              <option value={999999}>{t("dashboard.limitAll")}</option>
             </select>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "var(--bg-surface)" }}>
-                {["#", "Empresa", "CNPJ", "Razão Social", "Usuários", "Total de Chats", "Avaliação"].map((h) => (
+                {[
+                  "#",
+                  t("dashboard.colCompany"),
+                  t("dashboard.colCnpj"),
+                  t("dashboard.colLegalName"),
+                  t("dashboard.colUsers"),
+                  t("dashboard.colTotalChats"),
+                  t("dashboard.colRating"),
+                ].map((h) => (
                   <th
                     key={h}
                     style={{

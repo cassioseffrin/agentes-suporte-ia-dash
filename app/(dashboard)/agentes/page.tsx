@@ -32,6 +32,7 @@ import {
   Image as ImageIcon,
   Sync as SyncIcon,
 } from "@mui/icons-material";
+import { useI18n } from "../../i18n/I18nContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const BACKEND_API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
@@ -94,7 +95,8 @@ type FaqStatus = "idle" | "loading" | "saving" | "success" | "error";
 
 // ─── Markdown Toolbar ──────────────────────────────────────────────────────────
 function MarkdownToolbar({ onInsert }: { onInsert: (prefix: string, suffix?: string, placeholder?: string) => void }) {
-  const btn = (label: string, title: string, prefix: string, suffix = "", placeholder = "texto") => (
+  const { t } = useI18n();
+  const btn = (label: string, title: string, prefix: string, suffix = "", placeholder = t("agents.md.phText")) => (
     <Tooltip title={title} key={label}>
       <button
         type="button"
@@ -139,20 +141,20 @@ function MarkdownToolbar({ onInsert }: { onInsert: (prefix: string, suffix?: str
         borderRadius: "6px 6px 0 0",
       }}
     >
-      {btn("B", "Negrito", "**", "**", "texto")}
-      {btn("I", "Itálico", "_", "_", "texto")}
-      {btn("H1", "Título H1", "# ", "", "Título")}
-      {btn("H2", "Título H2", "## ", "", "Seção")}
-      {btn("H3", "Título H3", "### ", "", "Subseção")}
+      {btn("B", t("agents.md.bold"), "**", "**", t("agents.md.phText"))}
+      {btn("I", t("agents.md.italic"), "_", "_", t("agents.md.phText"))}
+      {btn("H1", t("agents.md.h1"), "# ", "", t("agents.md.phTitle"))}
+      {btn("H2", t("agents.md.h2"), "## ", "", t("agents.md.phSection"))}
+      {btn("H3", t("agents.md.h3"), "### ", "", t("agents.md.phSubsection"))}
       <div style={{ width: 1, height: 18, background: "#2d3352", margin: "0 4px" }} />
-      {btn("• Lista", "Lista com marcadores", "- ", "", "item")}
-      {btn("1. Lista", "Lista numerada", "1. ", "", "item")}
-      {btn("[ ] Task", "Lista de tarefas", "- [ ] ", "", "tarefa")}
+      {btn(t("agents.md.bulletLabel"), t("agents.md.bullet"), "- ", "", t("agents.md.phItem"))}
+      {btn(t("agents.md.numberedLabel"), t("agents.md.numbered"), "1. ", "", t("agents.md.phItem"))}
+      {btn("[ ] Task", t("agents.md.task"), "- [ ] ", "", t("agents.md.phTask"))}
       <div style={{ width: 1, height: 18, background: "#2d3352", margin: "0 4px" }} />
-      {btn("`code`", "Código inline", "`", "`", "código")}
-      {btn("```bloco```", "Bloco de código", "```\n", "\n```", "código")}
-      {btn("---", "Separador", "\n---\n", "", "")}
-      {btn("> Cit.", "Citação", "> ", "", "texto")}
+      {btn("`code`", t("agents.md.inlineCode"), "`", "`", t("agents.md.phCode"))}
+      {btn("```bloco```", t("agents.md.codeBlock"), "```\n", "\n```", t("agents.md.phCode"))}
+      {btn("---", t("agents.md.separator"), "\n---\n", "", "")}
+      {btn(t("agents.md.quoteLabel"), t("agents.md.quote"), "> ", "", t("agents.md.phText"))}
     </div>
   );
 }
@@ -171,6 +173,7 @@ function FaqEditor({
   onClose: () => void;
   onSaved: (newContent: string) => void;
 }) {
+  const { t } = useI18n();
   const [content, setContent] = useState("");
   const [original, setOriginal] = useState("");
   const [status, setStatus] = useState<FaqStatus>("loading");
@@ -246,7 +249,7 @@ function FaqEditor({
       setStatus("success");
       setTimeout(() => setStatus("idle"), 3000);
     } catch (e: unknown) {
-      setErrorMsg(e instanceof Error ? e.message : "Erro desconhecido");
+      setErrorMsg(e instanceof Error ? e.message : t("agents.unknownError"));
       setStatus("error");
     }
   };
@@ -265,7 +268,7 @@ function FaqEditor({
       setSyncStatus("success");
       setTimeout(() => setSyncStatus("idle"), 4000);
     } catch (e: unknown) {
-      setSyncError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSyncError(e instanceof Error ? e.message : t("agents.unknownError"));
       setSyncStatus("error");
     }
   };
@@ -323,12 +326,12 @@ function FaqEditor({
               onClick={() => setActiveTab(mode)}
               style={tabStyle(activeTab === mode)}
             >
-              {mode === "edit" ? "✏️ Editar" : mode === "split" ? "⬛ Split" : "👁 Preview"}
+              {mode === "edit" ? t("agents.tabEdit") : mode === "split" ? t("agents.tabSplit") : t("agents.tabPreview")}
             </button>
           ))}
         </div>
 
-        <Tooltip title="Fechar editor de FAQ">
+        <Tooltip title={t("agents.closeFaqEditor")}>
           <button
             type="button"
             onClick={onClose}
@@ -377,7 +380,7 @@ function FaqEditor({
                 ref={textareaRef}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={`# FAQ — ${agentTitle}\n\n## Pergunta frequente 1\nResposta aqui...\n\n## Pergunta frequente 2\nResposta aqui...`}
+                placeholder={t("agents.faqPlaceholder", { agent: agentTitle })}
                 spellCheck={false}
                 style={{
                   background: "#0f1117",
@@ -428,7 +431,7 @@ function FaqEditor({
                     }}
                   >
                     <FaqIcon sx={{ fontSize: 40, opacity: 0.3 }} />
-                    <span style={{ fontSize: 13 }}>Preview aparecerá aqui…</span>
+                    <span style={{ fontSize: 13 }}>{t("agents.previewEmpty")}</span>
                   </div>
                 )}
               </div>
@@ -472,11 +475,11 @@ function FaqEditor({
             >
               {status === "saving" ? (
                 <>
-                  <CircularProgress size={13} sx={{ color: "#fff" }} /> Salvando...
+                  <CircularProgress size={13} sx={{ color: "#fff" }} /> {t("agents.saving")}
                 </>
               ) : (
                 <>
-                  <SaveIcon sx={{ fontSize: 16 }} /> Salvar FAQ
+                  <SaveIcon sx={{ fontSize: 16 }} /> {t("agents.saveFaq")}
                 </>
               )}
             </button>
@@ -492,7 +495,7 @@ function FaqEditor({
                   animation: "fadeIn 0.2s ease",
                 }}
               >
-                <CheckCircle sx={{ fontSize: 14 }} /> FAQ salvo!
+                <CheckCircle sx={{ fontSize: 14 }} /> {t("agents.faqSaved")}
               </span>
             )}
 
@@ -513,7 +516,7 @@ function FaqEditor({
 
             {isDirty && status === "idle" && (
               <span style={{ fontSize: 11, color: "var(--warning)" }}>
-                ● Alterações não salvas
+                {t("agents.unsavedChanges")}
               </span>
             )}
 
@@ -521,7 +524,7 @@ function FaqEditor({
             <div style={{ width: 1, height: 20, background: "#2d3352", marginLeft: "auto", flexShrink: 0 }} />
 
             {/* NotebookLM Sync button */}
-            <Tooltip title="Sincroniza o FAQ atual com a source do NotebookLM do agente. Operação pode levar alguns segundos.">
+            <Tooltip title={t("agents.syncFaqTooltip")}>
               <button
                 type="button"
                 disabled={syncStatus === "syncing" || !!isDirty || !content.trim()}
@@ -567,13 +570,13 @@ function FaqEditor({
                 }}
               >
                 {syncStatus === "syncing" ? (
-                  <><CircularProgress size={11} sx={{ color: "currentColor" }} /> Sincronizando...</>
+                  <><CircularProgress size={11} sx={{ color: "currentColor" }} /> {t("agents.syncing")}</>
                 ) : syncStatus === "success" ? (
-                  <><CheckCircle sx={{ fontSize: 13 }} /> NotebookLM atualizado!</>
+                  <><CheckCircle sx={{ fontSize: 13 }} /> {t("agents.notebookUpdated")}</>
                 ) : syncStatus === "error" ? (
-                  <><ErrorOutline sx={{ fontSize: 13 }} /> {syncError ?? "Erro"}</>
+                  <><ErrorOutline sx={{ fontSize: 13 }} /> {syncError ?? t("agents.error")}</>
                 ) : (
-                  <>🔁 Sync NotebookLM</>
+                  <>{t("agents.syncNotebook")}</>
                 )}
               </button>
             </Tooltip>
@@ -597,6 +600,7 @@ function AgentLogoUploader({
   value: string | null | undefined;
   onChange: (base64: string | null) => void;
 }) {
+  const { t } = useI18n();
   const [isDragging, setIsDragging] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -606,14 +610,14 @@ function AgentLogoUploader({
 
     // Validate type (must be PNG)
     if (file.type !== "image/png" && !file.name.toLowerCase().endsWith(".png")) {
-      setErrorMsg("Apenas arquivos no formato PNG são permitidos.");
+      setErrorMsg(t("agents.onlyPng"));
       return;
     }
 
     // Validate size (max 50KB = 50 * 1024 bytes)
     if (file.size > 50 * 1024) {
       const sizeKb = (file.size / 1024).toFixed(1);
-      setErrorMsg(`Tamanho máximo excedido (${sizeKb} KB). O arquivo deve ter no máximo 50 KB.`);
+      setErrorMsg(t("agents.maxSize", { size: sizeKb }));
       return;
     }
 
@@ -626,7 +630,7 @@ function AgentLogoUploader({
       }
     };
     reader.onerror = () => {
-      setErrorMsg("Erro ao ler o arquivo de imagem.");
+      setErrorMsg(t("agents.readImageError"));
     };
     reader.readAsDataURL(file);
   };
@@ -658,7 +662,7 @@ function AgentLogoUploader({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
-        Logo do Agente (PNG, máx 50KB)
+        {t("agents.logoLabel")}
       </label>
 
       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -699,9 +703,9 @@ function AgentLogoUploader({
           <UploadIcon sx={{ fontSize: 26, color: isDragging ? "var(--accent)" : "#94a3b8" }} />
 
           <div style={{ fontSize: 13, color: "#94a3b8" }}>
-            <span style={{ color: "#f1f5f9", fontWeight: 600 }}>Clique para selecionar</span> ou arraste a imagem PNG aqui
+            <span style={{ color: "#f1f5f9", fontWeight: 600 }}>{t("agents.clickToSelect")}</span> {t("agents.orDragPng")}
             <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-              Aceita fundo transparente ou opaco · Limite máximo: 50 KB
+              {t("agents.logoHint")}
             </div>
           </div>
         </div>
@@ -730,7 +734,7 @@ function AgentLogoUploader({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={value}
-              alt="Logo do agente"
+              alt={t("agents.logoAlt")}
               style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", padding: 2 }}
             />
             <button
@@ -740,7 +744,7 @@ function AgentLogoUploader({
                 onChange(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
-              title="Remover logo"
+              title={t("agents.removeLogo")}
               style={{
                 position: "absolute",
                 top: 2,
@@ -779,7 +783,7 @@ function AgentLogoUploader({
             }}
           >
             <ImageIcon sx={{ fontSize: 20, opacity: 0.5 }} />
-            <span style={{ fontSize: 10 }}>Sem logo</span>
+            <span style={{ fontSize: 10 }}>{t("agents.noLogo")}</span>
           </div>
         )}
       </div>
@@ -804,6 +808,7 @@ function AgentCard({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       onClick={onClick}
@@ -882,10 +887,10 @@ function AgentCard({
             whiteSpace: "nowrap",
           }}
         >
-          {agent.name} · #{agent.sort_order}{agent.hide ? " · Oculto" : ""}{agent.notebooklm_profile ? ` · 🔑 ${agent.notebooklm_profile}` : ""}
+          {agent.name} · #{agent.sort_order}{agent.hide ? t("agents.hiddenSuffix") : ""}{agent.notebooklm_profile ? ` · 🔑 ${agent.notebooklm_profile}` : ""}
         </div>
       </div>
-      <Tooltip title={agent.active ? "Ativo" : "Inativo"}>
+      <Tooltip title={agent.active ? t("agents.active") : t("agents.inactive")}>
         <CircleIcon
           sx={{
             fontSize: 10,
@@ -900,6 +905,7 @@ function AgentCard({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function AgentesPage() {
+  const { t, tr, formatDateTime } = useI18n();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Agent | null>(null);
@@ -1015,7 +1021,7 @@ export default function AgentesPage() {
         const res = await fetch(`${API}/updateNotebooks?profile=${encodeURIComponent(prof)}`, { headers: AUTH_HEADERS });
         const json = await res.json();
         if (!res.ok) {
-          throw new Error(json.detail || `Falha ao atualizar o profile '${prof}': HTTP ${res.status}`);
+          throw new Error(json.detail || t("agents.profileUpdateFailed", { profile: prof, status: res.status }));
         }
         total += json.total ?? 0;
         inseridos += json.inseridos ?? 0;
@@ -1032,14 +1038,14 @@ export default function AgentesPage() {
         atualizados,
         desativados,
         erros,
-        profile: filterProfile === "all" ? "Todos os Profiles" : filterProfile,
+        profile: filterProfile === "all" ? t("agents.allProfiles") : filterProfile,
       });
       setSyncStatus("success");
       // Recarrega lista e perfis em tempo real
       await fetchAgents();
       await fetchProfiles();
     } catch (e: unknown) {
-      setSyncError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSyncError(e instanceof Error ? e.message : t("agents.unknownError"));
       setSyncStatus("error");
     }
   };
@@ -1083,7 +1089,7 @@ export default function AgentesPage() {
       setSyncPromptStatus("success");
       setTimeout(() => setSyncPromptStatus("idle"), 4000);
     } catch (e: unknown) {
-      setSyncPromptError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSyncPromptError(e instanceof Error ? e.message : t("agents.unknownError"));
       setSyncPromptStatus("error");
     }
   };
@@ -1114,14 +1120,14 @@ export default function AgentesPage() {
       reset(data);
       setTimeout(() => setSaveStatus("idle"), 3000);
     } catch (e: unknown) {
-      setSaveError(e instanceof Error ? e.message : "Erro desconhecido");
+      setSaveError(e instanceof Error ? e.message : t("agents.unknownError"));
       setSaveStatus("error");
     }
   };
 
   const fmtDate = (iso: string | null) => {
     if (!iso) return "-";
-    return new Date(iso).toLocaleString("pt-BR", {
+    return formatDateTime(iso, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -1154,10 +1160,10 @@ export default function AgentesPage() {
         {/* Header */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-             Agentes de Suporte IA
+             {t("agents.title")}
           </h1>
           <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-            Selecione um agente para editar suas configurações.
+            {t("agents.subtitle")}
           </p>
         </div>
 
@@ -1190,7 +1196,7 @@ export default function AgentesPage() {
                   paddingLeft: 2,
                 }}
               >
-                Conta / Profile
+                {t("agents.accountProfile")}
               </label>
               <select
                 value={filterProfile}
@@ -1213,7 +1219,7 @@ export default function AgentesPage() {
                 onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
               >
                 <option value="all">
-                  🌐 Todos os Profiles ({displayProfiles.length})
+                  {t("agents.allProfilesOption", { n: displayProfiles.length })}
                 </option>
                 {displayProfiles.map((prof) => (
                   <option key={prof} value={prof}>
@@ -1229,8 +1235,8 @@ export default function AgentesPage() {
                 disabled={syncStatus === "loading"}
                 title={
                   filterProfile === "all"
-                    ? "Sincronizar cadernos de todas as contas do NotebookLM com o banco de dados"
-                    : `Sincronizar cadernos da conta ${filterProfile} do NotebookLM com o banco de dados`
+                    ? t("agents.syncAllTooltip")
+                    : t("agents.syncProfileTooltip", { profile: filterProfile })
                 }
                 style={{
                   display: "flex",
@@ -1269,10 +1275,10 @@ export default function AgentesPage() {
                   }}
                 />
                 {syncStatus === "loading"
-                  ? "Sincronizando..."
+                  ? t("agents.syncing")
                   : filterProfile === "all"
-                  ? "Sincronizar Todos os Agentes"
-                  : `Sincronizar ${filterProfile}`}
+                  ? t("agents.syncAll")
+                  : t("agents.syncProfile", { profile: filterProfile })}
               </button>
             </div>
 
@@ -1293,10 +1299,9 @@ export default function AgentesPage() {
             >
               <span>
                 {loading
-                  ? "Carregando..."
-                  : `${filteredAgents.length} ${
-                      filteredAgents.length === 1 ? "agente" : "agentes"
-                    }${filterProfile !== "all" ? ` (${agents.length} total)` : ""}`}
+                  ? t("agents.loading")
+                  : t(filteredAgents.length === 1 ? "agents.agentsCountOne" : "agents.agentsCountOther", { n: filteredAgents.length }) +
+                    (filterProfile !== "all" ? t("agents.totalSuffix", { n: agents.length }) : "")}
               </span>
               {filterProfile !== "all" && (
                 <button
@@ -1311,7 +1316,7 @@ export default function AgentesPage() {
                     fontSize: 11,
                     padding: 0,
                   }}
-                  title="Ver todos os agentes"
+                  title={t("agents.viewAllAgents")}
                 >
                   Limpar
                 </button>
@@ -1340,7 +1345,7 @@ export default function AgentesPage() {
                     fontSize: 13,
                   }}
                 >
-                  Nenhum agente encontrado para esta conta.
+                  {t("agents.noAgentsForAccount")}
                   <br />
                   {filterProfile !== "all" ? (
                     <button
@@ -1356,10 +1361,10 @@ export default function AgentesPage() {
                         textDecoration: "underline",
                       }}
                     >
-                      Ver todos os agentes
+                      {t("agents.viewAllAgents")}
                     </button>
                   ) : (
-                    'Execute "Atualizar Agentes" primeiro.'
+                    t("agents.runUpdateFirst")
                   )}
                 </div>
               ) : (
@@ -1394,7 +1399,7 @@ export default function AgentesPage() {
               >
                 <AgentIcon sx={{ fontSize: 48, opacity: 0.3 }} />
                 <span style={{ fontSize: 14 }}>
-                  Selecione um agente na lista para editar
+                  {t("agents.selectAgentToEdit")}
                 </span>
               </div>
             ) : (
@@ -1470,19 +1475,19 @@ export default function AgentesPage() {
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
                         onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
-                        title="Copiar UUID"
+                        title={t("agents.copyUuid")}
                       >
                         <CopyIcon sx={{ fontSize: 13 }} />
                       </button>
                     </div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 11, color: "var(--text-muted)" }}>
-                    <div>Criado: {fmtDate(selected.creation)}</div>
-                    <div>Modificado: {fmtDate(selected.modification)}</div>
+                    <div>{t("agents.created", { date: fmtDate(selected.creation) })}</div>
+                    <div>{t("agents.modified", { date: fmtDate(selected.modification) })}</div>
                   </div>
 
                   {/* ── FAQ Button ── */}
-                  <Tooltip title={showFaq ? "Fechar editor de FAQ" : "Editar FAQ do agente (Markdown)"}>
+                  <Tooltip title={showFaq ? t("agents.closeFaqEditor") : t("agents.editFaqTooltip")}>
                     <button
                       type="button"
                       onClick={() => setShowFaq((v) => !v)}
@@ -1520,7 +1525,7 @@ export default function AgentesPage() {
                       }}
                     >
                       <FaqIcon sx={{ fontSize: 17 }} />
-                      {showFaq ? "Fechar FAQ" : "Editar FAQ"}
+                      {showFaq ? t("agents.closeFaq") : t("agents.editFaq")}
                     </button>
                   </Tooltip>
 
@@ -1553,22 +1558,22 @@ export default function AgentesPage() {
                   {/* Row 1: title + name + agent id */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 340px", gap: 16 }}>
                     <TextField
-                      label="Título"
+                      label={t("agents.fieldTitle")}
                       {...register("title", { required: true })}
                     />
                     <TextField
-                      label="Nome (chave)"
+                      label={t("agents.fieldName")}
                       {...register("name")}
                       inputProps={{ style: { fontFamily: "monospace", fontSize: 13 } }}
                     />
                     <TextField
-                      label="Agent ID (UUID)"
+                      label={t("agents.fieldAgentId")}
                       value={selected.id}
                       InputProps={{
                         readOnly: true,
                         endAdornment: (
                           <InputAdornment position="end">
-                            <Tooltip title="Copiar Agent ID">
+                            <Tooltip title={t("agents.copyAgentId")}>
                               <IconButton
                                 size="small"
                                 onClick={() => {
@@ -1591,12 +1596,12 @@ export default function AgentesPage() {
                    {/* Row 2: email + sort_order + active + hide */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 120px auto auto", gap: 16, alignItems: "center" }}>
                     <TextField
-                      label="Email"
+                      label={t("agents.fieldEmail")}
                       type="email"
                       {...register("email")}
                     />
                     <TextField
-                      label="Ordem"
+                      label={t("agents.fieldOrder")}
                       type="number"
                       {...register("sort_order")}
                       inputProps={{ min: 0, style: { textAlign: "center" } }}
@@ -1615,8 +1620,8 @@ export default function AgentesPage() {
                           }
                           label={
                             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                              Ativo
-                            </span>
+                              {t("agents.active")}
+                              </span>
                           }
                         />
                       )}
@@ -1635,8 +1640,8 @@ export default function AgentesPage() {
                           }
                           label={
                             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                              Oculto
-                            </span>
+                              {t("agents.hidden")}
+                              </span>
                           }
                         />
                       )}
@@ -1646,10 +1651,10 @@ export default function AgentesPage() {
                   {/* Row 3: NotebookLM Profile */}
                   <TextField
                     select
-                    label="Profile NotebookLM"
+                    label={t("agents.fieldProfile")}
                     {...register("notebooklm_profile")}
                     SelectProps={{ native: true }}
-                    helperText="Selecione o profile de autenticação no NotebookLM"
+                    helperText={t("agents.fieldProfileHelp")}
                   >
                     {displayProfiles.map((prof) => (
                       <option key={prof} value={prof}>
@@ -1660,7 +1665,7 @@ export default function AgentesPage() {
 
                   {/* Overview */}
                   <TextField
-                    label="Descrição (overview)"
+                    label={t("agents.fieldDescription")}
                     multiline
                     rows={2}
                     {...register("overview")}
@@ -1688,7 +1693,7 @@ export default function AgentesPage() {
                         System Prompt
                       </div>
 
-                      <Tooltip title="Sincronizar o prompt do agente diretamente para as instruções do NotebookLM">
+                      <Tooltip title={t("agents.syncPromptTooltip")}>
                         <button
                           type="button"
                           disabled={syncPromptStatus === "syncing"}
@@ -1731,24 +1736,24 @@ export default function AgentesPage() {
                         >
                           {syncPromptStatus === "syncing" ? (
                             <>
-                              <CircularProgress size={10} sx={{ color: "currentColor" }} /> Sincronizando...
+                              <CircularProgress size={10} sx={{ color: "currentColor" }} /> {t("agents.syncing")}
                             </>
                           ) : syncPromptStatus === "success" ? (
                             <>
-                              <CheckCircle sx={{ fontSize: 13 }} /> Prompt Sincronizado!
+                              <CheckCircle sx={{ fontSize: 13 }} /> {t("agents.promptSynced")}
                             </>
                           ) : syncPromptStatus === "error" ? (
                             <>
-                              <ErrorOutline sx={{ fontSize: 13 }} /> {syncPromptError ?? "Erro"}
+                              <ErrorOutline sx={{ fontSize: 13 }} /> {syncPromptError ?? t("agents.error")}
                             </>
                           ) : (
-                            <>🔁 Sincronizar com NotebookLM</>
+                            <>{t("agents.syncWithNotebook")}</>
                           )}
                         </button>
                       </Tooltip>
                     </div>
                     <TextField
-                      label="System Prompt"
+                      label={t("agents.systemPrompt")}
                       multiline
                       rows={10}
                       {...register("system_prompt")}
@@ -1803,11 +1808,11 @@ export default function AgentesPage() {
                       {saveStatus === "saving" ? (
                         <>
                           <span className="spinner" style={{ width: 16, height: 16 }} />
-                          Salvando...
-                        </>
+                          {t("agents.saving")}
+                          </>
                       ) : (
                         <>
-                          <SaveIcon sx={{ fontSize: 18 }} /> Salvar Alterações
+                          <SaveIcon sx={{ fontSize: 18 }} /> {t("agents.saveChanges")}
                         </>
                       )}
                     </button>
@@ -1824,7 +1829,7 @@ export default function AgentesPage() {
                           animation: "fadeIn 0.2s ease",
                         }}
                       >
-                        <CheckCircle sx={{ fontSize: 16 }} /> Salvo com sucesso!
+                        <CheckCircle sx={{ fontSize: 16 }} /> {t("agents.savedSuccess")}
                       </span>
                     )}
 
@@ -1845,7 +1850,7 @@ export default function AgentesPage() {
 
                     {isDirty && saveStatus === "idle" && (
                       <span style={{ fontSize: 12, color: "var(--warning)", marginLeft: "auto" }}>
-                        ● Alterações não salvas
+                        {t("agents.unsavedChanges")}
                       </span>
                     )}
                   </div>
@@ -1904,7 +1909,7 @@ export default function AgentesPage() {
             ) : (
               <CheckCircle sx={{ color: "var(--success)", fontSize: 22 }} />
             )}
-            <span>{syncError ? "Erro na Sincronização" : "Sincronização Concluída"}</span>
+            <span>{syncError ? t("agents.syncErrorTitle") : t("agents.syncDoneTitle")}</span>
           </div>
           <IconButton
             size="small"
@@ -1925,14 +1930,14 @@ export default function AgentesPage() {
           ) : syncResult ? (
             <div>
               <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 0, marginBottom: 14 }}>
-                Sincronização executada com sucesso para <strong>{syncResult.profile}</strong>:
+                {tr("agents.syncDoneText", { profile: <strong>{syncResult.profile}</strong> })}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {[
-                  ["Total Encontrados", syncResult.total],
-                  ["Novos Inseridos", syncResult.inseridos],
-                  ["Existentes Atualizados", syncResult.atualizados],
-                  ["Removidos Desativados", syncResult.desativados],
+                  [t("agents.resultTotal"), syncResult.total],
+                  [t("agents.resultInserted"), syncResult.inseridos],
+                  [t("agents.resultUpdated"), syncResult.atualizados],
+                  [t("agents.resultDeactivated"), syncResult.desativados],
                 ].map(([label, val]) => (
                   <div
                     key={label as string}
@@ -1954,7 +1959,7 @@ export default function AgentesPage() {
               </div>
               {(syncResult.erros as unknown[])?.length > 0 && (
                 <div style={{ marginTop: 12, fontSize: 12, color: "var(--warning)" }}>
-                  ⚠️ {(syncResult.erros as unknown[]).length} alerta(s) durante a sincronização
+                  {t("agents.syncWarnings", { n: (syncResult.erros as unknown[]).length })}
                 </div>
               )}
             </div>
@@ -1978,7 +1983,7 @@ export default function AgentesPage() {
               cursor: "pointer",
             }}
           >
-            Entendido
+            {t("agents.understood")}
           </button>
         </DialogActions>
       </Dialog>

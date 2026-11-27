@@ -16,6 +16,7 @@ import {
   ExpandMore as ExpandIcon,
   Edit as EditIcon,
 } from "@mui/icons-material";
+import { useI18n } from "../../../i18n/I18nContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
 const API_KEY = process.env.NEXT_PUBLIC_BACKEND_API_KEY || "";
@@ -49,6 +50,7 @@ interface ProfileStatus {
 }
 
 export default function RenovarAuthPage() {
+  const { t, tr } = useI18n();
   const [profiles, setProfiles] = useState<ProfileStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export default function RenovarAuthPage() {
     if (!name) return;
 
     if (profiles.some((p) => p.profile === name)) {
-      alert("Este profile já existe!");
+      alert(t("renewAuth.profileExists"));
       return;
     }
 
@@ -89,7 +91,7 @@ export default function RenovarAuthPage() {
       cookies_count: 0,
       expires_at: null,
       file_age_hours: null,
-      message: "Aguardando primeiro upload de autenticação.",
+      message: t("renewAuth.awaitingUpload"),
     };
 
     setProfiles((prev) => [...prev, tempProfile]);
@@ -148,7 +150,7 @@ export default function RenovarAuthPage() {
     }
 
     if (profiles.some((p) => p.profile === newP)) {
-      alert("Este profile já existe!");
+      alert(t("renewAuth.profileExists"));
       return;
     }
 
@@ -168,15 +170,15 @@ export default function RenovarAuthPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || "Erro ao renomear o profile.");
+        throw new Error(data.detail || t("renewAuth.renameError"));
       }
 
-      alert(data.message || "Profile renomeado com sucesso!");
+      alert(data.message || t("renewAuth.renameSuccess"));
       setIsRenamingProfile(false);
       setSelectedProfile(newP);
       await fetchProfiles();
     } catch (err: any) {
-      alert(err.message || "Erro de conexão ao renomear.");
+      alert(err.message || t("renewAuth.renameConnectionError"));
     } finally {
       setRenameLoading(false);
     }
@@ -186,7 +188,7 @@ export default function RenovarAuthPage() {
 
   const acceptFile = useCallback((f: File) => {
     if (!f.name.endsWith(".json")) {
-      setUploadError("Selecione um arquivo .json válido.");
+      setUploadError(t("renewAuth.selectValidJson"));
       setUploadStatus("error");
       return;
     }
@@ -194,7 +196,7 @@ export default function RenovarAuthPage() {
     setUploadStatus("ready");
     setUploadResult(null);
     setUploadError(null);
-  }, []);
+  }, [t]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -227,7 +229,7 @@ export default function RenovarAuthPage() {
       setUploadStatus("success");
       setTimeout(() => fetchProfiles(), 1500);
     } catch (e: unknown) {
-      setUploadError(e instanceof Error ? e.message : "Erro desconhecido");
+      setUploadError(e instanceof Error ? e.message : t("renewAuth.unknownError"));
       setUploadStatus("error");
     }
   };
@@ -255,10 +257,10 @@ export default function RenovarAuthPage() {
     const diffMs = d.getTime() - now.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (diffMs < 0) return "Expirado";
+    if (diffMs < 0) return t("renewAuth.expired");
     if (diffDays > 0) return `${diffDays}d ${diffHours}h`;
     if (diffHours > 0) return `${diffHours}h`;
-    return "Em breve";
+    return t("renewAuth.soon");
   };
 
   return (
@@ -267,7 +269,7 @@ export default function RenovarAuthPage() {
       <div style={{ marginBottom: 28 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>
-            Renovar Autenticação
+            {t("renewAuth.title")}
           </h1>
           {cliVersion && (
             <span
@@ -287,8 +289,7 @@ export default function RenovarAuthPage() {
           )}
         </div>
         <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 4, marginBottom: 0 }}>
-          Gerencie a autenticação do NotebookLM para cada profile.
-          Cada profile corresponde a uma conta Google diferente.
+          {t("renewAuth.subtitle")}
         </p>
       </div>
 
@@ -322,12 +323,12 @@ export default function RenovarAuthPage() {
                   color: "var(--text-muted)",
                 }}
               >
-                {profiles.length} Profile{profiles.length !== 1 ? "s" : ""}
+                {t(profiles.length === 1 ? "renewAuth.profilesCountOne" : "renewAuth.profilesCountOther", { n: profiles.length })}
               </div>
               <button
                 onClick={fetchProfiles}
                 disabled={loading}
-                title="Atualizar"
+                title={t("common.refresh")}
                 style={{
                   background: "none",
                   border: "none",
@@ -348,11 +349,11 @@ export default function RenovarAuthPage() {
 
             {loading && profiles.length === 0 ? (
               <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
-                Carregando profiles...
+                {t("renewAuth.loadingProfiles")}
               </div>
             ) : profiles.length === 0 ? (
               <div style={{ textAlign: "center", padding: 32, color: "var(--text-muted)", fontSize: 13 }}>
-                Nenhum profile encontrado.
+                {t("renewAuth.noProfiles")}
                 Configure o campo &quot;Profile NotebookLM&quot; nos agentes.
               </div>
             ) : (
@@ -410,7 +411,7 @@ export default function RenovarAuthPage() {
                     </div>
                     {/* Agent count */}
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 16 }}>
-                      {p.agents.length} agente{p.agents.length !== 1 ? "s" : ""}
+                      {t(p.agents.length === 1 ? "renewAuth.agentsCountOne" : "renewAuth.agentsCountOther", { n: p.agents.length })}
                       {p.exists && p.expires_at && (
                         <span
                           style={{
@@ -462,7 +463,7 @@ export default function RenovarAuthPage() {
                   target.style.background = "transparent";
                 }}
               >
-                + Adicionar Novo Profile
+                {t("renewAuth.addProfile")}
               </button>
             ) : (
               <div
@@ -475,13 +476,13 @@ export default function RenovarAuthPage() {
                 }}
               >
                 <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 6, color: "var(--text-secondary)" }}>
-                  Nome do Novo Profile:
+                  {t("renewAuth.newProfileName")}
                 </div>
                 <input
                   type="text"
                   value={newProfileName}
                   onChange={(e) => setNewProfileName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ""))}
-                  placeholder="ex: empresa-b"
+                  placeholder={t("renewAuth.newProfilePlaceholder")}
                   style={{
                     width: "100%",
                     padding: "6px 10px",
@@ -518,7 +519,7 @@ export default function RenovarAuthPage() {
                       cursor: "pointer",
                     }}
                   >
-                    Cancelar
+                    {t("common.cancel")}
                   </button>
                   <button
                     onClick={handleSaveNewProfile}
@@ -535,7 +536,7 @@ export default function RenovarAuthPage() {
                       opacity: newProfileName.trim() ? 1 : 0.5,
                     }}
                   >
-                    Confirmar
+                  {t("renewAuth.confirm")}
                   </button>
                 </div>
               </div>
@@ -555,22 +556,22 @@ export default function RenovarAuthPage() {
             }}
           >
             <div style={{ fontWeight: 600, color: "var(--warning, #f59e0b)", marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
-              💡 Validade da Autenticação
+              {t("renewAuth.validityTitle")}
             </div>
             <p style={{ margin: 0, marginBottom: 8 }}>
-              O status de expiração (ex: <code>27d 23h</code>) é estimado a partir dos cookies do arquivo <code>storage_state.json</code>.
+              {tr("renewAuth.validity1", { example: <code>27d 23h</code>, file: <code>storage_state.json</code> })}
             </p>
             <p style={{ margin: 0, marginBottom: 8, fontSize: 10, opacity: 0.85 }}>
-              O servidor identifica o cookie que expira mais cedo (<code>min(expires)</code>) e calcula o tempo restante.
+              {tr("renewAuth.validity2", { fn: <code>min(expires)</code> })}
             </p>
             <p style={{ margin: 0, marginBottom: 8, fontSize: 10, opacity: 0.85 }}>
-              Esses cookies são gerados pelo Google durante o fluxo de login no navegador. Quando você executa o comando <code>notebooklm login</code> (que usa a biblioteca Playwright por baixo), ele abre o navegador para você se autenticar. Após o login bem-sucedido, o Playwright exporta toda a sessão ativa (cookies, tokens e localStorage) e salva tudo estruturado em formato JSON dentro do arquivo <code>storage_state.json</code>.
+              {tr("renewAuth.validity3", { cmd: <code>notebooklm login</code>, file: <code>storage_state.json</code> })}
             </p>
             <p style={{ margin: 0, fontSize: 10, opacity: 0.85 }}>
-              Ao rodar os agentes, o sistema lê esse arquivo e injeta esses mesmos cookies no navegador automatizado para que o Google o reconheça como já autenticado, sem precisar digitar usuário e senha toda vez.
+              {t("renewAuth.validity4")}
             </p>
             <p style={{ margin: "8px 0 0 0", fontSize: 10, color: "var(--text-muted)", borderTop: "1px dashed var(--border)", paddingTop: 8 }}>
-              ⚠️ <strong>Nota:</strong> Este prazo é apenas nominal. O Google pode invalidar a sessão antes do tempo por segurança, não sendo uma garantia exata de funcionamento.
+              ⚠️ <strong>{t("renewAuth.validityNoteLabel")}</strong> {t("renewAuth.validityNote")}
             </p>
           </div>
         </div>
@@ -594,7 +595,7 @@ export default function RenovarAuthPage() {
             >
               <RefreshStatusIcon sx={{ fontSize: 48, opacity: 0.3 }} />
               <span style={{ fontSize: 14 }}>
-                Selecione um profile na lista
+                {t("renewAuth.selectProfile")}
               </span>
             </div>
           ) : (
@@ -663,7 +664,7 @@ export default function RenovarAuthPage() {
                           opacity: (renameLoading || !renamingName.trim()) ? 0.5 : 1,
                         }}
                       >
-                        {renameLoading ? "Salvando..." : "Salvar"}
+                        {renameLoading ? t("renewAuth.saving") : t("renewAuth.save")}
                       </button>
                       <button
                         onClick={() => setIsRenamingProfile(false)}
@@ -676,7 +677,7 @@ export default function RenovarAuthPage() {
                           fontSize: 12,
                         }}
                       >
-                        Cancelar
+                        {t("common.cancel")}
                       </button>
                     </div>
                   ) : (
@@ -688,7 +689,7 @@ export default function RenovarAuthPage() {
                         onClick={() => {
                           setShowRenameWarning(true);
                         }}
-                        title="Renomear Profile"
+                        title={t("renewAuth.renameProfile")}
                         style={{
                           background: "none",
                           border: "none",
@@ -713,7 +714,7 @@ export default function RenovarAuthPage() {
                     </div>
                   )}
                   <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                    {currentProfile.agents.length} agente{currentProfile.agents.length !== 1 ? "s" : ""} associado{currentProfile.agents.length !== 1 ? "s" : ""}
+                    {t(currentProfile.agents.length === 1 ? "renewAuth.associatedAgentsOne" : "renewAuth.associatedAgentsOther", { n: currentProfile.agents.length })}
                   </div>
                 </div>
               </div>
@@ -821,7 +822,7 @@ export default function RenovarAuthPage() {
                     >
                       <span>🍪 {currentProfile.cookies_count} cookies</span>
                       {currentProfile.file_age_hours !== null && (
-                        <span>📁 Atualizado há {currentProfile.file_age_hours}h</span>
+                        <span>{t("renewAuth.updatedAgo", { h: currentProfile.file_age_hours })}</span>
                       )}
                       {currentProfile.expires_at && (
                         <span
@@ -830,7 +831,7 @@ export default function RenovarAuthPage() {
                             fontWeight: 500,
                           }}
                         >
-                          ⏰ Expira em {getExpiresLabel(currentProfile.expires_at)}
+                          {t("renewAuth.expiresIn", { label: getExpiresLabel(currentProfile.expires_at) ?? "" })}
                         </span>
                       )}
                     </div>
@@ -959,11 +960,11 @@ export default function RenovarAuthPage() {
                       }}
                     >
                       {isDragging
-                        ? "Solte o arquivo aqui"
-                        : `Arraste o storage_state.json para o profile "${selectedProfile}"`}
+                        ? t("renewAuth.dropHere")
+                        : t("renewAuth.dragFile", { profile: selectedProfile })}
                     </div>
                     <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                      ou{" "}
+                      {t("renewAuth.orWord")}{" "}
                       <span
                         style={{
                           color: "var(--accent)",
@@ -971,7 +972,7 @@ export default function RenovarAuthPage() {
                           textDecoration: "underline",
                         }}
                       >
-                        clique para selecionar
+                        {t("renewAuth.clickToSelect")}
                       </span>
                     </div>
                   </>
@@ -1009,11 +1010,11 @@ export default function RenovarAuthPage() {
                 >
                   {isUploading ? (
                     <>
-                      <span className="spinner" /> Enviando para profile &quot;{selectedProfile}&quot;...
+                      <span className="spinner" /> {t("renewAuth.uploading", { profile: selectedProfile })}
                     </>
                   ) : (
                     <>
-                      <UploadIcon /> Enviar para profile &quot;{selectedProfile}&quot;
+                      <UploadIcon /> {t("renewAuth.upload", { profile: selectedProfile })}
                     </>
                   )}
                 </button>
@@ -1040,8 +1041,8 @@ export default function RenovarAuthPage() {
                         }}
                       >
                         {uploadResult.valid
-                          ? "Autenticação renovada!"
-                          : "Arquivo salvo (validação pendente)"}
+                          ? t("renewAuth.authRenewed")
+                          : t("renewAuth.fileSavedPending")}
                       </div>
                       <div
                         style={{
@@ -1067,7 +1068,7 @@ export default function RenovarAuthPage() {
                     </div>
                   </div>
                   <button onClick={resetUpload} style={secondaryBtnStyle}>
-                    Enviar outro arquivo
+                    {t("renewAuth.sendAnother")}
                   </button>
                 </div>
               )}
@@ -1085,7 +1086,7 @@ export default function RenovarAuthPage() {
                     <ErrorOutline sx={{ color: "var(--danger)", fontSize: 24, flexShrink: 0 }} />
                     <div>
                       <div style={{ color: "var(--danger)", fontWeight: 600, marginBottom: 4 }}>
-                        Falha no upload
+                        {t("renewAuth.uploadFailed")}
                       </div>
                       <div
                         style={{
@@ -1099,7 +1100,7 @@ export default function RenovarAuthPage() {
                     </div>
                   </div>
                   <button onClick={resetUpload} style={secondaryBtnStyle}>
-                    Tentar novamente
+                    {t("renewAuth.tryAgain")}
                   </button>
                 </div>
               )}
@@ -1124,7 +1125,7 @@ export default function RenovarAuthPage() {
                     }}
                   >
                     <strong style={{ color: "var(--text-primary)", fontSize: 15 }}>
-                      Como renovar a autenticação:
+                      {t("renewAuth.howTo")}
                     </strong>
                     <div
                       style={{
@@ -1172,20 +1173,20 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>1</span> Preparar Ambiente (Venv)
+                        <span style={stepNumberStyle}>1</span> {t("renewAuth.step1")}
                       </div>
                       <div style={{ marginLeft: 30, marginTop: 8 }}>
                         {os === "mac" ? (
                           <code style={terminalStyle}>
                             cd ~/dev/agentes-suporte-ia && source venv/bin/activate
                             <br />
-                            # 1ª vez: pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
+                            {t("renewAuth.firstTime")} pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
                           </code>
                         ) : (
                           <code style={terminalStyle}>
                             cd %USERPROFILE%\dev\agentes-suporte-ia && venv\Scripts\activate
                             <br />
-                            # 1ª vez: pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
+                            {t("renewAuth.firstTime")} pip install -U &quot;notebooklm-py[browser,cookies]&quot; && python -m playwright install chromium
                           </code>
                         )}
                       </div>
@@ -1202,12 +1203,12 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>2</span> Login (profile{" "}
-                        <code style={codeStyle}>{selectedProfile}</code>)
+                        <span style={stepNumberStyle}>2</span>{" "}
+                        {tr("renewAuth.step2", { profile: <code style={codeStyle}>{selectedProfile}</code> })}
                       </div>
                       <div style={{ marginLeft: 30, marginTop: 8 }}>
                         <code style={terminalStyle}>
-                          # se a sessão estiver corrompida ou for trocar de conta:
+                          {t("renewAuth.corruptedSession")}
                           <br />
                           notebooklm -p {selectedProfile} auth logout
                           <br />
@@ -1218,18 +1219,15 @@ export default function RenovarAuthPage() {
                       </div>
                       <ul style={{ margin: "8px 0 0 30px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4, fontSize: 12, opacity: 0.85 }}>
                         <li>
-                          • <code style={codeStyle}>--fresh</code> limpa o navegador em cache — evita o
-                          falso &quot;Already logged in&quot; e permite trocar de conta Google sem clicar em
-                          &quot;Sair&quot; (o que derruba as sessões em produção).
+                          • {tr("renewAuth.freshHint", { flag: <code style={codeStyle}>--fresh</code> })}
                         </li>
                         <li>
-                          • Faça o login e aguarde abrir a lista de notebooks. A sessão é salva
-                          sozinha (não precisa de ENTER).
+                          • {t("renewAuth.loginHint")}
                         </li>
                         <li>
                           {os === "mac"
-                            ? "• Usa o Google Chrome instalado (o Chromium embutido é instável no macOS 15+)."
-                            : "• Se o Chromium fechar ou travar, use --browser chrome ou --browser msedge."}
+                            ? `• ${t("renewAuth.macChrome")}`
+                            : `• ${t("renewAuth.winChromium")}`}
                         </li>
                       </ul>
                     </div>
@@ -1245,7 +1243,7 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>3</span> Validar
+                        <span style={stepNumberStyle}>3</span> {t("renewAuth.step3")}
                       </div>
                       <div style={{ marginLeft: 30, marginTop: 8 }}>
                         <code style={terminalStyle}>
@@ -1253,9 +1251,10 @@ export default function RenovarAuthPage() {
                         </code>
                       </div>
                       <p style={{ margin: "8px 0 4px 30px", fontSize: 12, opacity: 0.85, lineHeight: 1.5 }}>
-                        Se acusar falta de <code style={codeStyle}>SID</code> /{" "}
-                        <code style={codeStyle}>__Secure-1PSIDTS</code> (ou o navegador fechou antes do
-                        login), entre em notebooklm.google.com no navegador normal e importe os cookies:
+                        {tr("renewAuth.missingCookies", {
+                          sid: <code style={codeStyle}>SID</code>,
+                          psidts: <code style={codeStyle}>__Secure-1PSIDTS</code>,
+                        })}
                       </p>
                       <div style={{ marginLeft: 30 }}>
                         <code style={terminalStyle}>
@@ -1266,8 +1265,8 @@ export default function RenovarAuthPage() {
                       </div>
                       <p style={{ margin: "4px 0 0 30px", fontSize: 12, fontStyle: "italic", opacity: 0.8 }}>
                         {os === "mac"
-                          ? "O macOS pedirá acesso ao Keychain (Chrome Safe Storage): clique em \"Sempre Permitir\"."
-                          : "No Windows use Firefox: o Chrome/Edge 127+ criptografa cookies (App-Bound Encryption) e a leitura sai incompleta."}
+                          ? t("renewAuth.macKeychain")
+                          : t("renewAuth.winFirefox")}
                       </p>
                     </div>
 
@@ -1282,14 +1281,14 @@ export default function RenovarAuthPage() {
                           gap: 8,
                         }}
                       >
-                        <span style={stepNumberStyle}>4</span> Coletar e Upload
+                        <span style={stepNumberStyle}>4</span> {t("renewAuth.step4")}
                       </div>
                       <p style={{ margin: "4px 0 8px 30px", opacity: 0.8 }}>
-                        O arquivo será gerado em{" "}
+                        {t("renewAuth.fileGeneratedAt")}{" "}
                         <code style={codeStyle}>
                           {os === "mac"
                             ? `~/.notebooklm/profiles/${selectedProfile}/storage_state.json`
-                            : `C:\\Users\\SeuUsuario\\.notebooklm\\profiles\\${selectedProfile}\\storage_state.json`}
+                            : `C:\\Users\\${t("renewAuth.winUser")}\\.notebooklm\\profiles\\${selectedProfile}\\storage_state.json`}
                         </code>
                         .
                       </p>
@@ -1307,7 +1306,7 @@ export default function RenovarAuthPage() {
                           fontStyle: "italic",
                         }}
                       >
-                        Arraste o arquivo da sua Área de Trabalho para a zona de upload acima.
+                        {t("renewAuth.dragFromDesktop")}
                       </p>
                     </div>
                   </div>
@@ -1345,13 +1344,13 @@ export default function RenovarAuthPage() {
             }}
           >
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--danger)", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              ⚠️ Alerta!
+              {t("renewAuth.alertTitle")}
             </h3>
             <p style={{ fontSize: 14, color: "var(--text-primary)", lineHeight: "1.6", marginBottom: 20 }}>
-              Esta operação vai modificar os token de autenticação e pastas do que armazenam cokies, bem como relacionamentos no banco de dados que apontam para este profile. Esta operação requer uma revisão completa e possivelmente manutenção no serviço que roda os agentes deste profile.
+              {t("renewAuth.renameWarning")}
             </p>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 24 }}>
-              Confirmar?
+              {t("renewAuth.confirmQuestion")}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <button
@@ -1374,7 +1373,7 @@ export default function RenovarAuthPage() {
                   e.currentTarget.style.background = "transparent";
                 }}
               >
-                Cancelar
+                {t("common.cancel")}
               </button>
               <button
                 onClick={() => {
@@ -1402,7 +1401,7 @@ export default function RenovarAuthPage() {
                   e.currentTarget.style.background = "var(--accent)";
                 }}
               >
-                Sim
+              {t("renewAuth.yes")}
               </button>
             </div>
           </div>

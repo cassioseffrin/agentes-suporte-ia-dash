@@ -1,16 +1,20 @@
+"use client";
+
+import { useI18n } from "../../i18n/I18nContext";
 import ChatIA from "../../components/ChatIA";
 import ChatAuditList from "../../components/ChatAuditList";
 
 export default function TestarAgentesPage() {
+  const { t } = useI18n();
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 700, marginBottom: 4 }}>
-          Testar Agentes
+          {t("testAgents.title")}
         </h1>
         <p style={{ fontSize: 14, color: "var(--text-secondary)" }}>
-          Use o botão flutuante para testar novos chats. Abaixo, audite todas as conversas registradas.
+          {t("testAgents.subtitle")}
         </p>
       </div>
 
@@ -47,7 +51,7 @@ export default function TestarAgentesPage() {
                 color: "var(--text-primary)",
               }}
             >
-              Auditoria de Conversas
+              {t("testAgents.auditTitle")}
             </h2>
             <p
               style={{
@@ -56,7 +60,7 @@ export default function TestarAgentesPage() {
                 margin: 0,
               }}
             >
-              Clique em uma conversa para visualizar as mensagens completas
+              {t("testAgents.auditSubtitle")}
             </p>
           </div>
         </div>

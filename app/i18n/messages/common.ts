@@ -1,0 +1,73 @@
+import { defineMessages } from "../defineMessages";
+
+export default defineMessages({
+  "pt-BR": {
+    cancel: "Cancelar",
+    close: "Fechar",
+    copy: "Copiar",
+    pageOf: "Página {page} de {pages}",
+    noSubject: "Sem assunto",
+    readAt: "Lida em {date}",
+    deliveredAt: "Entregue em {date}",
+    sent: "Enviada",
+    timeAgo: {
+      days: "{n}d atrás",
+      hours: "{n}h atrás",
+      minutes: "{n}min atrás",
+      now: "agora",
+    },
+    refresh: "Atualizar",
+    language: {
+      label: "Idioma",
+      "pt-BR": "Português (Brasil)",
+      "en-US": "English (US)",
+      es: "Español",
+    },
+  },
+  "en-US": {
+    cancel: "Cancel",
+    close: "Close",
+    copy: "Copy",
+    pageOf: "Page {page} of {pages}",
+    noSubject: "No subject",
+    readAt: "Read on {date}",
+    deliveredAt: "Delivered on {date}",
+    sent: "Sent",
+    timeAgo: {
+      days: "{n}d ago",
+      hours: "{n}h ago",
+      minutes: "{n}min ago",
+      now: "now",
+    },
+    refresh: "Refresh",
+    language: {
+      label: "Language",
+      "pt-BR": "Português (Brasil)",
+      "en-US": "English (US)",
+      es: "Español",
+    },
+  },
+  es: {
+    cancel: "Cancelar",
+    close: "Cerrar",
+    copy: "Copiar",
+    pageOf: "Página {page} de {pages}",
+    noSubject: "Sin asunto",
+    readAt: "Leído el {date}",
+    deliveredAt: "Entregado el {date}",
+    sent: "Enviado",
+    timeAgo: {
+      days: "hace {n}d",
+      hours: "hace {n}h",
+      minutes: "hace {n}min",
+      now: "ahora",
+    },
+    refresh: "Actualizar",
+    language: {
+      label: "Idioma",
+      "pt-BR": "Português (Brasil)",
+      "en-US": "English (US)",
+      es: "Español",
+    },
+  },
+});

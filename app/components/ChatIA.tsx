@@ -38,6 +38,7 @@ import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import ReactMarkdown from "react-markdown";
 import axios from "axios";
+import { useI18n } from "../i18n/I18nContext";
 
  
 const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -59,20 +60,6 @@ const dotBounce = keyframes`
   40%            { transform: translateY(-6px); }
 `;
 
-const formatDateTimePtBr = (dateInput?: Date | string | number) => {
-  if (!dateInput) return "";
-  const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return "";
-  const pad = (num: number, size: number) => num.toString().padStart(size, '0');
-  const d = pad(date.getDate(), 2);
-  const m = pad(date.getMonth() + 1, 2);
-  const y = date.getFullYear();
-  const h = pad(date.getHours(), 2);
-  const min = pad(date.getMinutes(), 2);
-  const s = pad(date.getSeconds(), 2);
-  const ms = pad(date.getMilliseconds(), 3);
-  return `${d}/${m}/${y} ${h}:${min}:${s}.${ms}`;
-};
 
 interface ChatMessage {
   text: string;
@@ -96,6 +83,7 @@ interface ChatIAProps {
 }
 
 const ChatIA = ({ session }: ChatIAProps) => {
+  const { t, tr, formatDateTime, formatPreciseDateTime } = useI18n();
   const theme = useTheme();
   const isSmall = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState(false);
@@ -334,7 +322,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
         setThreadId(res.data.threadId);
         setMessages([
           {
-            text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
+            text: t("chat.welcome"),
             isUser: false,
             timestamp: new Date(),
           },
@@ -411,7 +399,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           read: !!m.read_at,
         }));
         const greeting: ChatMessage = {
-          text: "Olá! Sou seu assistente virtual, como posso lhe ajudar?",
+          text: t("chat.welcome"),
           isUser: false,
           timestamp: data.messages[0]?.created_at
             ? new Date(new Date(data.messages[0].created_at).getTime() - 1000)
@@ -436,7 +424,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   const handleDeleteThread = async (e: React.MouseEvent, tId: string) => {
     e.stopPropagation();
-    if (!confirm("Deseja excluir esta conversa? Esta ação não pode ser desfeita.")) return;
+    if (!confirm(t("chat.confirmDelete"))) return;
     try {
       const res = await axios.delete(`/thread/${tId}`, {
         baseURL: BASE_API_URL,
@@ -551,7 +539,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
       });
 
       if (!res.ok || !res.body) {
-        onError("Erro na conexão com o servidor.");
+        onError(t("chat.serverConnectionError"));
         return;
       }
 
@@ -610,7 +598,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 onFallback(data.content || "", data.reason || "");
                 break;
               case "error":
-                onError(data.detail || "Erro desconhecido.");
+                onError(data.detail || t("chat.unknownError"));
                 break;
             }
           } catch (e) {
@@ -620,7 +608,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
       }
     } catch (err: any) {
       if (err?.name === "AbortError") {
-        onError("A requisição expirou (timeout de 4 minutos). Tente novamente.");
+        onError(t("chat.timeoutError"));
       } else {
         // Para erros de conexão (não timeout), NÃO chamar onError.
         // Deixar o safety net em handleSend tentar o fallback ou
@@ -745,7 +733,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
           setMessages((prev) => [
             ...prev,
             {
-              text: detail || "Desculpe, não consegui processar isso. Tente novamente.",
+              text: detail || t("chat.processError"),
               isUser: false,
               timestamp: new Date(),
             },
@@ -767,7 +755,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
         ]);
       } else {
         // Total failure - try fallback non-streaming endpoint
-        setStatusText("Tentando conexão alternativa...");
+        setStatusText(t("chat.tryingFallback"));
         setIsTyping(true);
         const reply = await fetchResponseFallback(text, tid);
         setIsTyping(false);
@@ -780,7 +768,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
         } else {
           setMessages((prev) => [
             ...prev,
-            { text: "Desculpe, não consegui processar isso. Tente novamente.", isUser: false, timestamp: new Date() },
+            { text: t("chat.processError"), isUser: false, timestamp: new Date() },
           ]);
         }
       }
@@ -847,9 +835,9 @@ const ChatIA = ({ session }: ChatIAProps) => {
 
   return (
     <>
-      <Tooltip title="Assistente IA" placement="left">
+      <Tooltip title={t("chat.assistant")} placement="left">
         <Fab
-          aria-label="assistente ia"
+          aria-label={t("chat.assistant")}
           onClick={handleOpen}
           size={isSmall ? "small" : "medium"}
           sx={{
@@ -930,17 +918,17 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 variant="subtitle2"
                 sx={{ color: "#fff", fontWeight: 700, lineHeight: 1.2 }}
               >
-                {activeAgent ? activeAgent.title : "Assistente IA"}
+                {activeAgent ? activeAgent.title : t("chat.assistant")}
               </Typography>
               <Typography
                 variant="caption"
                 sx={{ color: "rgba(255,255,255,0.8)" }}
               >
-                {selectedAgent ? `Agente: ${selectedAgent}` : "Selecione um Agente"}
+                {selectedAgent ? t("chat.agentLabel", { agent: selectedAgent }) : t("chat.selectAgent")}
               </Typography>
             </Box>
 
-            <Tooltip title="Histórico de Conversas">
+            <Tooltip title={t("chat.history")}>
               <IconButton size="small" onClick={showHistory ? () => setShowHistory(false) : handleOpenHistory} sx={{ color: "#fff" }}>
                 <svg width="22" height="22" viewBox="0 0 33 31" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: "middle" }}>
                   <path d="M10.5063 11.0772H23.3554M13.375 16.7229L23.3556 16.7229M10.5064 21.5L19.4646 21.5M24.8547 27.2726C27.3136 25.7263 29.2301 23.5286 30.3618 20.9572C31.4935 18.3859 31.7896 15.5565 31.2127 12.8268C30.6357 10.097 29.2117 7.58964 27.1205 5.62162C25.0294 3.65361 22.3651 2.31337 19.4646 1.7704C16.5641 1.22742 13.5576 1.5061 10.8254 2.57118C8.09319 3.63626 5.75792 5.43992 4.11492 7.75406C1.09687 12.0049 1.59681 16.2692 2.60968 18.9463C3.43858 21.1371 2.17978 23.8378 1.59687 25.8882C1.46773 26.3416 1.46771 26.8191 1.59681 27.2726C1.7259 27.7261 1.97957 28.1396 2.33231 28.4716C2.68505 28.8035 3.12443 29.0423 3.60628 29.1638C4.08813 29.2853 4.59548 29.2852 5.07732 29.1637C7.25594 28.6151 10.2409 27.1751 12.4535 28.2128C16.7246 30.2134 20.7267 29.8684 24.8547 27.2726Z" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -948,7 +936,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Novo Chat">
+            <Tooltip title={t("chat.newChat")}>
               <IconButton size="small" onClick={handleReset} sx={{ color: "#fff" }}>
                 <svg width="22" height="22" viewBox="0 0 33 31" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ verticalAlign: "middle" }}>
                   <path d="M10.5636 15.5574H23.4364M17 9.5V21.6149M24.8547 27.2726C27.3136 25.7263 29.2301 23.5286 30.3618 20.9572C31.4935 18.3859 31.7896 15.5565 31.2127 12.8268C30.6357 10.097 29.2117 7.58964 27.1205 5.62162C25.0294 3.65361 22.3651 2.31337 19.4646 1.7704C16.5641 1.22742 13.5576 1.5061 10.8254 2.57118C8.09319 3.63626 5.75792 5.43992 4.11492 7.75406C1.09687 12.0049 1.59681 16.2692 2.60968 18.9463C3.43858 21.1371 2.17978 23.8378 1.59687 25.8882C1.46773 26.3416 1.46771 26.8191 1.59681 27.2726C1.7259 27.7261 1.97957 28.1396 2.33231 28.4716C2.68505 28.8035 3.12443 29.0423 3.60628 29.1638C4.08813 29.2853 4.59548 29.2852 5.07732 29.1637C7.25594 28.6151 10.2409 27.1751 12.4535 28.2128C16.7246 30.2134 20.7267 29.8684 24.8547 27.2726Z" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -956,7 +944,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title={isExpanded ? "Recolher" : "Expandir"}>
+            <Tooltip title={isExpanded ? t("chat.collapse") : t("chat.expand")}>
               <IconButton
                 size="small"
                 onClick={() => setIsExpanded((v) => !v)}
@@ -970,7 +958,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               </IconButton>
             </Tooltip>
 
-            <Tooltip title="Fechar">
+            <Tooltip title={t("common.close")}>
               <IconButton
                 size="small"
                 onClick={() => setOpen(false)}
@@ -1012,16 +1000,13 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 variant="subtitle1"
                 sx={{ fontWeight: 700, textAlign: "center", color: "var(--text-primary)" }}
               >
-                Aviso de Privacidade e IA
+                {t("chat.privacyTitle")}
               </Typography>
               <Typography
                 variant="body2"
                 sx={{ textAlign: "center", color: "#6b7280" }}
               >
-                Este assistente utiliza inteligência artificial fornecida pela
-                OpenAI. Suas mensagens serão enviadas para processamento. Seus
-                dados{" "}
-                <strong>não</strong> são usados para treinar modelos da OpenAI.
+                {tr("chat.privacyText", { not: <strong>{t("chat.privacyNot")}</strong> })}
               </Typography>
               <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
                 <Box
@@ -1040,7 +1025,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     "&:hover": { bgcolor: "#fef2f2" },
                   }}
                 >
-                  Não aceito
+                  {t("chat.decline")}
                 </Box>
                 <Box
                   component="button"
@@ -1059,7 +1044,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                     "&:hover": { opacity: 0.9 },
                   }}
                 >
-                  Aceito
+                  {t("chat.accept")}
                 </Box>
               </Box>
             </Box>
@@ -1080,14 +1065,14 @@ const ChatIA = ({ session }: ChatIAProps) => {
               <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
                 <HistoryIcon sx={{ color: "var(--accent, #bd4140)" }} />
                 <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                  Histórico de Conversas
+                  {t("chat.history")}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {history.map((t, idx) => (
+                {history.map((th, idx) => (
                   <Box
-                    key={t.thread_id}
-                    onClick={() => handleSelectHistoryThread(t.thread_id, t.agent_name)}
+                    key={th.thread_id}
+                    onClick={() => handleSelectHistoryThread(th.thread_id, th.agent_name)}
                     sx={{
                       textTransform: "none",
                       justifyContent: "flex-start",
@@ -1109,20 +1094,20 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   >
                     <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        {t.subject}
+                        {th.subject}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "var(--accent, #bd4140)", fontWeight: 500, mt: 0.5 }}>
-                        {t.agent_title}
+                        {th.agent_title}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#6b7280", mt: 0.5 }}>
-                        {new Date(t.created_at).toLocaleString("pt-BR")}
+                        {formatDateTime(th.created_at)}
                       </Typography>
                     </Box>
-                    <Tooltip title="Excluir conversa">
+                    <Tooltip title={t("chat.deleteConversation")}>
                       <IconButton
                         className="delete-btn"
                         size="small"
-                        onClick={(e) => handleDeleteThread(e, t.thread_id)}
+                        onClick={(e) => handleDeleteThread(e, th.thread_id)}
                         sx={{
                           opacity: 0,
                           transition: "opacity 0.2s",
@@ -1144,7 +1129,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
               )}
               {!loadingHistory && history.length === 0 && (
                 <Typography variant="body2" sx={{ textAlign: "center", color: "#6b7280", mt: 4 }}>
-                  Nenhum histórico encontrado.
+                  {t("chat.noHistory")}
                 </Typography>
               )}
             </Box>
@@ -1181,7 +1166,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   variant="subtitle2"
                   sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: 14 }}
                 >
-                  Escolha o assistente para conversar:
+                  {t("chat.chooseAssistant")}
                 </Typography>
               </Box>
 
@@ -1327,13 +1312,13 @@ const ChatIA = ({ session }: ChatIAProps) => {
                       variant="h6"
                       sx={{ fontWeight: 700, color: "var(--text-primary)" }}
                     >
-                      Assistente IA
+                      {t("chat.assistant")}
                     </Typography>
                     <Typography
                       variant="body2"
                       sx={{ color: "#6b7280", textAlign: "center" }}
                     >
-                      Como posso ajudar você hoje?
+                      {t("chat.howCanIHelp")}
                     </Typography>
                   </Box>
                 )}
@@ -1385,7 +1370,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                               <Box
                                 component="img"
                                 src={activeAgent.logo_base64}
-                                alt="Agente logo"
+                                alt={t("chat.agentLogo")}
                                 sx={{ width: "100%", height: "100%", objectFit: "contain", p: 0.25 }}
                               />
                             ) : (
@@ -1407,7 +1392,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                               textShadow: "0 1px 2px rgba(0,0,0,0.3)",
                             }}
                           >
-                            {msg.auditor_nickname || "Suporte"}
+                            {msg.auditor_nickname || t("chat.support")}
                           </Typography>
                         )}
                       </Box>
@@ -1500,22 +1485,22 @@ const ChatIA = ({ session }: ChatIAProps) => {
                             fontFamily: "monospace",
                           }}
                         >
-                          {formatDateTimePtBr(msg.timestamp || new Date())}
+                          {formatPreciseDateTime(msg.timestamp || new Date())}
                         </Typography>
 
                         {!msg.isUser && msg.id && (
                           <Box sx={{ display: "flex", gap: 0.5 }}>
-                            <Tooltip title="Copiar">
+                            <Tooltip title={t("common.copy")}>
                               <IconButton size="small" onClick={() => navigator.clipboard.writeText(msg.text)} sx={{ p: 0.5, color: "#9ca3af", "&:hover": { color: "var(--accent, #bd4140)", bgcolor: "rgba(189, 65, 64, 0.1)" }}}>
                                 <ContentCopyIcon sx={{ fontSize: 14 }} />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Gostei">
+                            <Tooltip title={t("chat.like")}>
                               <IconButton size="small" onClick={() => handleMessageFeedback(msg.id!, 1)} sx={{ p: 0.5, color: msg.feedback_thumb === 1 ? "#10b981" : "#9ca3af", "&:hover": { color: "#10b981", bgcolor: "rgba(16,185,129,0.1)" }}}>
                                 {msg.feedback_thumb === 1 ? <ThumbUpIcon sx={{ fontSize: 14 }} /> : <ThumbUpOutlinedIcon sx={{ fontSize: 14 }} />}
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Não Gostei">
+                            <Tooltip title={t("chat.dislike")}>
                               <IconButton size="small" onClick={() => openFeedbackDialog(msg.id!)} sx={{ p: 0.5, color: msg.feedback_thumb === -1 ? "#ef4444" : "#9ca3af", "&:hover": { color: "#ef4444", bgcolor: "rgba(239,68,68,0.1)" }}}>
                                 {msg.feedback_thumb === -1 ? <ThumbDownIcon sx={{ fontSize: 14 }} /> : <ThumbDownOutlinedIcon sx={{ fontSize: 14 }} />}
                               </IconButton>
@@ -1612,7 +1597,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                             fontFamily: "monospace",
                           }}
                         >
-                          {formatDateTimePtBr(new Date())}
+                          {formatPreciseDateTime(new Date())}
                         </Typography>
                       </Box>
                     </Box>
@@ -1700,7 +1685,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   inputRef={inputRef}
                   fullWidth
                   size="small"
-                  placeholder="Mensagem..."
+                  placeholder={t("chat.messagePlaceholder")}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -1771,7 +1756,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                   }}
                 >
                   <Typography variant="caption" sx={{ color: "#9ca3af", mr: 0.5 }}>
-                    {feedbackSent ? "Obrigado!" : "Avalie:"}
+                    {feedbackSent ? t("chat.thanks") : t("chat.rate")}
                   </Typography>
                   {[1, 2, 3, 4, 5].map((star) => (
                     <IconButton
@@ -1800,7 +1785,7 @@ const ChatIA = ({ session }: ChatIAProps) => {
                 }}
               >
                 <Typography variant="caption" sx={{ color: "#9ca3af" }}>
-                  O Assistente de IA pode cometer erros.
+                  {t("chat.disclaimer")}
                 </Typography>
               </Box>
             </>
@@ -1809,15 +1794,15 @@ const ChatIA = ({ session }: ChatIAProps) => {
       )}
 
       <Dialog open={feedbackDialogOpen} onClose={() => setFeedbackDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700, color: "var(--text-primary)" }}>Como podemos melhorar?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{t("chat.feedbackTitle")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ color: "#6b7280", mb: 2 }}>
-            Sua opinião é fundamental. Por favor, conte-nos por que essa resposta não foi útil.
+            {t("chat.feedbackText")}
           </Typography>
           <TextField
             autoFocus
             margin="dense"
-            label="Seu feedback"
+            label={t("chat.feedbackLabel")}
             type="text"
             fullWidth
             multiline
@@ -1828,8 +1813,8 @@ const ChatIA = ({ session }: ChatIAProps) => {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setFeedbackDialogOpen(false)} sx={{ color: "#6b7280" }}>Cancelar</Button>
-          <Button onClick={submitFeedbackDialog} variant="contained" sx={{ background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)" }}>Enviar Feedback</Button>
+          <Button onClick={() => setFeedbackDialogOpen(false)} sx={{ color: "#6b7280" }}>{t("common.cancel")}</Button>
+          <Button onClick={submitFeedbackDialog} variant="contained" sx={{ background: "linear-gradient(135deg, var(--accent, #bd4140) 0%, var(--accent-hover, #a03534) 100%)" }}>{t("chat.sendFeedback")}</Button>
         </DialogActions>
       </Dialog>
     </>

@@ -6,6 +6,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import axios from "axios";
 import { useAuditor } from "./AuditorContext";
+import { useI18n, translate, type Locale } from "../i18n/I18nContext";
 
 const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -46,6 +47,12 @@ interface ToastState {
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const { auditor } = useAuditor();
+  const { t, locale } = useI18n();
+  // Ref para o listener SSE (criado uma vez) sempre usar o idioma atual
+  const localeRef = useRef<Locale>(locale);
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
   const [ttsEnabled, setTtsEnabledState] = useState<boolean>(true);
   const [selectedVoice, setSelectedVoiceState] = useState<VoiceOption>("openai");
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.25);
@@ -165,7 +172,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       // 2. Play the spoken info via TTS using selected voice engine
       const res = await axios.post(
         `${BASE_API_URL}/admin/tts`,
-        { text, voice: selectedVoiceRef.current },
+        { text, voice: selectedVoiceRef.current, language: localeRef.current },
         {
           headers: { Authorization: `Bearer ${BACKEND_API_KEY}` },
           responseType: "blob",
@@ -270,18 +277,23 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
           setToast({
             open: true,
-            clientName: user_name || "Cliente desconhecido",
-            agentName: agent_name || "Agente",
+            clientName: user_name || "",
+            agentName: agent_name || "",
             firstMessage: first_message || "",
           });
 
-          const clientNameClean = user_name || "Cliente desconhecido";
-          const agentNameClean = agent_name || "Agente";
+          const lang = localeRef.current;
+          const clientNameClean = user_name || translate(lang, "notifications.unknownClient");
+          const agentNameClean = agent_name || translate(lang, "notifications.defaultAgent");
           const messageText = first_message || "";
           const messageLimited = messageText.length > 250
-            ? `${messageText.substring(0, 250)}, ... abreviado.`
+            ? translate(lang, "notifications.ttsAbbreviated", { text: messageText.substring(0, 250) })
             : messageText;
-          const ttsText = `cliente: ${clientNameClean}, ${agentNameClean}, ${messageLimited}`;
+          const ttsText = translate(lang, "notifications.ttsNewChat", {
+            client: clientNameClean,
+            agent: agentNameClean,
+            message: messageLimited,
+          });
           enqueueTts(ttsText);
 
           setLastThreadUpdate({
@@ -392,7 +404,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         autoHideDuration={8000}
         onClose={handleCloseToast}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        sx={{ zIndex: 9999 }}
+        sx={{ zIndex: 9999, top: { xs: 64, sm: 72 } }}
       >
         <Box
           sx={{
@@ -430,13 +442,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
           <Box sx={{ flex: 1, minWidth: 0, pr: 2 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--success, #10b981)", mb: 0.5 }}>
-              Nova Conversa Iniciada!
+              {t("notifications.newChatTitle")}
             </Typography>
             <Typography variant="body2" sx={{ color: "var(--text-primary, #ffffff)", fontWeight: 600, fontSize: 13 }}>
-              <strong>Cliente:</strong> {toast.clientName}
+              <strong>{t("notifications.client")}</strong> {toast.clientName || t("notifications.unknownClient")}
             </Typography>
             <Typography variant="body2" sx={{ color: "var(--text-secondary, #cbd5e1)", fontSize: 13, mt: 0.2 }}>
-              <strong>Agente:</strong> {toast.agentName}
+              <strong>{t("notifications.agent")}</strong> {toast.agentName || t("notifications.defaultAgent")}
             </Typography>
             <Typography
               variant="body2"

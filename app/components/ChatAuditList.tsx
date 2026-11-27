@@ -43,6 +43,7 @@ import ReactMarkdown from "react-markdown";
 import axios from "axios";
 import { useAuditor } from "../context/AuditorContext";
 import { useNotification } from "../context/NotificationContext";
+import { useI18n } from "../i18n/I18nContext";
 
 const BASE_API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://assistant.arpasistemas.com.br";
@@ -99,40 +100,26 @@ const PAGE_SIZE = 15;
 
 /** Indicador estilo WhatsApp: ✓ enviada, ✓✓ entregue, ✓✓ azul lida */
 const ReadReceipt = ({ msg }: { msg: ChatMessage }) => {
+  const { t, formatPreciseDateTime } = useI18n();
   if (msg.read_at) {
     return (
-      <Tooltip title={`Lida em ${formatDateTimePtBr(msg.read_at)}`}>
+      <Tooltip title={t("common.readAt", { date: formatPreciseDateTime(msg.read_at) })}>
         <DoneAllIcon sx={{ fontSize: 16, ml: 0.5, color: "#53bdeb" }} />
       </Tooltip>
     );
   }
   if (msg.delivered_at) {
     return (
-      <Tooltip title={`Entregue em ${formatDateTimePtBr(msg.delivered_at)}`}>
+      <Tooltip title={t("common.deliveredAt", { date: formatPreciseDateTime(msg.delivered_at) })}>
         <DoneAllIcon sx={{ fontSize: 16, ml: 0.5, color: "#9ca3af" }} />
       </Tooltip>
     );
   }
   return (
-    <Tooltip title="Enviada">
+    <Tooltip title={t("common.sent")}>
       <DoneIcon sx={{ fontSize: 16, ml: 0.5, color: "#9ca3af" }} />
     </Tooltip>
   );
-};
-
-const formatDateTimePtBr = (dateInput?: Date | string | number) => {
-  if (!dateInput) return "";
-  const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return "";
-  const pad = (num: number, size: number) => num.toString().padStart(size, '0');
-  const d = pad(date.getDate(), 2);
-  const m = pad(date.getMonth() + 1, 2);
-  const y = date.getFullYear();
-  const h = pad(date.getHours(), 2);
-  const min = pad(date.getMinutes(), 2);
-  const s = pad(date.getSeconds(), 2);
-  const ms = pad(date.getMilliseconds(), 3);
-  return `${d}/${m}/${y} ${h}:${min}:${s}.${ms}`;
 };
 
 const formatCnpj = (cnpj?: string) => {
@@ -142,11 +129,11 @@ const formatCnpj = (cnpj?: string) => {
   return clean.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
 };
 
-const getCompanyDisplay = (item?: {
+const getCompanyDisplay = (item: {
   cnpj?: string;
   user_cnpj?: string;
   company_data?: any;
-} | null) => {
+} | null | undefined, notFoundText: string) => {
   if (!item) return null;
   let companyData = item.company_data;
   if (typeof companyData === "string") {
@@ -163,7 +150,7 @@ const getCompanyDisplay = (item?: {
 
   if (cnpj) {
     const formattedCnpj = formatCnpj(cnpj);
-    const razaoText = razaoSocial || "Razão não encontrada";
+    const razaoText = razaoSocial || notFoundText;
     return `🏢 ${formattedCnpj} - ${razaoText}`;
   }
 
@@ -219,6 +206,7 @@ export default function ChatAuditList() {
 function ChatAuditListContent() {
   const { auditor } = useAuditor();
   const { lastThreadUpdate } = useNotification();
+  const { t, formatDateTime, formatPreciseDateTime } = useI18n();
   const searchParams = useSearchParams();
   const threadIdFromUrl = searchParams.get("thread");
 
@@ -532,7 +520,7 @@ function ChatAuditListContent() {
   const handleOpenFaqModal = () => {
     const pairs = extractQAPairs();
     if (pairs.length === 0) {
-      setSnackbar({ open: true, message: "Nenhum par de Pergunta/Resposta encontrado nesta conversa.", severity: "info" });
+      setSnackbar({ open: true, message: t("chatAudit.noQaPairs"), severity: "info" });
       return;
     }
     setFaqPairs(pairs);
@@ -565,7 +553,7 @@ function ChatAuditListContent() {
     if (!selectedThread || faqLoading) return;
     const validPairs = faqPairs.filter((p) => p.question.trim() && p.answer.trim());
     if (validPairs.length === 0) {
-      setSnackbar({ open: true, message: "Adicione pelo menos um par de Pergunta/Resposta válido.", severity: "error" });
+      setSnackbar({ open: true, message: t("chatAudit.addValidPair"), severity: "error" });
       return;
     }
     setFaqLoading(true);
@@ -581,13 +569,13 @@ function ChatAuditListContent() {
         setFaqStatus({ faq_added: true, has_auditor: true });
         setSnackbar({
           open: true,
-          message: `FAQ gerada com sucesso para ${res.data.agent_title || "o agente"}!`,
+          message: t("chatAudit.faqSuccess", { agent: res.data.agent_title || t("chatAudit.theAgent") }),
           severity: "success",
         });
       }
     } catch (e: unknown) {
       const err = e as { response?: { data?: { detail?: string }; status?: number } };
-      const detail = err?.response?.data?.detail || "Erro ao gerar FAQ";
+      const detail = err?.response?.data?.detail || t("chatAudit.faqError");
       const severity = err?.response?.status === 409 ? "info" : "error";
       setSnackbar({ open: true, message: detail, severity });
       if (err?.response?.status === 409) {
@@ -654,7 +642,7 @@ function ChatAuditListContent() {
                 whiteSpace: "nowrap",
               }}
             >
-              {selectedThread.subject || "Sem assunto"}
+              {selectedThread.subject || t("common.noSubject")}
             </Typography>
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 0.5 }}>
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)" }}>
@@ -665,13 +653,13 @@ function ChatAuditListContent() {
                 <SmartToyIcon sx={{ fontSize: 13, mr: 0.5, verticalAlign: "middle" }} />
                 {selectedThread.agent_title}
               </Typography>
-              {getCompanyDisplay(selectedThread) && (
+              {getCompanyDisplay(selectedThread, t("chatAudit.companyNotFound")) && (
                 <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>
-                  {getCompanyDisplay(selectedThread)}
+                  {getCompanyDisplay(selectedThread, t("chatAudit.companyNotFound"))}
                 </Typography>
               )}
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
-                {new Date(selectedThread.created_at).toLocaleString("pt-BR")}
+                {formatDateTime(selectedThread.created_at)}
               </Typography>
             </Box>
           </Box>
@@ -689,7 +677,7 @@ function ChatAuditListContent() {
             />
           )}
           {/* Online/Offline indicator */}
-          <Tooltip title={isUserOnline ? "Usuário online agora" : "Usuário offline"}>
+          <Tooltip title={isUserOnline ? t("chatAudit.userOnlineNow") : t("chatAudit.userOffline")}>
             <Chip
               icon={
                 <FiberManualRecordIcon
@@ -715,12 +703,12 @@ function ChatAuditListContent() {
           <Tooltip
             title={
               !faqStatus
-                ? "Carregando status..."
+                ? t("chatAudit.faqStatusLoading")
                 : faqStatus.faq_added
-                  ? "FAQ já adicionada para esta conversa"
+                  ? t("chatAudit.faqAlreadyAdded")
                   : !hasAuditorInteraction
-                    ? "Necessário interação do auditor para gerar FAQ"
-                    : "Gerar FAQ a partir desta conversa"
+                    ? t("chatAudit.faqNeedsAuditor")
+                    : t("chatAudit.faqGenerate")
             }
           >
             <span>
@@ -762,8 +750,8 @@ function ChatAuditListContent() {
                 {faqLoading
                   ? "Gerando..."
                   : faqStatus?.faq_added
-                    ? "FAQ Adicionada ✓"
-                    : "Adicionar a FAQ"}
+                    ? t("chatAudit.faqAddedButton")
+                    : t("chatAudit.faqAddButton")}
               </Button>
             </span>
           </Tooltip>
@@ -806,7 +794,7 @@ function ChatAuditListContent() {
               variant="body2"
               sx={{ textAlign: "center", color: "#9ca3af", py: 8 }}
             >
-              Nenhuma mensagem encontrada nesta conversa.
+              {t("chatAudit.noMessages")}
             </Typography>
           ) : (
             messages.map((msg, i) => {
@@ -934,7 +922,7 @@ function ChatAuditListContent() {
                             fontFamily: "monospace",
                           }}
                         >
-                          {msg.created_at ? formatDateTimePtBr(msg.created_at) : ""}
+                          {msg.created_at ? formatPreciseDateTime(msg.created_at) : ""}
                         </Typography>
                         {!isUser && <ReadReceipt msg={msg} />}
                       </Box>
@@ -952,7 +940,7 @@ function ChatAuditListContent() {
                         }}
                       >
                         {msg.feedback_thumb === 1 && (
-                          <Tooltip title="Usuário gostou">
+                          <Tooltip title={t("chatAudit.userLiked")}>
                             <ThumbUpIcon
                               sx={{ fontSize: 14, color: "#10b981" }}
                             />
@@ -962,8 +950,8 @@ function ChatAuditListContent() {
                           <Tooltip
                             title={
                               msg.feedback_text
-                                ? `Feedback: ${msg.feedback_text}`
-                                : "Usuário não gostou"
+                                ? t("chatAudit.feedbackPrefix", { text: msg.feedback_text })
+                                : t("chatAudit.userDisliked")
                             }
                           >
                             <ThumbDownIcon
@@ -1034,8 +1022,8 @@ function ChatAuditListContent() {
             size="small"
             placeholder={
               isUserOnline
-                ? "Enviar mensagem para o usuário (online agora)..."
-                : "Enviar mensagem para o usuário (offline - verá ao voltar)..."
+                ? t("chatAudit.inputOnline")
+                : t("chatAudit.inputOffline")
             }
             value={auditorInput}
             onChange={(e) => setAuditorInput(e.target.value)}
@@ -1055,7 +1043,7 @@ function ChatAuditListContent() {
               },
             }}
           />
-          <Tooltip title={isUserOnline ? "Enviar (usuário verá em tempo real)" : "Enviar (usuário verá quando voltar)"}>
+          <Tooltip title={isUserOnline ? t("chatAudit.sendOnline") : t("chatAudit.sendOffline")}>
             <span>
               <IconButton
                 onClick={handleSendAuditorMessage}
@@ -1118,14 +1106,14 @@ function ChatAuditListContent() {
             <QuizIcon sx={{ color: "var(--accent, #bd4140)", fontSize: 22 }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary, #f1f5f9)" }}>
-                Revisar FAQ antes de enviar
+                {t("chatAudit.faqReviewTitle")}
               </Typography>
               <Typography sx={{ fontSize: 12, color: "var(--text-secondary, #94a3b8)", mt: 0.3 }}>
-                Edite as perguntas e respostas extraídas da conversa. Pares vazios serão ignorados.
+                {t("chatAudit.faqReviewHint")}
               </Typography>
             </Box>
             <Chip
-              label={`${faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length} par(es)`}
+              label={t("chatAudit.pairsCount", { n: faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length })}
               size="small"
               sx={{
                 bgcolor: "rgba(189,65,64,0.15)",
@@ -1192,7 +1180,7 @@ function ChatAuditListContent() {
                   <Typography sx={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary, #94a3b8)", flex: 1 }}>
                     Par {idx + 1}
                   </Typography>
-                  <Tooltip title="Remover este par">
+                  <Tooltip title={t("chatAudit.removePair")}>
                     <IconButton
                       size="small"
                       onClick={() => handleRemoveFaqPair(idx)}
@@ -1221,7 +1209,7 @@ function ChatAuditListContent() {
                       gap: 0.5,
                     }}
                   >
-                    <PersonIcon sx={{ fontSize: 13 }} /> Pergunta
+                    <PersonIcon sx={{ fontSize: 13 }} /> {t("chatAudit.question")}
                   </Typography>
                   <TextField
                     fullWidth
@@ -1262,7 +1250,7 @@ function ChatAuditListContent() {
                       gap: 0.5,
                     }}
                   >
-                    <SmartToyIcon sx={{ fontSize: 13 }} /> Resposta
+                    <SmartToyIcon sx={{ fontSize: 13 }} /> {t("chatAudit.answer")}
                   </Typography>
                   <TextField
                     fullWidth
@@ -1310,7 +1298,7 @@ function ChatAuditListContent() {
                 },
               }}
             >
-              Adicionar novo par
+              {t("chatAudit.addPair")}
             </Button>
           </DialogContent>
 
@@ -1325,8 +1313,7 @@ function ChatAuditListContent() {
             }}
           >
             <Typography sx={{ fontSize: 11, color: "var(--text-secondary, #6b7280)" }}>
-              {faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length} par(es) válido(s) ·
-              O processo de revisão de perguntas existentes será mantido
+              {t("chatAudit.validPairsNote", { n: faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length })}
             </Typography>
             <Box sx={{ display: "flex", gap: 1.5 }}>
               <Button
@@ -1339,8 +1326,8 @@ function ChatAuditListContent() {
                   "&:hover": { bgcolor: "rgba(255,255,255,0.05)" },
                 }}
               >
-                Cancelar
-              </Button>
+                {t("common.cancel")}
+                </Button>
               <Button
                 onClick={handleConfirmAddToFaq}
                 disabled={faqPairs.filter((p) => p.question.trim() && p.answer.trim()).length === 0}
@@ -1358,7 +1345,7 @@ function ChatAuditListContent() {
                   "&.Mui-disabled": { bgcolor: "#1e2233", color: "#4a5068" },
                 }}
               >
-                {faqLoading ? "Enviando..." : "Confirmar e Enviar FAQ"}
+                {faqLoading ? t("chatAudit.sending") : t("chatAudit.confirmFaq")}
               </Button>
             </Box>
           </DialogActions>
@@ -1391,7 +1378,7 @@ function ChatAuditListContent() {
       <Box sx={{ mb: 2.5, display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
         <TextField
           size="small"
-          placeholder="Buscar por assunto, usuário, email ou thread ID..."
+          placeholder={t("chatAudit.searchPlaceholder")}
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           InputProps={{
@@ -1435,24 +1422,24 @@ function ChatAuditListContent() {
             }}
             style={{ accentColor: "var(--accent, #bd4140)", width: 16, height: 16 }}
           />
-          🛡️ Intervenção do Auditor
+          {t("chatAudit.auditorFilter")}
         </label>
       </Box>
 
       {/* Stats */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
         <Typography variant="body2" sx={{ color: "var(--text-secondary, #6b7280)" }}>
-          {total} conversa{total !== 1 ? "s" : ""} encontrada{total !== 1 ? "s" : ""}
+          {t(total === 1 ? "chatAudit.countOne" : "chatAudit.countOther", { n: total })}
         </Typography>
         {loading && <CircularProgress size={16} sx={{ color: "var(--accent, #bd4140)" }} />}
       </Box>
 
       {/* Thread cards */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        {threads.map((t, idx) => (
+        {threads.map((th, idx) => (
           <Box
-            key={t.thread_id}
-            onClick={() => handleSelectThread(t)}
+            key={th.thread_id}
+            onClick={() => handleSelectThread(th)}
             sx={{
               display: "flex",
               alignItems: "center",
@@ -1502,7 +1489,7 @@ function ChatAuditListContent() {
                   fontSize: 14,
                 }}
               >
-                {t.subject || "Sem assunto"}
+                {th.subject || t("common.noSubject")}
               </Typography>
               <Box
                 sx={{
@@ -1523,7 +1510,7 @@ function ChatAuditListContent() {
                   }}
                 >
                   <PersonIcon sx={{ fontSize: 13 }} />
-                  {t.user_name || t.user_email}
+                  {th.user_name || th.user_email}
                 </Typography>
                 <Typography
                   variant="caption"
@@ -1537,9 +1524,9 @@ function ChatAuditListContent() {
                   }}
                 >
                   <SmartToyIcon sx={{ fontSize: 13 }} />
-                  {t.agent_title}
+                  {th.agent_title}
                 </Typography>
-                {getCompanyDisplay(t) && (
+                {getCompanyDisplay(th, t("chatAudit.companyNotFound")) && (
                   <Typography
                     variant="caption"
                     sx={{
@@ -1550,7 +1537,7 @@ function ChatAuditListContent() {
                       gap: 0.3,
                     }}
                   >
-                    {getCompanyDisplay(t)}
+                    {getCompanyDisplay(th, t("chatAudit.companyNotFound"))}
                   </Typography>
                 )}
               </Box>
@@ -1570,11 +1557,11 @@ function ChatAuditListContent() {
                 variant="caption"
                 sx={{ color: "var(--text-secondary)", fontSize: 11 }}
               >
-                {new Date(t.created_at).toLocaleString("pt-BR")}
+                {formatDateTime(th.created_at)}
               </Typography>
               <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
                 <Chip
-                  label={`${t.message_count} msg`}
+                  label={t("chatAudit.msgCount", { n: th.message_count })}
                   size="small"
                   sx={{
                     height: 20,
@@ -1584,14 +1571,14 @@ function ChatAuditListContent() {
                     color: "var(--accent, #bd4140)",
                   }}
                 />
-                {t.feedback_rating && (
+                {th.feedback_rating && (
                   <Chip
                     icon={
                       <StarIcon
                         sx={{ color: "#f59e0b !important", fontSize: 13 }}
                       />
                     }
-                    label={t.feedback_rating}
+                    label={th.feedback_rating}
                     size="small"
                     sx={{
                       height: 20,
@@ -1602,14 +1589,14 @@ function ChatAuditListContent() {
                     }}
                   />
                 )}
-                {t.thumb_up_count !== undefined && t.thumb_up_count > 0 && (
+                {th.thumb_up_count !== undefined && th.thumb_up_count > 0 && (
                   <Chip
                     icon={
                       <ThumbUpIcon
                         sx={{ color: "#10b981 !important", fontSize: 13 }}
                       />
                     }
-                    label={t.thumb_up_count}
+                    label={th.thumb_up_count}
                     size="small"
                     sx={{
                       height: 20,
@@ -1620,14 +1607,14 @@ function ChatAuditListContent() {
                     }}
                   />
                 )}
-                {t.thumb_down_count !== undefined && t.thumb_down_count > 0 && (
+                {th.thumb_down_count !== undefined && th.thumb_down_count > 0 && (
                   <Chip
                     icon={
                       <ThumbDownIcon
                         sx={{ color: "#ef4444 !important", fontSize: 13 }}
                       />
                     }
-                    label={t.thumb_down_count}
+                    label={th.thumb_down_count}
                     size="small"
                     sx={{
                       height: 20,
@@ -1638,10 +1625,10 @@ function ChatAuditListContent() {
                     }}
                   />
                 )}
-                {t.has_auditor && (
+                {th.has_auditor && (
                   <Chip
                     icon={<SupportAgentIcon sx={{ color: "#d97706 !important", fontSize: 13 }} />}
-                    label={t.auditor_nickname || "Auditor"}
+                    label={th.auditor_nickname || t("chatAudit.auditor")}
                     size="small"
                     sx={{
                       height: 20,
@@ -1663,7 +1650,7 @@ function ChatAuditListContent() {
                   opacity: 0.6,
                 }}
               >
-                {t.thread_id.slice(0, 8)}...
+                {th.thread_id.slice(0, 8)}...
               </Typography>
             </Box>
           </Box>
@@ -1683,12 +1670,12 @@ function ChatAuditListContent() {
             sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }}
           />
           <Typography variant="body1" sx={{ fontWeight: 600 }}>
-            Nenhuma conversa encontrada
+            {t("chatAudit.emptyTitle")}
           </Typography>
           <Typography variant="body2" sx={{ mt: 0.5 }}>
             {search
-              ? "Tente ajustar os termos de busca."
-              : "Ainda não há conversas registradas."}
+              ? t("chatAudit.emptySearch")
+              : t("chatAudit.emptyDefault")}
           </Typography>
         </Box>
       )}
@@ -1724,7 +1711,7 @@ function ChatAuditListContent() {
               fontWeight: 500,
             }}
           >
-            Página {page} de {pages}
+            {t("common.pageOf", { page, pages })}
           </Typography>
           <IconButton
             size="small"

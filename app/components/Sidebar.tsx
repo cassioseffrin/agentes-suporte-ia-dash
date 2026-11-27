@@ -20,6 +20,7 @@ import {
 import { useState } from "react";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import { useAuditor } from "../context/AuditorContext";
+import { useI18n, type TranslationKey } from "../i18n/I18nContext";
 import { useNotification } from "../context/NotificationContext";
 import { Tooltip, IconButton, keyframes } from "@mui/material";
 import {
@@ -34,54 +35,54 @@ const pulseWarning = keyframes`
 `;
 
 interface NavItem {
-  label: string;
+  label: TranslationKey;
   href: string;
   icon: any;
   customClass?: string;
-  badge?: string;
+  badge?: TranslationKey;
   badgeClass?: string;
 }
 
 interface NavGroup {
-  label: string;
+  label: TranslationKey;
   items: NavItem[];
 }
 
 const navGroups: NavGroup[] = [
   {
-    label: "Dashboard",
+    label: "sidebar.groupDashboard",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: DashboardIcon },
-      { label: "Arquitetura", href: "/arquitetura", icon: DiagramIcon },
+      { label: "sidebar.navDashboard", href: "/dashboard", icon: DashboardIcon },
+      { label: "sidebar.navArchitecture", href: "/arquitetura", icon: DiagramIcon },
     ],
   },
   {
-    label: "Utilitários",
+    label: "sidebar.groupUtilities",
     items: [
       {
-        label: "Testar Agentes",
+        label: "sidebar.navTestAgents",
         href: "/testar-agentes",
         icon: TestIcon,
         customClass: "test-agents",
-        badge: "Lab",
+        badge: "sidebar.badgeLab",
         badgeClass: "badge-lab",
       },
-      { label: "Feedbacks", href: "/feedbacks", icon: FeedbackIcon },
-      { label: "Documentação Widget", href: "/documentacao-widget", icon: DocsIcon },
+      { label: "sidebar.navFeedbacks", href: "/feedbacks", icon: FeedbackIcon },
+      { label: "sidebar.navWidgetDocs", href: "/documentacao-widget", icon: DocsIcon },
     ],
   },
   {
-    label: "Configurações",
+    label: "sidebar.groupSettings",
     items: [
       {
-        label: "Agentes de Suporte IA",
+        label: "sidebar.navSupportAgents",
         href: "/agentes",
         icon: SupportAgentIcon,
         customClass: "support-agents",
-        badge: "IA",
+        badge: "sidebar.badgeAI",
         badgeClass: "badge-ia",
       },
-      { label: "Renovar Autenticação", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
+      { label: "sidebar.navRenewAuth", href: "/utilitarios/renovar-auth", icon: RefreshIcon },
     ],
   },
 ];
@@ -91,6 +92,7 @@ export default function Sidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { auditor, logout } = useAuditor();
+  const { t } = useI18n();
   const {
     ttsEnabled,
     setTtsEnabled,
@@ -152,9 +154,9 @@ export default function Sidebar() {
         </div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)" }}>
-            Agentes IA
+            {t("sidebar.appName")}
           </div>
-          <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Dashboard Admin</div>
+          <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{t("sidebar.appSubtitle")}</div>
           {auditor && (
             <div
               style={{
@@ -206,16 +208,16 @@ export default function Sidebar() {
           }}
         >
           <CircleIcon sx={{ fontSize: 8 }} />
-          Backend conectado
+          {t("sidebar.backendConnected")}
         </div>
 
         <Tooltip
           title={
             !ttsEnabled
-              ? "Notificações por voz desativadas — clique para ativar"
+              ? t("sidebar.ttsOff")
               : ttsInteractionRequired
-                ? "Clique na página para ativar o áudio (bloqueado pelo navegador)"
-                : "Notificações por voz ativadas — clique para desativar"
+                ? t("sidebar.ttsBlocked")
+                : t("sidebar.ttsOn")
           }
         >
           <IconButton
@@ -283,7 +285,7 @@ export default function Sidebar() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>Voz:</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{t("sidebar.voice")}</span>
           <select
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value as any)}
@@ -298,14 +300,14 @@ export default function Sidebar() {
               cursor: "pointer",
             }}
           >
-            <option value="openai">OpenAI (Default)</option>
-            <option value="dora">Dora (Feminina)</option>
-            <option value="alex">Alex (Masculina)</option>
+            <option value="openai">{t("sidebar.voiceOpenai")}</option>
+            <option value="dora">{t("sidebar.voiceDora")}</option>
+            <option value="alex">{t("sidebar.voiceAlex")}</option>
           </select>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>Velocidade:</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)" }}>{t("sidebar.speed")}</span>
           <select
             value={playbackSpeed}
             onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
@@ -320,10 +322,10 @@ export default function Sidebar() {
               cursor: "pointer",
             }}
           >
-            <option value={1.0}>1.0x (Normal)</option>
-            <option value={1.25}>1.25x (Padrão)</option>
-            <option value={1.5}>1.5x (Acelerado)</option>
-            <option value={2.0}>2.0x (Rápido)</option>
+            <option value={1.0}>{t("sidebar.speedNormal")}</option>
+            <option value={1.25}>{t("sidebar.speedDefault")}</option>
+            <option value={1.5}>{t("sidebar.speedFast")}</option>
+            <option value={2.0}>{t("sidebar.speedFaster")}</option>
           </select>
         </div>
       </div>
@@ -343,7 +345,7 @@ export default function Sidebar() {
                 marginBottom: 6,
               }}
             >
-              {group.label}
+              {t(group.label)}
             </div>
             {group.items.map((item) => {
               const active = pathname === item.href;
@@ -358,10 +360,10 @@ export default function Sidebar() {
                   <div className={`nav-icon-box ${item.customClass || ""}`}>
                     <Icon sx={{ fontSize: 18 }} />
                   </div>
-                  <span className="nav-item-text">{item.label}</span>
+                  <span className="nav-item-text">{t(item.label)}</span>
                   {item.badge && (
                     <span className={`nav-item-badge ${item.badgeClass || ""}`}>
-                      {item.badge}
+                      {t(item.badge)}
                     </span>
                   )}
                 </Link>
@@ -424,7 +426,7 @@ export default function Sidebar() {
             {/* Logout */}
             <button
               onClick={handleLogout}
-              title="Sair"
+              title={t("sidebar.logout")}
               style={{
                 background: "none",
                 border: "none",
